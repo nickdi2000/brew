@@ -1,0 +1,116 @@
+{
+    "Dashboard": [
+      {
+        "tab_name": "Overview",
+        "description": "Summary of program performance, including total members, points issued, and recent redemptions."
+      },
+      {
+        "tab_name": "Key Metrics",
+        "description": "Visual charts for member growth, engagement rates, and reward redemption trends."
+      },
+      {
+        "tab_name": "Recent Activity",
+        "description": "Log of recent member actions, such as check-ins, reward claims, and challenge completions."
+      }
+    ],
+    "Members": [
+      {
+        "tab_name": "All Members",
+        "description": "List of all enrolled members with details like join date, points balance, and tier status."
+      },
+      {
+        "tab_name": "Search & Filter",
+        "description": "Search members by name, email, or activity; filter by tier, location, or engagement level."
+      },
+      {
+        "tab_name": "Tiers & Levels",
+        "description": "Manage tier structures, set point thresholds, and assign benefits for each level."
+      },
+      {
+        "tab_name": "Export Data",
+        "description": "Download member data in CSV format for external analysis or marketing campaigns."
+      }
+    ],
+    "Rewards": [
+      {
+        "tab_name": "Manage Rewards",
+        "description": "View and edit available rewards, including descriptions, point costs, and stock levels."
+      },
+      {
+        "tab_name": "Redemption History",
+        "description": "Track all reward redemptions with details on user, date, and reward type."
+      },
+      {
+        "tab_name": "Create New Reward",
+        "description": "Add new rewards like discounts, free pints, or merch with customizable point values."
+      },
+      {
+        "tab_name": "Point Settings",
+        "description": "Configure how points are earned (e.g., per visit, purchase) and expiration rules."
+      }
+    ],
+    "QR Codes": [
+      {
+        "tab_name": "Portal Access",
+        "description": "Generate and manage QR codes for member login and registration access."
+      },
+      {
+        "tab_name": "Award Points",
+        "description": "Create and manage QR codes for awarding points to members."
+      }
+    ],
+    "Challenges & Events": [
+      {
+        "tab_name": "Active Challenges",
+        "description": "Monitor ongoing challenges like 'try 5 beers' with participation and completion stats."
+      },
+      {
+        "tab_name": "Past Challenges",
+        "description": "Review completed challenges, their outcomes, and user engagement metrics."
+      },
+      {
+        "tab_name": "Create Challenge",
+        "description": "Design new challenges with goals, rewards, and duration for member engagement."
+      },
+      {
+        "tab_name": "Event Stamps",
+        "description": "Manage QR-based stamps for events like taproom visits or brewery tours."
+      }
+    ],
+    "Analytics": [
+      {
+        "tab_name": "Engagement Reports",
+        "description": "Analyze member activity patterns, including check-ins, social shares, and referrals."
+      },
+      {
+        "tab_name": "User Demographics",
+        "description": "View aggregated data on member age, location, and beer preferences."
+      },
+      {
+        "tab_name": "Reward Performance",
+        "description": "Evaluate which rewards are most popular and their impact on engagement."
+      },
+      {
+        "tab_name": "Custom Reports",
+        "description": "Generate tailored reports based on specific metrics or timeframes."
+      }
+    ],
+    "Settings": [
+      {
+        "tab_name": "Brewery Profile",
+        "description": "Update brewery details, branding, and contact info displayed in the program."
+      },
+      {
+        "tab_name": "Program Rules",
+        "description": "Set rules for point earning, redemption limits, and membership terms."
+      },
+      {
+        "tab_name": "Notifications",
+        "description": "Configure automated emails or push notifications for members and admins."
+      },
+      {
+        "tab_name": "Account & Users",
+        "description": "Manage admin accounts, permissions, and access to the portal."
+      }
+    ]
+  }

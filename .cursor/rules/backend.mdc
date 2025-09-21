@@ -1,0 +1,53 @@
+---
+globs: fe/*
+alwaysApply: false
+---
+1. ALWAYS:
+   - Use try/catch for async operations
+   - Include auth middleware for protected routes
+   - Follow established naming patterns
+   - Return standardized response objects
+   - Handle null/undefined cases
+   - Validate inputs
+   - Use proper HTTP status codes
+
+2. PATTERNS:
+   - Controllers: `exports.functionName = async (req, res) => {}`
+   - Routes: `router.method('/path', middleware, controller.function)`
+   - Models: `const modelSchema = new mongoose.Schema({...})`
+   - Auth: `{ authenticateToken: auth }`
+   - Error Format: `{ error: message }`
+   - Success Format: `{ data: result }`
+
+3. NAMING:
+   - Routes: noun-based ('/users', '/organization')
+   - Controllers: action-based (getUser, createMember)
+   - Variables: camelCase
+   - Models: PascalCase
+
+4. VALIDATION:
+   - Required Fields: `required: true`
+   - String Fields: `trim: true`
+   - Enums: Define allowed values
+   - Dates: Default to `Date.now`
+
+5. ERROR HANDLING:
+   - 400: Invalid input
+   - 401: Authentication failed
+   - 403: Permission denied
+   - 404: Resource not found
+   - 500: Server error
+
+6. SECURITY:
+   - Never expose passwords
+   - Always hash sensitive data
+   - Validate user permissions
+   - Check organization access
+
+7. DATABASE:
+   - Use proper indexes
+   - Include timestamps
+   - Reference related models
+   - Handle cascade operations
+   
+- if you need to run the backend server to test it -- check first if its already running (on port 3391) -- you can kill that service first then re-start it but don't try to start it on a different PORT

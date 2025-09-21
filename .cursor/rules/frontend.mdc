@@ -1,0 +1,63 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+1. ALWAYS:
+   - Use composition API with `<script setup>`
+   - use Iconify for icons ( ie <Icon icon="mdi:beer" class="h-6 w-6 text-gray-500" />)
+   - Define prop types and defaults
+   - Handle loading/error states
+   - Show empty states
+   - Clean up listeners and timers
+
+2. NEVER:
+   - Make direct axios calls
+   - Mutate props
+   - Use complex logic in templates
+   - Leave console.logs in production
+   - Access DOM directly in setup()
+
+3. API HANDLING:
+   - Use api service from api/index.js
+   - Expect response format: { success, message, data }
+   - Handle errors with try/catch
+   - Show toast messages for feedback
+   - Handle loading states
+
+4. STATE MANAGEMENT:
+   - Use Vuex for shared state
+   - Use composables for local state
+   - Handle loading/error states
+   - Use getters for derived data
+   - Keep mutations synchronous
+
+5. ROUTING:
+   - Check auth in guards
+   - Handle query params
+   - Use meta fields
+   - Handle navigation errors
+   - Clean up on route change
+
+6. NOTIFICATIONS:
+   - Use this.$toast for messages
+   - Provide clear messages
+   - Use correct type (success/error)
+   - Show loading feedback
+   - Handle errors gracefully
+
+7. FORMS:
+   - Use v-model
+   - Validate inputs
+   - Show feedback
+   - Prevent double submit
+   - Handle API errors
+   - Use the btn btn-primary and btn-secondary classes
+
+8. SECURITY:
+   - Check auth state
+   - Validate inputs
+   - Handle token refresh
+   - Clear sensitive data
+   - Use proper auth guards

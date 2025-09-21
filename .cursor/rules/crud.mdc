@@ -1,0 +1,12 @@
+---
+alwaysApply: false
+---
+
+- build the full backend: Model, routes controller and service
+- build out full CRUD capabilities with "RESTful" api definitions
+- use proper error handling, throwing an error for any potential situations like missing params
+- make the code as robust as possible
+
+- build the frontend fully as well, using typescript so we can ensure we are working with the right structure and attributes as defined in the model 
+- we should have a nice slick looking empty state div for when there are no records. 
+
