@@ -1,10 +1,13 @@
 <template>
-  <div class="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden">
-    <div class="flex items-center p-4 space-x-4">
+  <div 
+    class="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer group"
+    @click="$emit('edit', reward)"
+  >
+    <div class="flex items-center p-4 space-x-4 group-hover:bg-gray-50">
       <!-- Icon -->
       <div class="flex-shrink-0">
-        <component 
-          :is="rewardIcon" 
+        <Icon 
+          :icon="rewardIcon" 
           class="w-12 h-12 text-amber-600 bg-amber-50 rounded-full p-2"
           aria-hidden="true" 
         />
@@ -25,7 +28,7 @@
             </div>
 
             <!-- Stock -->
-            <div v-if="reward.quantity !== null" class="text-right">
+            <div v-if="reward.quantity !== null && reward.quantity !== -1" class="text-right">
               <p class="text-sm font-medium" :class="stockTextColor">
                 {{ reward.quantity }} left
               </p>
@@ -42,7 +45,7 @@
                 ]"
                 role="switch"
                 :aria-checked="reward.isActive"
-                @click="$emit('toggle', reward)"
+                @click.stop="$emit('toggle', reward)"
               >
                 <span
                   :class="[
@@ -57,15 +60,7 @@
                     ]"
                     aria-hidden="true"
                   >
-                    <svg class="h-3 w-3 text-gray-400" fill="none" viewBox="0 0 12 12">
-                      <path
-                        d="M4 8l2-2m0 0l2-2M6 6L4 4m2 2l2 2"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                      />
-                    </svg>
+                    <Icon icon="mdi:close" class="h-3 w-3 text-gray-400" />
                   </span>
                   <span
                     :class="[
@@ -74,9 +69,7 @@
                     ]"
                     aria-hidden="true"
                   >
-                    <svg class="h-3 w-3 text-amber-600" fill="currentColor" viewBox="0 0 12 12">
-                      <path d="M3.707 5.293a1 1 0 00-1.414 1.414l1.414-1.414zM5 8l-.707.707a1 1 0 001.414 0L5 8zm4.707-3.293a1 1 0 00-1.414-1.414l1.414 1.414zm-7.414 2l2 2 1.414-1.414-2-2-1.414 1.414zm3.414 2l4-4-1.414-1.414-4 4 1.414 1.414z" />
-                    </svg>
+                    <Icon icon="mdi:check" class="h-3 w-3 text-amber-600" />
                   </span>
                 </span>
               </button>
@@ -91,16 +84,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { Reward } from '@/types/reward';
-import {
-  GiftIcon,
-  SparklesIcon,
-  TicketIcon,
-  StarIcon,
-  BeakerIcon,
-  CakeIcon,
-  HeartIcon,
-  TrophyIcon
-} from '@heroicons/vue/24/outline';
+import { Icon } from '@iconify/vue';
 
 const props = defineProps<{
   reward: Reward;
@@ -113,12 +97,12 @@ defineEmits<{
 
 // Compute icon based on reward type and name
 const rewardIcon = computed(() => {
-  const customIcons: Record<string, any> = {
-    'Birthday Reward': CakeIcon,
-    'VIP Experience': StarIcon,
-    'Mystery Brew': BeakerIcon,
-    'Loyalty Bonus': HeartIcon,
-    'Achievement': TrophyIcon
+  const customIcons: Record<string, string> = {
+    'Birthday Reward': 'mdi:cake',
+    'VIP Experience': 'mdi:star',
+    'Mystery Brew': 'mdi:flask',
+    'Loyalty Bonus': 'mdi:heart',
+    'Achievement': 'mdi:trophy'
   };
 
   if (customIcons[props.reward.name]) {
@@ -127,15 +111,15 @@ const rewardIcon = computed(() => {
 
   switch (props.reward.type) {
     case 'product':
-      return GiftIcon;
+      return 'mdi:gift';
     case 'service':
-      return SparklesIcon;
+      return 'mdi:sparkles';
     case 'discount':
-      return TicketIcon;
+      return 'mdi:ticket';
     case 'experience':
-      return StarIcon;
+      return 'mdi:star';
     default:
-      return GiftIcon;
+      return 'mdi:gift';
   }
 });
 

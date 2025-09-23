@@ -41,7 +41,8 @@ alwaysApply: true
    - Clean up on route change
 
 6. NOTIFICATIONS:
-   - Use this.$toast for messages
+   - use this.$toast(message, 'error') in components
+   - and useToast()(message, 'error') in composition API setup
    - Provide clear messages
    - Use correct type (success/error)
    - Show loading feedback
@@ -55,9 +56,5 @@ alwaysApply: true
    - Handle API errors
    - Use the btn btn-primary and btn-secondary classes
 
-8. SECURITY:
-   - Check auth state
-   - Validate inputs
-   - Handle token refresh
-   - Clear sensitive data
-   - Use proper auth guards
+8. TROUBLESHOOTING:
+   - review the logs in /logs/ when troubleshooting frontend (vue, js, html, css) issues.

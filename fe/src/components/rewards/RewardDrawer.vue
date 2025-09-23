@@ -72,32 +72,6 @@
           </div>
         </div>
 
-        <!-- Stock -->
-        <div>
-          <div class="flex items-center justify-between">
-            <label for="quantity" class="block text-sm font-medium text-gray-700">Stock</label>
-            <div class="flex items-center">
-              <input
-                type="checkbox"
-                id="unlimited"
-                v-model="isUnlimited"
-                class="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded"
-              />
-              <label for="unlimited" class="ml-2 text-sm text-gray-500">Unlimited</label>
-            </div>
-          </div>
-          <div class="mt-1">
-            <input
-              type="number"
-              id="quantity"
-              v-model.number="form.quantity"
-              min="0"
-              :disabled="isUnlimited"
-              class="shadow-sm focus:ring-amber-500 focus:border-amber-500 block w-full sm:text-sm border-gray-300 rounded-md disabled:bg-gray-100"
-            />
-          </div>
-        </div>
-
         <!-- Status -->
         <div>
           <div class="flex items-center justify-between">
@@ -125,6 +99,125 @@
           <p class="mt-1 text-sm text-gray-500">
             {{ form.isActive ? 'Reward is active and available' : 'Reward is inactive' }}
           </p>
+        </div>
+
+        <!-- Advanced Fields Toggle -->
+        <div class="relative">
+          <div class="absolute inset-0 flex items-center" aria-hidden="true">
+            <div class="w-full border-t border-gray-200"></div>
+          </div>
+          <div class="relative flex justify-center">
+            <button
+              type="button"
+              @click="showAdvanced = !showAdvanced"
+              class="inline-flex items-center gap-x-1.5 rounded-full bg-white px-3 py-1.5 text-sm font-medium text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+            >
+              <Icon
+                :icon="showAdvanced ? 'mdi:chevron-up' : 'mdi:chevron-down'"
+                class="h-4 w-4 text-gray-400"
+              />
+              Advanced Options
+            </button>
+          </div>
+        </div>
+
+        <!-- Advanced Fields -->
+        <div v-if="showAdvanced" class="space-y-6">
+          <!-- Stock -->
+          <div class="rounded-lg bg-gray-50 p-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Stock</label>
+                <p class="text-sm text-gray-500">
+                  {{ isUnlimited ? 'Unlimited stock available' : 'Limited stock' }}
+                </p>
+              </div>
+              <button
+                type="button"
+                :class="[
+                  isUnlimited ? 'bg-amber-600' : 'bg-gray-200',
+                  'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2'
+                ]"
+                role="switch"
+                :aria-checked="isUnlimited"
+                @click="isUnlimited = !isUnlimited"
+              >
+                <span class="sr-only">Unlimited stock</span>
+                <span
+                  aria-hidden="true"
+                  :class="[
+                    isUnlimited ? 'translate-x-5' : 'translate-x-0',
+                    'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out'
+                  ]"
+                />
+              </button>
+            </div>
+            <div v-if="!isUnlimited" class="mt-3">
+              <input
+                type="number"
+                id="quantity"
+                v-model.number="form.quantity"
+                min="0"
+                class="shadow-sm focus:ring-amber-500 focus:border-amber-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                placeholder="Enter stock quantity"
+              />
+            </div>
+          </div>
+
+          <!-- Expiry -->
+          <div class="rounded-lg bg-gray-50 p-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <label class="block text-sm font-medium text-gray-700">Expiry</label>
+                <p class="text-sm text-gray-500">
+                  {{ isIndefinite ? 'Reward never expires' : 'Reward has expiry date' }}
+                </p>
+              </div>
+              <button
+                type="button"
+                :class="[
+                  isIndefinite ? 'bg-amber-600' : 'bg-gray-200',
+                  'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2'
+                ]"
+                role="switch"
+                :aria-checked="isIndefinite"
+                @click="isIndefinite = !isIndefinite"
+              >
+                <span class="sr-only">No expiry</span>
+                <span
+                  aria-hidden="true"
+                  :class="[
+                    isIndefinite ? 'translate-x-5' : 'translate-x-0',
+                    'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out'
+                  ]"
+                />
+              </button>
+            </div>
+            <div v-if="!isIndefinite" class="mt-3 grid grid-cols-2 gap-4">
+              <div>
+                <label for="startDate" class="block text-sm font-medium text-gray-700">Start Date</label>
+                <div class="mt-1">
+                  <input
+                    type="date"
+                    id="startDate"
+                    v-model="form.startDate"
+                    class="shadow-sm focus:ring-amber-500 focus:border-amber-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  />
+                </div>
+              </div>
+              <div>
+                <label for="endDate" class="block text-sm font-medium text-gray-700">End Date</label>
+                <div class="mt-1">
+                  <input
+                    type="date"
+                    id="endDate"
+                    v-model="form.endDate"
+                    class="shadow-sm focus:ring-amber-500 focus:border-amber-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </form>
     </template>
@@ -172,14 +265,27 @@ const form = ref({
   type: 'product' as RewardType,
   pointsCost: 0,
   quantity: 0,
-  isActive: true
+  isActive: true,
+  startDate: '',
+  endDate: ''
 });
+
+const showAdvanced = ref(false);
+const isIndefinite = ref(true);
 
 const isUnlimited = ref(false);
 
 // Watch for unlimited toggle
 watch(isUnlimited, (value) => {
   form.value.quantity = value ? null : 0;
+});
+
+// Watch for indefinite toggle
+watch(isIndefinite, (value) => {
+  if (value) {
+    form.value.startDate = '';
+    form.value.endDate = '';
+  }
 });
 
 // Watch for reward prop changes
@@ -191,9 +297,12 @@ watch(() => [props.reward, props.initialData], ([newReward, initialData]) => {
       type: newReward.type,
       pointsCost: newReward.pointsCost,
       quantity: newReward.quantity,
-      isActive: newReward.isActive
+      isActive: newReward.isActive,
+      startDate: newReward.startDate || '',
+      endDate: newReward.expiresAt ? new Date(newReward.expiresAt).toISOString().split('T')[0] : ''
     };
     isUnlimited.value = newReward.quantity === null;
+    isIndefinite.value = !newReward.expiresAt;
   } else if (initialData) {
     form.value = {
       name: initialData.name ?? '',
@@ -201,7 +310,9 @@ watch(() => [props.reward, props.initialData], ([newReward, initialData]) => {
       type: (initialData.type as RewardType) ?? 'product',
       pointsCost: initialData.pointsCost ?? 0,
       quantity: initialData.quantity ?? 0,
-      isActive: initialData.isActive ?? true
+      isActive: initialData.isActive ?? true,
+      startDate: initialData.startDate ?? '',
+      endDate: initialData.endDate ?? ''
     };
     isUnlimited.value = initialData.quantity === null;
   } else {
@@ -211,13 +322,26 @@ watch(() => [props.reward, props.initialData], ([newReward, initialData]) => {
       type: 'product',
       pointsCost: 0,
       quantity: 0,
-      isActive: true
+      isActive: true,
+      startDate: '',
+      endDate: ''
     };
     isUnlimited.value = false;
   }
 }, { immediate: true });
 
 const handleSubmit = () => {
-  emit('save', form.value);
+  const formData = { ...form.value };
+  
+  // Handle expiry dates
+  if (isIndefinite.value) {
+    formData.startDate = null;
+    formData.endDate = null;
+    formData.expiresAt = null;
+  } else {
+    formData.expiresAt = formData.endDate ? new Date(formData.endDate).toISOString() : null;
+  }
+
+  emit('save', formData);
 };
 </script>

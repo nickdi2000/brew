@@ -8,6 +8,20 @@ export default defineConfig({
   server: {
     port: 5644,
     host: true,
+    strictPort: true,
+    hmr: {
+      clientPort: 5644
+    },
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3391',
+        changeOrigin: true
+      }
+    },
+    headers: {
+      'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+      'Cross-Origin-Embedder-Policy': 'require-corp'
+    }
   },
   resolve: {
     alias: {

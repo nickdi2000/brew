@@ -4,6 +4,9 @@ import App from './App.vue'
 import router from './router'
 import store from './store'
 import { toast } from './plugins/toast'
+import organizationPlugin from './plugins/organization'
+import vue3GoogleLogin from 'vue3-google-login'
+import './utils/logger'  // Import logger to override console methods
 
 // Create app instance
 const app = createApp(App)
@@ -12,12 +15,19 @@ const app = createApp(App)
 app.use(store)
 app.use(router)
 app.use(toast)
-
-// Initialize auth state and activity monitoring
-store.dispatch('initAuth').finally(() => {
-  // Mount the app after auth initialization
-  app.mount('#app')
+app.use(vue3GoogleLogin, {
+  clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID
 })
+
+// Initialize auth state
+store.dispatch('initAuth')
+  .catch(error => {
+    console.warn('Auth initialization error:', error);
+  })
+  .finally(() => {
+    // Mount the app after initialization
+    app.mount('#app')
+  })
 
 // Setup activity monitoring
 app.config.globalProperties.$updateActivity = () => {

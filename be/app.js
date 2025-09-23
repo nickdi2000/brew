@@ -5,9 +5,12 @@ const cors = require('cors');
 const userRoutes = require('./routes/userRoutes');
 const waitlistRoutes = require('./routes/waitlistRoutes');
 const authRoutes = require('./routes/authRoutes');
+const googleAuthRoutes = require('./routes/googleAuthRoutes');
 const organizationRoutes = require('./routes/organizationRoutes');
 const rewardRoutes = require('./routes/rewardRoutes');
 const qrCodeRoutes = require('./routes/qrCodeRoutes');
+const logRoutes = require('./routes/logRoutes');
+const memberRoutes = require('./routes/memberRoutes');
 
 // Import models to ensure they are registered with Mongoose
 require('./models/Organization');
@@ -30,9 +33,12 @@ app.get('/api/health', (req, res) => {
 app.use('/api/users', userRoutes);
 app.use('/api/waitlist', waitlistRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/auth', googleAuthRoutes);
 app.use('/api/organization', organizationRoutes);
 app.use('/api/rewards', rewardRoutes);
 app.use('/api/qr-codes', qrCodeRoutes);
+app.use('/api/log', logRoutes);
+app.use('/api/memberships', memberRoutes);
 
 // MongoDB Connection
 const connectDB = async () => {

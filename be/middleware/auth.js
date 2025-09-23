@@ -13,14 +13,18 @@ exports.authenticateToken = async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    // Fetch the user from the database with populated organization
-    const user = await User.findById(decoded.userId).populate('organization');
+    // Fetch the user from the database
+    const user = await User.findById(decoded.userId).populate('organizations');
     if (!user) {
       return res.status(404).json(formatError('User not found'));
     }
 
     // Store both decoded token and user object
-    req.user = user;
+    const userObj = user.toObject();
+    req.user = {
+      ...userObj,
+      organizations: userObj.organizations // Now contains the populated organizations data
+    };
     req.token = decoded;
     next();
   } catch (error) {

@@ -81,6 +81,7 @@ const submitBetaSignup = async (event) => {
 };
 
 onMounted(() => {
+  console.log('Landing page mounted');
   AOS.init({
     duration: 1000,
     easing: 'ease-out',

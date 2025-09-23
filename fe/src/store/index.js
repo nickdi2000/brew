@@ -4,6 +4,7 @@ import router from '../router';
 import members from './modules/members';
 import organization from './modules/organization';
 import rewards from './modules/rewards';
+import auth from './modules/auth';
 
 // Helper function to handle persistent storage
 const storage = {
@@ -35,7 +36,8 @@ export default createStore({
   modules: {
     members,
     organization,
-    rewards
+    rewards,
+    auth
   },
   state: {
     user: storage.get('user', true) || null,

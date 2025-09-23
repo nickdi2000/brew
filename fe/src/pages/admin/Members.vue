@@ -5,27 +5,7 @@
       <h2 class="text-2xl font-bold text-gradient-blue font-display">Members</h2>
     </div>
 
-    <!-- Tabs -->
-    <div class="border-b border-gray-200">
-      <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-        <button
-          v-for="tab in tabs"
-          :key="tab.name"
-          @click="currentTab = tab.name"
-          :class="[
-            currentTab === tab.name
-              ? 'border-amber-500 text-amber-600'
-              : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
-            'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium'
-          ]"
-        >
-          {{ tab.label }}
-        </button>
-      </nav>
-    </div>
-
-    <!-- Tab Panels -->
-    <div v-if="currentTab === 'all'" class="space-y-6">
+    <div class="space-y-6">
       <!-- Filters and Stats (only shown when there are members) -->
       <template v-if="!loading && members.length > 0">
         <!-- Filters -->
@@ -39,7 +19,7 @@
                 placeholder="Search members..."
                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500"
               />
-              <SearchIcon class="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
+              <Icon icon="mdi:magnify" class="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
             </div>
 
             <!-- Status Filter -->
@@ -86,7 +66,7 @@
             <div class="p-5">
               <div class="flex items-center">
                 <div class="flex-shrink-0">
-                  <component :is="stat.icon" class="h-6 w-6 text-amber-600" aria-hidden="true" />
+                  <Icon :icon="stat.icon" class="h-6 w-6 text-amber-600" aria-hidden="true" />
                 </div>
                 <div class="ml-5 w-0 flex-1">
                   <dl>
@@ -143,9 +123,26 @@
             <tr v-else-if="members.length === 0">
               <td colspan="6" class="px-6 py-4 text-center text-gray-500">
                 <div class="flex flex-col items-center py-6">
-                  <UsersIcon class="h-12 w-12 text-gray-400" />
+                  <Icon icon="mdi:account-group" class="h-12 w-12 text-gray-400" />
                   <h3 class="mt-2 text-sm font-medium text-gray-900">No members found</h3>
-                  <p class="mt-1 text-sm text-gray-500">Members will join through your member portal.</p>
+                  <p class="mt-1 text-sm text-gray-500">Share your <router-link to="/admin/settings" class="text-amber-600 hover:text-amber-700 underline">member portal link</router-link> to start growing your community!</p>
+                  <div class="mt-3 max-w-2xl mx-auto w-full hidden">
+                    <div class="flex items-center justify-center space-x-3 bg-gray-50 py-3 px-4 rounded-lg border border-gray-200">
+                      <Icon icon="mdi:link-variant" class="h-5 w-5 text-gray-400 flex-shrink-0" />
+                      <span class="text-gray-900 font-medium">{{ portalLink }}</span>
+                      <button
+                        @click="copyToClipboard"
+                        class="inline-flex items-center text-amber-600 hover:text-amber-700 focus:outline-none"
+                      >
+                        <Icon icon="mdi:content-copy" class="h-5 w-5" />
+                        <span class="ml-1 text-sm">Copy</span>
+                      </button>
+                    </div>
+                    <p v-if="showCopied" class="mt-2 text-sm text-green-600 text-center">
+                      <Icon icon="mdi:check-circle" class="inline h-4 w-4 mr-1" />
+                      Copied to clipboard!
+                    </p>
+                  </div>
                 </div>
               </td>
             </tr>
@@ -257,7 +254,7 @@
                   class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                 >
                   <span class="sr-only">Previous</span>
-                  <ChevronLeftIcon class="h-5 w-5" />
+                  <Icon icon="mdi:chevron-left" class="h-5 w-5" />
                 </button>
                 <button
                   v-for="page in paginationRange"
@@ -278,7 +275,7 @@
                   class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                 >
                   <span class="sr-only">Next</span>
-                  <ChevronRightIcon class="h-5 w-5" />
+                  <Icon icon="mdi:chevron-right" class="h-5 w-5" />
                 </button>
               </nav>
             </div>
@@ -288,110 +285,6 @@
 
     </div>
 
-    <!-- Config Tab -->
-    <div v-if="currentTab === 'config'" class="space-y-6">
-      <div class="bg-white shadow rounded-lg p-6">
-        <form @submit.prevent="saveConfig" class="space-y-6">
-          <div class="lg:grid lg:grid-cols-2 lg:gap-8">
-            <!-- Left Column: Portal Settings -->
-            <div class="space-y-6">
-              <!-- Member Portal Access -->
-              <div>
-                <h3 class="text-lg font-medium text-gray-900">Member Portal Access</h3>
-                <p class="mt-1 text-sm text-gray-500">Configure how members will access your rewards portal.</p>
-              </div>
-
-              <!-- Access Code -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700">Access Code</label>
-                <div class="mt-1">
-                  <div class="flex rounded-md shadow-sm">
-                    <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">
-                      https://
-                    </span>
-                    <input
-                      type="text"
-                      v-model="orgConfig.code"
-                      class="flex-1 min-w-0 block w-full px-3 py-2 rounded-none border-gray-300 focus:ring-amber-500 focus:border-amber-500 sm:text-sm"
-                    />
-                    <span class="inline-flex items-center px-3 rounded-r-md border border-l-0 border-gray-300 bg-gray-50 text-gray-500 sm:text-sm">
-                      .brewtokens.com
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Custom Domain -->
-              <div>
-                <div class="flex items-center justify-between">
-                  <label class="block text-sm font-medium text-gray-700">Custom Domain</label>
-                  <button
-                    type="button"
-                    class="text-sm text-gray-500 hover:text-gray-700"
-                    @click="orgConfig.useCustomDomain = !orgConfig.useCustomDomain"
-                    :disabled="true"
-                  >
-                    {{ orgConfig.useCustomDomain ? 'Use Subdomain' : 'Use Custom Domain' }}
-                  </button>
-                </div>
-                <div class="mt-1">
-                  <input
-                    type="text"
-                    v-model="orgConfig.customDomain"
-                    :disabled="!orgConfig.useCustomDomain"
-                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    placeholder="rewards.yourdomain.com"
-                  />
-                  <p class="mt-2 text-sm text-gray-500">Custom domain support coming soon!</p>
-                </div>
-              </div>
-
-              <!-- Save Button -->
-              <div class="flex justify-end pt-4">
-                <button
-                  type="submit"
-                  class="btn btn-primary"
-                  :disabled="orgLoading"
-                >
-                  {{ orgLoading ? 'Saving...' : 'Save Changes' }}
-                </button>
-              </div>
-            </div>
-
-            <!-- Right Column: QR Code -->
-            <div class="mt-6 lg:mt-0">
-              <div>
-                <label class="block text-sm font-medium text-gray-700">QR Code</label>
-                <p class="mt-1 text-sm text-gray-500">Scan to access your member portal.</p>
-                <div class="mt-4 flex flex-col items-center">
-                  <router-link 
-                    :to="{ name: 'qr-print', query: { url: memberPortalUrl }}" 
-                    class="block p-4 bg-white border rounded-lg hover:border-amber-500 transition-colors duration-200"
-                  >
-                    <img :src="qrCodeUrl" alt="Member Portal QR Code" class="w-48 h-48" />
-                  </router-link>
-                  <div class="mt-4 flex space-x-3">
-                    <button
-                      type="button"
-                      class="btn btn-secondary"
-                      @click="downloadQRCode"
-                    >
-                      Download QR Code
-                    </button>
-                    <router-link 
-                      :to="{ name: 'qr-print', query: { url: memberPortalUrl }}"
-                      class="btn btn-secondary"
-                    >
-                      Print View
-                    </router-link>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
 
     <!-- Modals -->
     <MemberForm
@@ -416,22 +309,28 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useStore } from 'vuex';
-import {
-  MagnifyingGlassIcon as SearchIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  UsersIcon,
-  UserGroupIcon,
-  StarIcon,
-  ChartBarIcon
-} from '@heroicons/vue/24/outline';
+import { Icon } from '@iconify/vue';
 import MemberForm from '@/components/members/MemberForm.vue';
 import ConfirmationModal from '@/components/ConfirmationModal.vue';
+import { usePortalLink } from '@/composables/usePortalLink';
 
 const store = useStore();
+const { portalLink } = usePortalLink();
+const showCopied = ref(false);
+
+const copyToClipboard = async () => {
+  try {
+    await navigator.clipboard.writeText(portalLink.value);
+    showCopied.value = true;
+    setTimeout(() => {
+      showCopied.value = false;
+    }, 2000);
+  } catch (err) {
+    console.error('Failed to copy text: ', err);
+  }
+};
 
 // State
-const currentTab = ref('all');
 const showDeleteModal = ref(false);
 const selectedMember = ref(null);
 const filters = ref({
@@ -442,57 +341,33 @@ const filters = ref({
   order: 'asc'
 });
 
-const orgConfig = ref({
-  code: '',
-  useCustomDomain: false,
-  customDomain: ''
-});
-
-const orgLoading = computed(() => store.getters['organization/loading']);
-
-const tabs = [
-  { name: 'all', label: 'All Members' },
-  { name: 'config', label: 'Configuration' }
-];
-
 // Computed
 const members = computed(() => store.getters['members/membersList']);
 const loading = computed(() => store.getters['members/isLoading']);
 const pagination = computed(() => store.getters['members/pagination']);
 const error = computed(() => store.getters['members/error']);
 
-const memberPortalUrl = computed(() => {
-  if (orgConfig.value.useCustomDomain && orgConfig.value.customDomain) {
-    return `https://${orgConfig.value.customDomain}`;
-  }
-  return `https://${orgConfig.value.code}.brewtokens.com`;
-});
-
-const qrCodeUrl = computed(() => {
-  const url = encodeURIComponent(memberPortalUrl.value);
-  return `https://api.qrserver.com/v1/create-qr-code/?size=512x512&data=${url}`;
-});
 
 const stats = computed(() => [
   {
     name: 'Total Members',
     value: pagination.value.total.toLocaleString(),
-    icon: UserGroupIcon
+    icon: 'mdi:account-multiple'
   },
   {
     name: 'Active Members',
     value: members.value.filter(m => m.status === 'active').length.toLocaleString(),
-    icon: UsersIcon
+    icon: 'mdi:account-group'
   },
   {
     name: 'Gold+ Members',
     value: members.value.filter(m => ['gold', 'platinum'].includes(m.membershipLevel)).length.toLocaleString(),
-    icon: StarIcon
+    icon: 'mdi:star'
   },
   {
     name: 'Total Points',
     value: store.getters['members/totalPoints'].toLocaleString(),
-    icon: ChartBarIcon
+    icon: 'mdi:chart-bar'
   }
 ]);
 
@@ -606,35 +481,8 @@ watch(filters, () => {
   store.dispatch('members/setFilters', filters.value);
 }, { deep: true });
 
-// Config methods
-const saveConfig = async () => {
-  try {
-    await store.dispatch('organization/updateConfig', orgConfig.value);
-    toast('Settings saved successfully', 'success');
-  } catch (err) {
-    console.error('Failed to save config:', err);
-    toast('Failed to save settings', 'error');
-  }
-};
-
-const downloadQRCode = () => {
-  const link = document.createElement('a');
-  link.href = qrCodeUrl.value;
-  link.download = 'member-portal-qr.png';
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};
-
 // Lifecycle
-onMounted(async () => {
+onMounted(() => {
   fetchMembers();
-  try {
-    const config = await store.dispatch('organization/fetchConfig');
-    orgConfig.value = { ...orgConfig.value, ...config };
-  } catch (error) {
-    console.error('Failed to fetch organization config:', error);
-    toast('Failed to load organization settings', 'error');
-  }
 });
 </script>

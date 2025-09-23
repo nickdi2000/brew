@@ -93,12 +93,36 @@ exports.getReward = async (req, res) => {
 // Create reward
 exports.createReward = async (req, res) => {
   try {
+    console.log('Creating reward - Auth debug:', {
+      user: req.user,
+      organizationId: req.user?.organizationId,
+      headers: req.headers,
+      body: req.body
+    });
+
+    if (!req.user) {
+      console.error('No user found in request');
+      return res.status(401).json(formatError('User not authenticated'));
+    }
+
+    if (!req.user.organizationId) {
+      console.error('No organizationId found in user:', req.user);
+      return res.status(400).json(formatError('User has no organization ID'));
+    }
+
     const reward = new Reward({
       ...req.body,
       organizationId: req.user.organizationId
     });
 
+    console.log('Attempting to save reward:', {
+      rewardData: reward.toObject(),
+      organizationId: reward.organizationId
+    });
+
     await reward.save();
+
+    console.log('Reward saved successfully:', reward.toObject());
 
     res.status(201).json(formatResponse({
       data: reward,

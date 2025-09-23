@@ -8,7 +8,7 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
 
     // Find user by email
-    const user = await User.findOne({ email }).populate('organization');
+    const user = await User.findOne({ email }).populate('organizations');
     if (!user) {
       return res.status(401).json(formatError('Invalid credentials'));
     }
@@ -25,7 +25,7 @@ exports.login = async (req, res) => {
         userId: user._id,
         email: user.email,
         isAdmin: user.isAdmin,
-        organizationId: user.organization._id
+        organizations: user.organizations.map(org => org._id)
       },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
@@ -58,10 +58,10 @@ exports.login = async (req, res) => {
           firstName: user.firstName,
           lastName: user.lastName,
           isAdmin: user.isAdmin,
-          organization: {
-            id: user.organization._id,
-            name: user.organization.name
-          }
+          organizations: user.organizations.map(org => ({
+            id: org._id,
+            name: org.name
+          }))
         }
       },
       message: 'Login successful'
@@ -72,7 +72,6 @@ exports.login = async (req, res) => {
   }
 };
 
-// Get current user
 // Refresh token
 exports.refreshToken = async (req, res) => {
   try {
@@ -85,7 +84,7 @@ exports.refreshToken = async (req, res) => {
     const user = await User.findOne({ 
       refreshToken,
       refreshTokenExpiresAt: { $gt: new Date() }
-    }).populate('organization');
+    }).populate('organizations');
 
     if (!user) {
       return res.status(401).json(formatError('Invalid or expired refresh token'));
@@ -97,7 +96,7 @@ exports.refreshToken = async (req, res) => {
         userId: user._id,
         email: user.email,
         isAdmin: user.isAdmin,
-        organizationId: user.organization._id
+        organizations: user.organizations.map(org => org._id)
       },
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
@@ -134,11 +133,15 @@ exports.refreshToken = async (req, res) => {
 
 exports.getCurrentUser = async (req, res) => {
   try {
-    // User is attached by authenticateToken middleware and already has organization populated
+    // User is attached by authenticateToken middleware and already has organizations populated
     const user = req.user;
     if (!user) {
       return res.status(404).json(formatError('User not found'));
     }
+
+    // Include per-organization membership roles for this user
+    const Member = require('../models/Member');
+    const memberships = await Member.find({ user: user._id }).select('organization role status points');
 
     res.json(formatResponse({
       data: {
@@ -148,10 +151,16 @@ exports.getCurrentUser = async (req, res) => {
           firstName: user.firstName,
           lastName: user.lastName,
           isAdmin: user.isAdmin,
-          organization: {
-            id: user.organization._id,
-            name: user.organization.name
-          }
+          organizations: user.organizations.map(org => ({
+            id: org._id,
+            name: org.name
+          })),
+          memberships: memberships.map(m => ({
+            organization: m.organization,
+            role: m.role,
+            status: m.status,
+            points: m.points
+          }))
         }
       },
       message: 'User details retrieved successfully'

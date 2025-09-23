@@ -39,7 +39,7 @@
           <tr v-else-if="members.length === 0">
             <td colspan="6" class="px-6 py-4 text-center text-gray-500">
               <div class="flex flex-col items-center py-6">
-                <UsersIcon class="h-12 w-12 text-gray-400" />
+                <Icon icon="mdi:account-group" class="h-12 w-12 text-gray-400" />
                 <h3 class="mt-2 text-sm font-medium text-gray-900">No members found</h3>
                 <p class="mt-1 text-sm text-gray-500">Get started by adding a new member.</p>
                 <div class="mt-6">
@@ -161,7 +161,7 @@
               class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
             >
               <span class="sr-only">Previous</span>
-              <ChevronLeftIcon class="h-5 w-5" />
+              <Icon icon="mdi:chevron-left" class="h-5 w-5" />
             </button>
             <button
               v-for="page in paginationRange"
@@ -182,7 +182,7 @@
               class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
             >
               <span class="sr-only">Next</span>
-              <ChevronRightIcon class="h-5 w-5" />
+              <Icon icon="mdi:chevron-right" class="h-5 w-5" />
             </button>
           </nav>
         </div>
@@ -193,7 +193,7 @@
 
 <script setup>
 import { computed } from 'vue';
-import { UsersIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/outline';
+import { Icon } from '@iconify/vue';
 
 const props = defineProps({
   members: {

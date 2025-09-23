@@ -47,7 +47,7 @@
                       @click="$emit('close')"
                     >
                       <span class="sr-only">Close panel</span>
-                      <XMarkIcon class="h-6 w-6" aria-hidden="true" />
+                      <Icon icon="mdi:close" class="h-6 w-6" aria-hidden="true" />
                     </button>
                   </div>
                 </div>
@@ -73,7 +73,7 @@
 </template>
 
 <script setup lang="ts">
-import { XMarkIcon } from '@heroicons/vue/24/outline';
+import { Icon } from '@iconify/vue';
 
 const props = withDefaults(defineProps<{
   show: boolean;

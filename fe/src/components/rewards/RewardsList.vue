@@ -11,7 +11,7 @@
             placeholder="Search rewards..."
             class="w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500"
           />
-          <MagnifyingGlassIcon class="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
+          <Icon icon="mdi:magnify" class="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
         </div>
 
         <!-- Type Filter -->
@@ -67,7 +67,7 @@
             class="object-cover"
           />
           <div v-else class="flex items-center justify-center h-full bg-gray-100">
-            <GiftIcon class="h-12 w-12 text-gray-400" />
+            <Icon icon="mdi:gift" class="h-12 w-12 text-gray-400" />
           </div>
         </div>
 
@@ -142,7 +142,7 @@
 
     <!-- Empty State -->
     <div v-else class="text-center py-12 bg-white shadow rounded-lg">
-      <GiftIcon class="mx-auto h-12 w-12 text-gray-400" />
+      <Icon icon="mdi:gift" class="mx-auto h-12 w-12 text-gray-400" />
       <h3 class="mt-2 text-sm font-medium text-gray-900">No rewards</h3>
       <p class="mt-1 text-sm text-gray-500">Get started by creating a new reward.</p>
       <div class="mt-6">
@@ -193,7 +193,7 @@
               class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
             >
               <span class="sr-only">Previous</span>
-              <ChevronLeftIcon class="h-5 w-5" aria-hidden="true" />
+              <Icon icon="mdi:chevron-left" class="h-5 w-5" aria-hidden="true" />
             </button>
             <button
               v-for="page in paginationRange"
@@ -213,7 +213,7 @@
               class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
             >
               <span class="sr-only">Next</span>
-              <ChevronRightIcon class="h-5 w-5" aria-hidden="true" />
+              <Icon icon="mdi:chevron-right" class="h-5 w-5" aria-hidden="true" />
             </button>
           </nav>
         </div>
@@ -225,12 +225,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useStore } from 'vuex';
-import {
-  MagnifyingGlassIcon,
-  GiftIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon
-} from '@heroicons/vue/24/outline';
+import { Icon } from '@iconify/vue';
 import type { Reward, RewardFilters } from '@/types/reward';
 
 const store = useStore();

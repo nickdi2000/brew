@@ -106,7 +106,7 @@
                       @click="adjustPoints('add')"
                       class="relative -ml-px inline-flex items-center space-x-2 rounded-r-md border border-gray-300 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
                     >
-                      <PlusIcon class="h-5 w-5 text-gray-400" aria-hidden="true" />
+                      <Icon icon="mdi:plus" class="h-5 w-5 text-gray-400" aria-hidden="true" />
                       <span>Add Points</span>
                     </button>
                   </div>
@@ -128,7 +128,7 @@
                 <div v-if="error" class="rounded-md bg-red-50 p-4">
                   <div class="flex">
                     <div class="flex-shrink-0">
-                      <XCircleIcon class="h-5 w-5 text-red-400" aria-hidden="true" />
+                      <Icon icon="mdi:close-circle" class="h-5 w-5 text-red-400" aria-hidden="true" />
                     </div>
                     <div class="ml-3">
                       <h3 class="text-sm font-medium text-red-800">
@@ -175,7 +175,7 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue';
-import { PlusIcon, XCircleIcon } from '@heroicons/vue/24/outline';
+import { Icon } from '@iconify/vue';
 
 const props = defineProps({
   show: {

@@ -6,6 +6,17 @@ const organizationSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
+  bannerImage: {
+    type: String,
+    trim: true,
+    validate: {
+      validator: function(v) {
+        // Check if it's a URL or base64 image
+        return !v || v.startsWith('http') || v.startsWith('https') || v.startsWith('data:image/');
+      },
+      message: props => `${props.value} is not a valid image URL or base64 string!`
+    }
+  },
   description: {
     type: String,
     trim: true

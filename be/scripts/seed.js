@@ -16,7 +16,11 @@ const seedData = async () => {
 
     // Create organization
     const organization = await Organization.create({
-      name: 'BrewTokens Admin'
+      name: 'BrewTokens Admin',
+      description: 'The official BrewTokens rewards program',
+      website: 'https://brewtokens.com',
+      email: 'support@brewtokens.com',
+      code: 'brewtokens'  // This will be auto-generated if not provided
     });
     console.log('Created organization');
 

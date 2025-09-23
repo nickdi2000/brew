@@ -213,8 +213,15 @@ const updateMemberStatus = (id, status) => api.patch(`/members/${id}/status`, { 
 const updateMemberPoints = (id, points, operation = 'add') => api.patch(`/members/${id}/points`, { points, operation });
 
 // Organization management API functions
-const getOrganization = () => api.get('/organization');
+const getOrganization = async () => {
+  console.log('📞 Calling getOrganization API');
+  const response = await api.get('/organization');
+  console.log('📦 Organization API Response:', response.data);
+  return response;
+};
+const getOrganizationByCode = (code) => api.get(`/organization/by-code/${code}`);
 const updateOrganization = (data) => api.put('/organization', data);
+const uploadOrganizationBanner = (imageData) => api.post('/organization/banner-image', { imageData });
 
 // QR Codes (Awarding points) management API functions
 const getAwardQRCodes = (params = {}) => api.get('/qr-codes', { params });
@@ -231,11 +238,59 @@ export const cancelPendingRequests = (message = 'Operation cancelled by user') =
   cancelTokenSource = axios.CancelToken.source();
 };
 
+// Authentication functions
+const googleLogin = async (credential, organizationId) => {
+  try {
+    console.log('🔍 Sending Google login request:', { 
+      credentialLength: credential?.length,
+      credentialStart: credential?.substring(0, 50) + '...',
+      organizationId
+    });
+
+    // Cancel any pending token refresh attempts
+    cancelPendingRequests('New login attempt');
+
+    // First, exchange the authorization code for tokens
+    const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', {
+      code: credential,
+      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+      client_secret: import.meta.env.VITE_GOOGLE_CLIENT_SECRET,
+      redirect_uri: window.location.origin,
+      grant_type: 'authorization_code'
+    });
+
+    if (!tokenResponse.data.id_token) {
+      throw new Error('Failed to get ID token from Google');
+    }
+
+    // Now send the ID token to our backend
+    const response = await api.post('/auth/google/login', { 
+      token: tokenResponse.data.id_token, 
+      organizationCode: organizationId // organizationId parameter actually contains the code
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    return response;
+  } catch (error) {
+    console.error('❌ Google login API error:', {
+      status: error.response?.status,
+      message: error.response?.data?.message,
+      data: error.response?.data
+    });
+    throw error;
+  }
+};
+
 // Export the configured axios instance and API functions
 export {
   api as default,
   signupForBeta,
   checkHealth,
+  // Authentication
+  googleLogin,
   // Member management
   getMembers,
   getMemberDetails,
@@ -246,7 +301,9 @@ export {
   updateMemberPoints,
   // Organization management
   getOrganization,
+  getOrganizationByCode,
   updateOrganization,
+  uploadOrganizationBanner,
   // QR codes management
   getAwardQRCodes,
   createAwardQRCode,

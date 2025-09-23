@@ -13,23 +13,31 @@
       <div class="flex justify-between items-center">
         <div>
           <h2 class="text-2xl font-bold text-gradient-blue font-display">Rewards</h2>
-          <p class="mt-1 text-sm text-gray-500">Manage your rewards program offerings.</p>
+          <div class="mt-1 flex items-center gap-3">
+            <p class="text-sm text-gray-500">Manage your rewards program offerings.</p>
+            <button
+              @click="showTemplates = true"
+              class="text-sm text-amber-600 hover:text-amber-700 font-medium"
+            >
+              View Templates
+            </button>
+          </div>
         </div>
         <button
           @click="openCreate"
           class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500"
         >
-          <PlusIcon class="h-5 w-5 mr-2" />
+          <Icon icon="mdi:plus" class="h-5 w-5 mr-2" />
           Create New Reward
         </button>
       </div>
 
-      <!-- Blank Slate / Templates CTA -->
+      <!-- Blank Slate -->
     <div v-if="!loading && rewards.length === 0" class="relative overflow-hidden rounded-xl border border-dashed border-gray-300 bg-white">
       <div class="px-6 py-12 sm:px-12 lg:px-16">
         <div class="mx-auto max-w-3xl text-center">
           <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-amber-50">
-            <GiftIcon class="h-6 w-6 text-amber-600" />
+            <Icon icon="mdi:gift" class="h-6 w-6 text-amber-600" />
           </div>
           <h3 class="text-2xl font-semibold text-slate-900">Start building your first reward</h3>
           <p class="mt-2 text-slate-500">Create a custom reward or pick a ready‑made template to get started fast.</p>
@@ -39,7 +47,7 @@
               @click="openCreate"
               class="btn btn-primary inline-flex items-center px-4 py-2 rounded-md text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500"
             >
-              <PlusIcon class="h-5 w-5 mr-2" /> Create custom reward
+              <Icon icon="mdi:plus" class="h-5 w-5 mr-2" /> Create custom reward
             </button>
             <button
               @click="showTemplates = true"
@@ -49,17 +57,34 @@
             </button>
           </div>
         </div>
+      </div>
+    </div>
 
-        <!-- Animated Template Grid -->
-        <Transition
-          enter-active-class="transition-all duration-300 ease-out"
-          enter-from-class="opacity-0 -translate-y-2 max-h-0"
-          enter-to-class="opacity-100 translate-y-0 max-h-[1000px]"
-          leave-active-class="transition-all duration-200 ease-in"
-          leave-from-class="opacity-100 translate-y-0 max-h-[1000px]"
-          leave-to-class="opacity-0 -translate-y-2 max-h-0"
-        >
-          <div v-if="showTemplates" class="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <!-- Templates Grid -->
+    <Transition
+      enter-active-class="transition-all duration-300 ease-out"
+      enter-from-class="opacity-0 -translate-y-2 max-h-0"
+      enter-to-class="opacity-100 translate-y-0 max-h-[1000px]"
+      leave-active-class="transition-all duration-200 ease-in"
+      leave-from-class="opacity-100 translate-y-0 max-h-[1000px]"
+      leave-to-class="opacity-0 -translate-y-2 max-h-0"
+    >
+      <div v-if="showTemplates" class="relative overflow-hidden rounded-xl border border-gray-200 bg-white">
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-6">
+            <div>
+              <h3 class="text-lg font-semibold text-slate-900">Reward Templates</h3>
+              <p class="mt-1 text-sm text-slate-500">Choose from our pre-made templates to get started quickly.</p>
+            </div>
+            <button
+              @click="showTemplates = false"
+              class="text-gray-400 hover:text-gray-500"
+            >
+              <span class="sr-only">Close</span>
+              <Icon icon="mdi:close" class="h-6 w-6" />
+            </button>
+          </div>
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <button
               v-for="t in templates"
               :key="t.key"
@@ -69,7 +94,7 @@
             >
               <div class="flex items-start gap-4">
                 <div class="flex h-10 w-10 items-center justify-center rounded-md bg-amber-50">
-                  <component :is="t.icon" class="h-6 w-6 text-amber-600" />
+                  <Icon :icon="t.icon" class="h-6 w-6 text-amber-600" />
                 </div>
                 <div class="">
                   <h4 class="text-base font-semibold text-slate-900">{{ t.title }}</h4>
@@ -81,9 +106,9 @@
               </div>
             </button>
           </div>
-        </Transition>
+        </div>
       </div>
-    </div>
+    </Transition>
 
     <!-- Rewards List -->
     <div class="space-y-4">
@@ -114,10 +139,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
-import {
-  GiftIcon,
-  PlusIcon
-} from '@heroicons/vue/24/outline';
+import { Icon } from '@iconify/vue';
 import RewardCard from '@/components/rewards/RewardCard.vue';
 import RewardDrawer from '@/components/rewards/RewardDrawer.vue';
 
@@ -163,7 +185,7 @@ const templates = [
     key: 'free-pint',
     title: 'Free Pint',
     subtitle: 'One complimentary pint for members',
-    icon: GiftIcon,
+    icon: 'mdi:gift',
     data: {
       name: 'Free Pint',
       description: 'Enjoy a complimentary pint on us!',
@@ -177,7 +199,7 @@ const templates = [
     key: 'ten-off',
     title: '10% Off',
     subtitle: 'Discount on entire order',
-    icon: GiftIcon,
+    icon: 'mdi:gift',
     data: {
       name: '10% Off',
       description: 'Take 10% off your purchase.',
@@ -191,7 +213,7 @@ const templates = [
     key: 'free-app',
     title: 'Free Appetizer',
     subtitle: 'Starter on the house',
-    icon: GiftIcon,
+    icon: 'mdi:gift',
     data: {
       name: 'Free Appetizer',
       description: 'Choose any appetizer for free.',
@@ -205,7 +227,7 @@ const templates = [
     key: 'bogo',
     title: 'BOGO Pint',
     subtitle: 'Buy one pint, get one free',
-    icon: GiftIcon,
+    icon: 'mdi:gift',
     data: {
       name: 'BOGO Pint',
       description: 'Buy one pint, get one free of equal or lesser value.',
