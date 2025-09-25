@@ -18,14 +18,41 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = store.getters.token;
+    const currentOrganizationId = store.getters['organization/currentOrganizationId'];
+    
+    // Define public endpoints that don't need auth token
+    const publicEndpoints = [
+      '/organization/by-code/',
+      '/waitlist',
+      '/health',
+      '/auth/google/login'
+    ];
+    
+    const isPublicEndpoint = publicEndpoints.some(endpoint => config.url.includes(endpoint));
+    
     console.log(`🚀 API Request to ${config.url}:`, {
       method: config.method,
       hasToken: !!token,
-      tokenValue: token ? `${token.substring(0, 10)}...` : 'none'
+      tokenValue: token ? `${token.substring(0, 10)}...` : 'none',
+      organizationId: currentOrganizationId,
+      isPublicEndpoint
     });
-    if (token) {
+    
+    // Only add auth token for non-public endpoints
+    if (token && !isPublicEndpoint) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // Add organization ID to headers if available and not a public endpoint
+    if (currentOrganizationId && !isPublicEndpoint) {
+      config.headers['X-Organization-ID'] = currentOrganizationId;
+      // Also add it as a query parameter for endpoints that expect it
+      if (!config.params) {
+        config.params = {};
+      }
+      config.params.organizationId = currentOrganizationId;
+    }
+    
     // Add cancel token to request
     config.cancelToken = cancelTokenSource.token;
     return config;
@@ -200,17 +227,17 @@ api.interceptors.response.use(
 );
 
 // API endpoints
-const signupForBeta = (email) => api.post('/beta/signup', { email });
+const signupForBeta = (email) => api.post('/waitlist', { email });
 const checkHealth = () => api.get('/health');
 
 // Member management API functions
-const getMembers = (params = {}) => api.get('/members', { params });
-const getMemberDetails = (id) => api.get(`/members/${id}`);
-const createMember = (data) => api.post('/members', data);
-const updateMember = (id, data) => api.put(`/members/${id}`, data);
-const deleteMember = (id) => api.delete(`/members/${id}`);
-const updateMemberStatus = (id, status) => api.patch(`/members/${id}/status`, { status });
-const updateMemberPoints = (id, points, operation = 'add') => api.patch(`/members/${id}/points`, { points, operation });
+const getMembers = (params = {}) => api.get('/memberships', { params });
+const getMemberDetails = (id) => api.get(`/memberships/${id}`);
+const createMember = (data) => api.post('/memberships', data);
+const updateMember = (id, data) => api.put(`/memberships/${id}`, data);
+const deleteMember = (id) => api.delete(`/memberships/${id}`);
+const updateMemberStatus = (id, status) => api.patch(`/memberships/${id}/status`, { status });
+const updateMemberPoints = (id, points, operation = 'add') => api.patch(`/memberships/${id}/points`, { points, operation });
 
 // Organization management API functions
 const getOrganization = async () => {

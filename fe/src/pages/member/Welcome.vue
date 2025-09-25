@@ -32,12 +32,12 @@
     </div>
 
     <!-- Content -->
-    <div class="min-h-screen">
+    <div v-if="organization" class="min-h-screen">
       <welcome-component
-        :name="organization?.name"
-        :description="organization?.description"
-        :banner-image="organization?.bannerImage"
-        :code="organization?.code"
+        :name="organization.name"
+        :description="organization.description"
+        :banner-image="organization.bannerImage"
+        :code="organization.code"
         @sign-in="signInWithGoogle"
       />
     </div>
@@ -83,7 +83,9 @@ const fetchOrganizationInfo = async () => {
       hasOrg: !!organization.value,
       code: organization.value?.code,
       id: organization.value?._id,
-      name: organization.value?.name
+      name: organization.value?.name,
+      description: organization.value?.description,
+      fullData: organization.value
     });
     
     // Preload the banner image
@@ -229,6 +231,7 @@ const signInWithGoogle = async () => {
     toast('Failed to initialize Google Sign In', 'error');
   }
 };
+
 
 onMounted(() => {
   fetchOrganizationInfo();

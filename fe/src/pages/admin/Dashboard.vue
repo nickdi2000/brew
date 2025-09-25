@@ -1,13 +1,20 @@
 <template>
-  <div>
-    <TabView 
-      :tabs="dashboardTabs"
-      :initial-tab="dashboardTabs[0]?.tab_name"
-    >
-      <template #default="{ activeTab }">
-        <component :is="getComponentForTab(activeTab)" />
-      </template>
-    </TabView>
+  <div class="min-h-screen bg-gray-50">
+    <div class="max-w-7xl mx-auto">
+      <div class="py-6">
+        <h1 class="text-2xl font-semibold text-gray-900 mb-6">Dashboard</h1>
+        
+        <TabView 
+          :tabs="dashboardTabs"
+          :initial-tab="dashboardTabs[0]?.tab_name"
+          class="bg-white rounded-lg shadow"
+        >
+          <template #default="{ activeTab }">
+            <component :is="getComponentForTab(activeTab)" />
+          </template>
+        </TabView>
+      </div>
+    </div>
   </div>
 </template>
 

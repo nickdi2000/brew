@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Member = require('../models/Member');
 const { formatResponse, formatError } = require('../utils/responseFormatter');
+const { fetchAndCompressImage } = require('../utils/imageUtils');
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -17,7 +18,7 @@ exports.googleLogin = async (req, res) => {
     });
     
     const payload = ticket.getPayload();
-    const { sub: googleId, email, name, picture } = payload;
+    const { sub: googleId, email, name, picture, given_name, family_name, email_verified, locale, hd } = payload;
 
     // Find or create user
     let user = await User.findOne({ googleId });
@@ -45,6 +46,29 @@ exports.googleLogin = async (req, res) => {
       }
     }
 
+    // Update SSO profile details
+    try {
+      user.sso = user.sso || {};
+      user.sso.provider = 'google';
+      user.sso.google = {
+        id: googleId,
+        email,
+        name,
+        givenName: given_name || user.firstName || null,
+        familyName: family_name || user.lastName || null,
+        picture: picture || user.picture || null,
+        emailVerified: typeof email_verified === 'boolean' ? email_verified : null,
+        locale: locale || null,
+        hd: hd || null,
+        raw: payload || null
+      };
+      user.sso.linkedAt = user.sso.linkedAt || new Date();
+      user.sso.lastLoginAt = new Date();
+      await user.save();
+    } catch (e) {
+      console.error('[GoogleAuth] Failed to persist SSO profile:', e);
+    }
+
     // Ensure membership exists for this organization
     const organizationCode = req.body.organizationCode;
     console.log('[GoogleAuth] Incoming organizationCode:', organizationCode);
@@ -69,9 +93,40 @@ exports.googleLogin = async (req, res) => {
       member = await Member.findOne({ user: user._id, organization: organization._id });
       if (!member) {
         console.log('[GoogleAuth] Creating new membership for user/org:', user._id.toString(), organization._id.toString());
-        member = await Member.create({ user: user._id, organization: organization._id, role: 'member' });
+        
+        // Process avatar if available
+        let avatar = null;
+        if (picture) {
+          try {
+            avatar = await fetchAndCompressImage(picture);
+            console.log('[GoogleAuth] Successfully processed avatar');
+          } catch (err) {
+            console.error('[GoogleAuth] Failed to process avatar:', err);
+          }
+        }
+
+        member = await Member.create({ 
+          user: user._id, 
+          organization: organization._id, 
+          role: 'member',
+          avatar 
+        });
       } else {
         console.log('[GoogleAuth] Existing membership found:', member._id.toString());
+        
+        // Update avatar if not present
+        if (!member.avatar && picture) {
+          try {
+            const avatar = await fetchAndCompressImage(picture);
+            if (avatar) {
+              member.avatar = avatar;
+              await member.save();
+              console.log('[GoogleAuth] Updated existing member with avatar');
+            }
+          } catch (err) {
+            console.error('[GoogleAuth] Failed to update avatar:', err);
+          }
+        }
       }
     }
 
@@ -99,7 +154,18 @@ exports.googleLogin = async (req, res) => {
             firstName: user.firstName,
             lastName: user.lastName,
             picture: user.picture,
-            organizations: user.organizations
+            organizations: user.organizations,
+            sso: user.sso ? {
+              provider: user.sso.provider,
+              google: user.sso.google ? {
+                id: user.sso.google.id,
+                email: user.sso.google.email,
+                name: user.sso.google.name,
+                picture: user.sso.google.picture
+              } : null,
+              linkedAt: user.sso.linkedAt,
+              lastLoginAt: user.sso.lastLoginAt
+            } : null
           },
           membership: member ? {
             id: member._id,

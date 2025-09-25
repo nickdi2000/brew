@@ -11,7 +11,8 @@ const joinWaitlist = async (req, res) => {
     if (!email) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Email is required' 
+        message: 'Email is required',
+        data: null
       });
     }
 
@@ -20,7 +21,8 @@ const joinWaitlist = async (req, res) => {
     if (!emailRegex.test(email)) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Please enter a valid email address' 
+        message: 'Please enter a valid email address',
+        data: null
       });
     }
 
@@ -69,7 +71,8 @@ This signup was automatically generated from the BrewTokens website.
 
     res.json({ 
       success: true, 
-      message: 'Successfully joined the waitlist! We\'ll notify you when BrewTokens launches.' 
+      message: 'Successfully joined the waitlist! We\'ll notify you when BrewTokens launches.',
+      data: { email }
     });
 
   } catch (error) {
@@ -79,13 +82,15 @@ This signup was automatically generated from the BrewTokens website.
     if (error.code === 300) {
       return res.status(400).json({ 
         success: false, 
-        message: 'Invalid email address' 
+        message: 'Invalid email address',
+        data: null
       });
     }
 
     res.status(500).json({ 
       success: false, 
-      message: 'Something went wrong. Please try again.' 
+      message: 'Something went wrong. Please try again.',
+      data: null
     });
   }
 };

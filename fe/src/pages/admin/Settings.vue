@@ -1,18 +1,26 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <div class="container mx-auto px-4 py-8">
-      <div class="flex items-center justify-between mb-8">
+    <div class="container mx-auto px-4 py-6">
+      <div class="flex items-center justify-between mb-6">
         <h1 class="text-3xl font-bold text-gray-900">Settings</h1>
-        <div class="text-sm text-gray-500">Last updated: {{ lastUpdated }}</div>
+        <button
+          @click="togglePreview"
+          class="btn btn-primary"
+          :class="{ 'btn-secondary': showPreview }"
+        >
+          <Icon :icon="showPreview ? 'mdi:eye-off' : 'mdi:eye'" class="h-4 w-4 mr-2" />
+          {{ showPreview ? 'Hide Preview' : 'Preview' }}
+        </button>
       </div>
-      
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+      <div class="grid gap-8" :class="showPreview ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'">
         <!-- Settings Form -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div class="p-6">
             <organization-form 
               :organization="organization"
               :loading="loading"
+              :show-preview="showPreview"
               @submit="handleOrganizationUpdate"
               @update:preview="previewData = $event"
             />
@@ -20,11 +28,15 @@
         </div>
 
         <!-- Mobile Preview -->
-        <div>
+        <div 
+          v-show="showPreview"
+          class="transition-all duration-300 ease-in-out"
+          :class="showPreview ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'"
+        >
           <h2 class="text-lg font-medium text-gray-900 mb-4">Member Portal Preview</h2>
           <div class="relative mx-auto" style="max-width: 380px;">
             <!-- Phone Frame -->
-            <div class="relative mx-auto border-gray-800 dark:border-gray-800 bg-gray-800 border-[14px] rounded-[2.5rem] h-[720px] w-[380px]">
+            <div class="preview-phone relative mx-auto border-gray-800 dark:border-gray-800 bg-gray-800 border-[14px] rounded-[2.5rem] h-[720px] w-[380px]">
               <div class="h-[32px] w-[3px] bg-gray-800 dark:bg-gray-800 absolute -start-[17px] top-[72px] rounded-s-lg"></div>
               <div class="h-[46px] w-[3px] bg-gray-800 dark:bg-gray-800 absolute -start-[17px] top-[124px] rounded-s-lg"></div>
               <div class="h-[46px] w-[3px] bg-gray-800 dark:bg-gray-800 absolute -start-[17px] top-[178px] rounded-s-lg"></div>
@@ -43,7 +55,7 @@
               </div>
 
               <!-- Content -->
-              <div class="w-[352px] h-[644px] bg-white overflow-hidden">
+              <div class="w-[352px] h-[644px] bg-white overflow-hidden pointer-events-none select-none">
                 <welcome-component
                   :name="previewData?.name || organization?.name"
                   :description="previewData?.description || organization?.description"
@@ -60,9 +72,11 @@
           </div>
         </div>
       </div>
+      <div class="mt-8 text-center">
+        <div class="text-xs text-gray-400">Last updated: {{ lastUpdated }}</div>
+      </div>
     </div>
   </div>
-  
 </template>
 
 <script setup lang="ts">
@@ -80,6 +94,7 @@ const organization = ref<any>(null);
 const previewData = ref<any>(null);
 const loading = ref(false);
 const lastUpdatedTime = ref(new Date());
+const showPreview = ref(false);
 
 const lastUpdated = computed(() => {
   return new Intl.DateTimeFormat('en-US', {
@@ -90,6 +105,10 @@ const lastUpdated = computed(() => {
     hour12: true
   }).format(lastUpdatedTime.value);
 });
+
+const togglePreview = () => {
+  showPreview.value = !showPreview.value;
+};
 
 const fetchOrganization = async () => {
   console.log('🔄 Starting fetchOrganization in Settings.vue');
@@ -134,5 +153,19 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* No custom styles needed */
+/* Disable all interactions in the preview phone */
+.preview-phone * {
+  pointer-events: none !important;
+  user-select: none !important;
+  cursor: default !important;
+}
+
+.preview-phone button,
+.preview-phone a,
+.preview-phone input,
+.preview-phone textarea,
+.preview-phone select {
+  pointer-events: none !important;
+  cursor: default !important;
+}
 </style>

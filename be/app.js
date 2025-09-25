@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const logger = require('./utils/logger');
 const userRoutes = require('./routes/userRoutes');
 const waitlistRoutes = require('./routes/waitlistRoutes');
 const authRoutes = require('./routes/authRoutes');
@@ -11,6 +12,7 @@ const rewardRoutes = require('./routes/rewardRoutes');
 const qrCodeRoutes = require('./routes/qrCodeRoutes');
 const logRoutes = require('./routes/logRoutes');
 const memberRoutes = require('./routes/memberRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 
 // Import models to ensure they are registered with Mongoose
 require('./models/Organization');
@@ -23,6 +25,24 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Request logging middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  
+  // Log the incoming request
+  logger.logRequest(req);
+
+  // Override res.json to capture and log the response
+  const originalJson = res.json;
+  res.json = function(body) {
+    const responseTime = Date.now() - start;
+    logger.logResponse(req, res, body, { responseTime });
+    return originalJson.call(this, body);
+  };
+
+  next();
+});
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -39,21 +59,28 @@ app.use('/api/rewards', rewardRoutes);
 app.use('/api/qr-codes', qrCodeRoutes);
 app.use('/api/log', logRoutes);
 app.use('/api/memberships', memberRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // MongoDB Connection
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URL);
-    console.log('MongoDB connected successfully');
+    logger.info('MongoDB connected successfully');
   } catch (error) {
-    console.error('MongoDB connection error:', error);
+    logger.error('MongoDB connection error:', { error: error.message, stack: error.stack });
     process.exit(1);
   }
 };
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  logger.error('Unhandled error:', {
+    error: err.message,
+    stack: err.stack,
+    url: req.url,
+    method: req.method,
+    userId: req.user?._id
+  });
   res.status(500).json({ error: 'Something went wrong!' });
 });
 
@@ -64,10 +91,10 @@ const startServer = async () => {
   try {
     await connectDB();
     app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
+      logger.info(`Server is running on port ${PORT}`);
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
+    logger.error('Failed to start server:', { error: error.message, stack: error.stack });
     process.exit(1);
   }
 };

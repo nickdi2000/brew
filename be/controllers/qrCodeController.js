@@ -1,4 +1,5 @@
 const QRCode = require('../models/QRCode');
+const Organization = require('../models/Organization');
 const { formatResponse, formatError } = require('../utils/responseFormatter');
 
 // Generate a simple unique code
@@ -6,9 +7,14 @@ const generateCode = () => Math.random().toString(36).substring(2, 10).toUpperCa
 
 exports.list = async (req, res) => {
   try {
-    const orgId = req.user.organization._id;
-    const items = await QRCode.find({ organization: orgId }).sort({ createdAt: -1 });
-    res.json(formatResponse({ data: items, message: 'QR codes fetched' }));
+    const orgId = req.user?.organization?._id || req.organizationId;
+    const items = orgId ? await QRCode.find({ organization: orgId }).sort({ createdAt: -1 }) : [];
+    // Include organization info to help FE initialize
+    let organization = req.user?.organizations?.find?.(o => String(o._id) === String(orgId)) || null;
+    if (!organization && orgId) {
+      organization = await Organization.findById(orgId).lean().exec();
+    }
+    res.json(formatResponse({ data: { items, organization }, message: 'QR codes fetched' }));
   } catch (e) {
     res.status(500).json(formatError('Failed to fetch QR codes', e.message));
   }

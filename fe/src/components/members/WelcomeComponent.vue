@@ -30,20 +30,8 @@
             Join our rewards program
           </h2>
           
-          <!-- User Profile or Sign In Button -->
-          <div v-if="currentUser" class="text-center">
-            <div class="flex items-center justify-center mb-4">
-              <img :src="currentUser.picture" :alt="currentUser.firstName" class="h-16 w-16 rounded-full" />
-            </div>
-            <h3 class="text-lg font-medium text-gray-900">
-              Welcome, {{ currentUser.firstName }}!
-            </h3>
-            <p class="mt-1 text-sm text-gray-500">
-              You're now part of our rewards program
-            </p>
-          </div>
+          <!-- Sign In Button -->
           <GoogleLogin
-            v-else
             :callback="handleGoogleLoginSuccess"
             :error-callback="handleGoogleLoginError"
             :popup-type="'CODE'"
@@ -158,12 +146,17 @@ const isAdminOfThisOrg = computed(() => {
 const membershipByCode = ref(null);
 
 onMounted(async () => {
+  const codeToUse = props.code || route.params.code;
+  if (!codeToUse) return;
+
+  // If user is already logged in, redirect to member portal
+  if (store.getters.token) {
+    router.push({ name: 'member-portal', params: { code: codeToUse } });
+    return;
+  }
+
   try {
-    const codeToUse = props.code || route.params.code;
-    if (!codeToUse) return;
-    // If authenticated, attempt to fetch membership for this org code
-    const token = store.getters.token;
-    if (!token) return;
+    // Only check membership for admins to show the warning message
     const { default: api } = await import('@/api');
     const response = await api.get(`/memberships/by-code/${codeToUse}`);
     membershipByCode.value = response.data.data;
@@ -222,6 +215,7 @@ const props = defineProps({
     default: ''
   }
 });
+
 
 defineEmits(['sign-in']);
 </script>

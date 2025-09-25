@@ -25,6 +25,7 @@ exports.login = async (req, res) => {
         userId: user._id,
         email: user.email,
         isAdmin: user.isAdmin,
+        organization: user.organization, // Include single organization
         organizations: user.organizations.map(org => org._id)
       },
       process.env.JWT_SECRET,
@@ -61,7 +62,18 @@ exports.login = async (req, res) => {
           organizations: user.organizations.map(org => ({
             id: org._id,
             name: org.name
-          }))
+          })),
+          sso: user.sso ? {
+            provider: user.sso.provider,
+            google: user.sso.google ? {
+              id: user.sso.google.id,
+              email: user.sso.google.email,
+              name: user.sso.google.name,
+              picture: user.sso.google.picture
+            } : null,
+            linkedAt: user.sso.linkedAt,
+            lastLoginAt: user.sso.lastLoginAt
+          } : null
         }
       },
       message: 'Login successful'
@@ -141,7 +153,7 @@ exports.getCurrentUser = async (req, res) => {
 
     // Include per-organization membership roles for this user
     const Member = require('../models/Member');
-    const memberships = await Member.find({ user: user._id }).select('organization role status points');
+    const memberships = await Member.find({ user: user._id }).select('organization role status points avatar');
 
     res.json(formatResponse({
       data: {
@@ -159,8 +171,20 @@ exports.getCurrentUser = async (req, res) => {
             organization: m.organization,
             role: m.role,
             status: m.status,
-            points: m.points
-          }))
+            points: m.points,
+            avatar: m.avatar
+          })),
+          sso: user.sso ? {
+            provider: user.sso.provider,
+            google: user.sso.google ? {
+              id: user.sso.google.id,
+              email: user.sso.google.email,
+              name: user.sso.google.name,
+              picture: user.sso.google.picture
+            } : null,
+            linkedAt: user.sso.linkedAt,
+            lastLoginAt: user.sso.lastLoginAt
+          } : null
         }
       },
       message: 'User details retrieved successfully'

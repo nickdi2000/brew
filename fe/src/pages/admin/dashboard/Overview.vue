@@ -1,51 +1,77 @@
 <template>
-  <div class="space-y-6">
-    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-      <!-- Placeholder stats cards -->
-      <div v-for="stat in stats" :key="stat.name" class="bg-white overflow-hidden shadow rounded-lg">
-        <div class="p-5">
-          <div class="flex items-center">
-            <div class="flex-shrink-0">
-              <component :is="stat.icon" class="h-6 w-6 text-amber-600" aria-hidden="true" />
-            </div>
-            <div class="ml-5 w-0 flex-1">
-              <dl>
-                <dt class="text-sm font-medium text-slate-500 truncate">{{ stat.name }}</dt>
-                <dd class="flex items-baseline">
-                  <div class="text-2xl font-semibold text-slate-900">{{ stat.value }}</div>
-                </dd>
-              </dl>
-            </div>
+  <div class="p-8 space-y-8">
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <!-- Total Members Card -->
+      <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100 hover:border-primary-300 hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 animate-fade-slide-up" style="animation-delay: 0ms">
+        <div class="flex items-center justify-between">
+          <h3 class="text-gray-500 text-sm font-medium">Total Members</h3>
+          <div class="p-2 bg-blue-50 rounded-full">
+            <Icon icon="mdi:account-group" class="h-6 w-6 text-blue-500" />
           </div>
         </div>
+        <p class="mt-3 text-3xl font-semibold text-gray-900">0</p>
+        <p class="mt-2 text-sm text-gray-500">Active members in your program</p>
+      </div>
+
+      <!-- Total Rewards Card -->
+      <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100 hover:border-primary-300 hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 animate-fade-slide-up" style="animation-delay: 100ms">
+        <div class="flex items-center justify-between">
+          <h3 class="text-gray-500 text-sm font-medium">Active Rewards</h3>
+          <div class="p-2 bg-purple-50 rounded-full">
+            <Icon icon="mdi:gift" class="h-6 w-6 text-purple-500" />
+          </div>
+        </div>
+        <p class="mt-3 text-3xl font-semibold text-gray-900">0</p>
+        <p class="mt-2 text-sm text-gray-500">Available reward options</p>
+      </div>
+
+      <!-- Total Points Card -->
+      <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100 hover:border-primary-300 hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 animate-fade-slide-up" style="animation-delay: 200ms">
+        <div class="flex items-center justify-between">
+          <h3 class="text-gray-500 text-sm font-medium">Points Issued</h3>
+          <div class="p-2 bg-amber-50 rounded-full">
+            <Icon icon="mdi:beer" class="h-6 w-6 text-amber-500" />
+          </div>
+        </div>
+        <p class="mt-3 text-3xl font-semibold text-gray-900">0</p>
+        <p class="mt-2 text-sm text-gray-500">Total points in circulation</p>
+      </div>
+
+      <!-- Redemptions Card -->
+      <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100 hover:border-primary-300 hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 animate-fade-slide-up" style="animation-delay: 300ms">
+        <div class="flex items-center justify-between">
+          <h3 class="text-gray-500 text-sm font-medium">Redemptions</h3>
+          <div class="p-2 bg-green-50 rounded-full">
+            <Icon icon="mdi:ticket-confirmation" class="h-6 w-6 text-green-500" />
+          </div>
+        </div>
+        <p class="mt-3 text-3xl font-semibold text-gray-900">0</p>
+        <p class="mt-2 text-sm text-gray-500">Total rewards redeemed</p>
       </div>
     </div>
+
   </div>
 </template>
 
 <script setup>
-import { ref, defineComponent } from 'vue'
-
-const UsersIcon = defineComponent({
-  template: `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>`
-})
-
-const PointsIcon = defineComponent({
-  template: `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>`
-})
-
-const RewardsIcon = defineComponent({
-  template: `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>`
-})
-
-const ActivityIcon = defineComponent({
-  template: `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>`
-})
-
-const stats = ref([
-  { name: 'Total Members', value: '2,651', icon: UsersIcon },
-  { name: 'Points Issued', value: '156,000', icon: PointsIcon },
-  { name: 'Rewards Claimed', value: '243', icon: RewardsIcon },
-  { name: 'Active Today', value: '89', icon: ActivityIcon },
-])
+import { Icon } from '@iconify/vue'
 </script>
+
+<style>
+.animate-fade-slide-up {
+  animation: fadeSlideUp 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style>

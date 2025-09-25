@@ -268,6 +268,7 @@ const handleSave = async (data: Partial<Reward>) => {
     await store.dispatch('rewards/createReward', data);
   }
   closeDrawer();
+  showTemplates.value = false; // Hide templates after saving
 };
 
 const openCreate = () => {

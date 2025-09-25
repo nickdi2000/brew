@@ -11,6 +11,7 @@ alwaysApply: true
    - Handle loading/error states
    - Show empty states
    - Clean up listeners and timers
+   - Try to build out components into separate re-usable components by responsibility if they are fairly large/complex, use informative naming conventions for the files. 
 
 2. NEVER:
    - Make direct axios calls
@@ -18,6 +19,7 @@ alwaysApply: true
    - Use complex logic in templates
    - Leave console.logs in production
    - Access DOM directly in setup()
+   - use scale/size hover animations
 
 3. API HANDLING:
    - Use api service from api/index.js

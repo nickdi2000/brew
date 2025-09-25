@@ -1,127 +1,203 @@
 <template>
-  <div class="space-y-6 animate-slide-up">
-    <div class="flex justify-between items-center">
-      <h2 class="text-2xl font-bold text-gradient-blue font-display">My Profile</h2>
-      <span class="text-sm text-gray-500 font-accent">Last updated: {{ new Date().toLocaleDateString() }}</span>
-    </div>
+  <div class="max-w-4xl mx-auto">
+    <div class="bg-white shadow rounded-lg">
+      <!-- Header -->
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h2 class="text-xl font-semibold text-gray-800">My Profile</h2>
+      </div>
 
-    <div class="glass-clean rounded-lg p-8">
-      <div class="space-y-8">
-        <!-- Profile Photo Section -->
-        <div class="flex items-center animate-slide-right" style="animation-delay: 100ms">
-          <div class="relative group">
-            <div class="w-32 h-32 rounded-full overflow-hidden ring-4 ring-white shadow-lg transition-transform duration-300 transform group-hover:scale-105">
-              <!-- Placeholder for profile image with gradient overlay -->
-              <div class="w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
-                <svg class="w-20 h-20 text-white/80" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
+      <!-- Content -->
+      <div class="p-6">
+        <div class="space-y-8">
+          <!-- User Information Section -->
+          <div>
+            <h3 class="text-lg font-medium text-gray-900 mb-4">User Information</h3>
+            <form @submit.prevent="handleSubmit" class="space-y-6">
+              <!-- Name Fields -->
+              <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div>
+                  <label for="firstName" class="block text-sm font-medium text-gray-700">First Name</label>
+                  <input
+                    type="text"
+                    id="firstName"
+                    v-model="form.firstName"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
+                    :disabled="!isEditing"
+                  />
+                </div>
+                <div>
+                  <label for="lastName" class="block text-sm font-medium text-gray-700">Last Name</label>
+                  <input
+                    type="text"
+                    id="lastName"
+                    v-model="form.lastName"
+                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
+                    :disabled="!isEditing"
+                  />
+                </div>
+              </div>
+
+              <!-- Email -->
+              <div>
+                <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+                <input
+                  type="email"
+                  id="email"
+                  v-model="form.email"
+                  class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
+                  disabled
+                />
+                <p class="mt-1 text-sm text-gray-500">Email cannot be changed</p>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="flex justify-end space-x-3">
+                <button
+                  v-if="!isEditing"
+                  type="button"
+                  @click="startEditing"
+                  class="btn btn-secondary"
+                >
+                  Edit Profile
+                </button>
+                <template v-else>
+                  <button
+                    type="button"
+                    @click="cancelEditing"
+                    class="btn btn-secondary"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    class="btn btn-primary"
+                    :disabled="isSaving"
+                  >
+                    {{ isSaving ? 'Saving...' : 'Save Changes' }}
+                  </button>
+                </template>
+              </div>
+            </form>
+          </div>
+
+          <!-- Organization Information -->
+          <div>
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Organization Information</h3>
+            <div v-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+              <p class="text-sm text-red-600">{{ error }}</p>
+            </div>
+            <div v-else-if="isLoading" class="bg-gray-50 rounded-lg p-4">
+              <div class="flex items-center justify-center py-4">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
               </div>
             </div>
-            <div class="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-              <button class="text-white text-sm font-medium">Change Photo</button>
+            <div v-else class="bg-gray-50 rounded-lg p-4">
+              <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <dt class="text-sm font-medium text-gray-500">Organization Name</dt>
+                  <dd class="mt-1 text-sm text-gray-900">{{ organization?.name || 'N/A' }}</dd>
+                </div>
+                <div>
+                  <dt class="text-sm font-medium text-gray-500">Role</dt>
+                  <dd class="mt-1 text-sm text-gray-900">{{ user?.role || 'N/A' }}</dd>
+                </div>
+                <div>
+                  <dt class="text-sm font-medium text-gray-500">Member Count</dt>
+                  <dd class="mt-1 text-sm text-gray-900">{{ organization?.memberCount || 0 }} members</dd>
+                </div>
+                <div>
+                  <dt class="text-sm font-medium text-gray-500">Created On</dt>
+                  <dd class="mt-1 text-sm text-gray-900">{{ formatDate(organization?.createdAt) }}</dd>
+                </div>
+              </dl>
             </div>
-          </div>
-          <div class="ml-8">
-            <button class="btn btn-primary btn-shimmer font-accent">
-              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-              </svg>
-              Upload New Photo
-            </button>
-            <p class="mt-2 text-sm text-gray-500 font-accent">JPG, GIF or PNG. Max size of 800K</p>
           </div>
         </div>
-
-        <!-- Profile Form -->
-        <form @submit.prevent="handleSubmit" class="space-y-6 animate-slide-up" style="animation-delay: 200ms">
-          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700 font-accent">First Name</label>
-              <input
-                type="text"
-                v-model="form.firstName"
-                class="input-glass w-full rounded-lg px-4 py-2.5 text-gray-900 font-accent transition-all duration-300 focus:ring-2 focus:ring-blue-500/30"
-              />
-            </div>
-
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700 font-accent">Last Name</label>
-              <input
-                type="text"
-                v-model="form.lastName"
-                class="input-glass w-full rounded-lg px-4 py-2.5 text-gray-900 font-accent transition-all duration-300 focus:ring-2 focus:ring-blue-500/30"
-              />
-            </div>
-
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700 font-accent">Email</label>
-              <input
-                type="email"
-                v-model="form.email"
-                class="input-glass w-full rounded-lg px-4 py-2.5 text-gray-900 font-accent transition-all duration-300 focus:ring-2 focus:ring-blue-500/30"
-              />
-            </div>
-
-            <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-700 font-accent">Phone Number</label>
-              <input
-                type="tel"
-                v-model="form.phone"
-                class="input-glass w-full rounded-lg px-4 py-2.5 text-gray-900 font-accent transition-all duration-300 focus:ring-2 focus:ring-blue-500/30"
-              />
-            </div>
-          </div>
-
-          <div class="space-y-2">
-            <label class="block text-sm font-medium text-gray-700 font-accent">Bio</label>
-            <textarea
-              v-model="form.bio"
-              rows="4"
-              class="input-glass w-full rounded-lg px-4 py-2.5 text-gray-900 font-accent transition-all duration-300 focus:ring-2 focus:ring-blue-500/30"
-            ></textarea>
-          </div>
-
-          <div class="flex justify-end space-x-3 pt-4">
-            <button 
-              type="button" 
-              class="btn btn-secondary hover-lift font-accent"
-            >
-              Cancel
-            </button>
-            <button 
-              type="submit" 
-              class="btn btn-primary btn-shimmer font-accent"
-            >
-              Save Changes
-            </button>
-          </div>
-        </form>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useStore } from 'vuex'
+import { useToast } from '@/plugins/toast'
 
 const store = useStore()
+const toast = useToast()
 
+// State
+const isEditing = ref(false)
+const isSaving = ref(false)
 const form = ref({
-  firstName: 'John',
-  lastName: 'Smith',
-  email: 'john.smith@brewbucks.com',
-  phone: '(555) 123-4567',
-  bio: 'Passionate about craft beer and building amazing customer experiences. Managing our rewards program since 2023.'
+  firstName: '',
+  lastName: '',
+  email: ''
 })
+
+// Computed
+const user = computed(() => store.getters.currentUser)
+const organization = computed(() => store.getters['organization/config'])
+
+// Methods
+const startEditing = () => {
+  form.value = {
+    firstName: user.value?.firstName || '',
+    lastName: user.value?.lastName || '',
+    email: user.value?.email || ''
+  }
+  isEditing.value = true
+}
+
+const cancelEditing = () => {
+  isEditing.value = false
+  form.value = {
+    firstName: user.value?.firstName || '',
+    lastName: user.value?.lastName || '',
+    email: user.value?.email || ''
+  }
+}
 
 const handleSubmit = async () => {
   try {
-    // TODO: Implement profile update logic
-    console.log('Form submitted:', form.value)
+    isSaving.value = true
+    await store.dispatch('updateProfile', {
+      firstName: form.value.firstName,
+      lastName: form.value.lastName
+    })
+    isEditing.value = false
+    toast('Profile updated successfully', 'success')
   } catch (error) {
-    console.error('Error updating profile:', error)
+    toast(error.message || 'Failed to update profile', 'error')
+  } finally {
+    isSaving.value = false
   }
 }
+
+const formatDate = (date) => {
+  if (!date) return 'N/A'
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+}
+
+// State
+const isLoading = ref(false)
+const error = ref(null)
+
+// Initialization
+onMounted(async () => {
+  try {
+    isLoading.value = true
+    error.value = null
+    await store.dispatch('organization/initializeStore')
+  } catch (err) {
+    error.value = err.message || 'Failed to load organization data'
+    console.error('Error loading organization data:', err)
+  } finally {
+    isLoading.value = false
+  }
+})
 </script>

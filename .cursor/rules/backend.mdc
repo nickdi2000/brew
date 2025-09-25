@@ -10,6 +10,7 @@ alwaysApply: false
    - Handle null/undefined cases
    - Validate inputs
    - Use proper HTTP status codes
+   - when troubleshooting, investigate the logs in the /logs folder in the root.
 
 2. PATTERNS:
    - Controllers: `exports.functionName = async (req, res) => {}`

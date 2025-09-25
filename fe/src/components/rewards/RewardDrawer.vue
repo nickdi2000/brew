@@ -34,25 +34,49 @@
           </div>
         </div>
 
-        <!-- Type -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700">Type</label>
-          <div class="mt-1">
-            <div class="flex flex-wrap gap-2">
+        <!-- Image Upload (moved from Advanced) -->
+        <div class="rounded-lg bg-gray-50 p-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700">Reward Image</label>
+            <p class="text-sm text-gray-500">Upload an image for this reward</p>
+          </div>
+
+          <!-- Image Preview -->
+          <div v-if="form.base64Image" class="mt-3">
+            <div class="relative w-full h-48 rounded-lg overflow-hidden bg-gray-100">
+              <img :src="form.base64Image" class="w-full h-full object-cover" alt="Reward preview" />
               <button
-                v-for="type in rewardTypes"
-                :key="type"
-                type="button"
-                class="inline-flex items-center px-3 py-2 border rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500"
-                :class="[
-                  form.type === type
-                    ? 'border-amber-600 bg-amber-50 text-amber-700'
-                    : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                ]"
-                @click="form.type = type"
+                @click="removeImage"
+                class="absolute top-2 right-2 p-1 bg-white rounded-full shadow-sm hover:bg-gray-50"
               >
-                {{ type.charAt(0).toUpperCase() + type.slice(1) }}
+                <Icon icon="mdi:close" class="h-5 w-5 text-gray-500" />
               </button>
+            </div>
+          </div>
+
+          <!-- Upload Button -->
+          <div v-else class="mt-3">
+            <div class="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg">
+              <div class="space-y-1 text-center">
+                <Icon icon="mdi:image-plus" class="mx-auto h-12 w-12 text-gray-400" />
+                <div class="flex text-sm text-gray-600">
+                  <label
+                    for="image-upload"
+                    class="relative cursor-pointer rounded-md font-medium text-amber-600 hover:text-amber-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-amber-500"
+                  >
+                    <span>Upload an image</span>
+                    <input
+                      id="image-upload"
+                      type="file"
+                      class="sr-only"
+                      accept="image/*"
+                      @change="handleImageUpload"
+                    />
+                  </label>
+                  <p class="pl-1">or drag and drop</p>
+                </div>
+                <p class="text-xs text-gray-500">PNG, JPG, GIF up to 5MB</p>
+              </div>
             </div>
           </div>
         </div>
@@ -123,6 +147,31 @@
 
         <!-- Advanced Fields -->
         <div v-if="showAdvanced" class="space-y-6">
+          <!-- Type (moved to Advanced) -->
+          <div class="rounded-lg bg-gray-50 p-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700">Type</label>
+            </div>
+            <div class="mt-3">
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="type in rewardTypes"
+                  :key="type"
+                  type="button"
+                  class="inline-flex items-center px-3 py-2 border rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500"
+                  :class="[
+                    form.type === type
+                      ? 'border-amber-600 bg-amber-50 text-amber-700'
+                      : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                  ]"
+                  @click="form.type = type"
+                >
+                  {{ type.charAt(0).toUpperCase() + type.slice(1) }}
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- Stock -->
           <div class="rounded-lg bg-gray-50 p-4">
             <div class="flex items-center justify-between">
@@ -218,6 +267,8 @@
               </div>
             </div>
           </div>
+
+          
         </div>
       </form>
     </template>
@@ -243,8 +294,11 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
+import { Icon } from '@iconify/vue';
 import Drawer from '@/components/Drawer.vue';
 import type { Reward, RewardType } from '@/types/reward';
+import { compressImage, isValidImage, formatFileSize } from '@/utils/imageUtils';
+import { useToast } from '@/plugins/toast';
 
 const props = defineProps<{
   show: boolean;
@@ -267,7 +321,8 @@ const form = ref({
   quantity: 0,
   isActive: true,
   startDate: '',
-  endDate: ''
+  endDate: '',
+  base64Image: ''
 });
 
 const showAdvanced = ref(false);
@@ -299,7 +354,8 @@ watch(() => [props.reward, props.initialData], ([newReward, initialData]) => {
       quantity: newReward.quantity,
       isActive: newReward.isActive,
       startDate: newReward.startDate || '',
-      endDate: newReward.expiresAt ? new Date(newReward.expiresAt).toISOString().split('T')[0] : ''
+      endDate: newReward.expiresAt ? new Date(newReward.expiresAt).toISOString().split('T')[0] : '',
+      base64Image: newReward.base64Image || ''
     };
     isUnlimited.value = newReward.quantity === null;
     isIndefinite.value = !newReward.expiresAt;
@@ -312,7 +368,8 @@ watch(() => [props.reward, props.initialData], ([newReward, initialData]) => {
       quantity: initialData.quantity ?? 0,
       isActive: initialData.isActive ?? true,
       startDate: initialData.startDate ?? '',
-      endDate: initialData.endDate ?? ''
+      endDate: initialData.endDate ?? '',
+      base64Image: initialData.base64Image ?? ''
     };
     isUnlimited.value = initialData.quantity === null;
   } else {
@@ -324,11 +381,44 @@ watch(() => [props.reward, props.initialData], ([newReward, initialData]) => {
       quantity: 0,
       isActive: true,
       startDate: '',
-      endDate: ''
+      endDate: '',
+      base64Image: ''
     };
     isUnlimited.value = false;
   }
 }, { immediate: true });
+
+const handleImageUpload = async (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  if (!input.files?.length) return;
+
+  const file = input.files[0];
+  
+  // Validate file type
+  if (!isValidImage(file)) {
+    useToast()('Please upload a valid image file (JPEG, PNG, GIF, or WebP)', 'error');
+    return;
+  }
+
+  // Validate file size (5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    useToast()('Image size should be less than 5MB', 'error');
+    return;
+  }
+
+  try {
+    // Compress and convert to base64
+    const base64String = await compressImage(file);
+    form.value.base64Image = base64String;
+  } catch (error) {
+    useToast()('Failed to process image', 'error');
+    console.error('Image processing error:', error);
+  }
+};
+
+const removeImage = () => {
+  form.value.base64Image = '';
+};
 
 const handleSubmit = () => {
   const formData = { ...form.value };

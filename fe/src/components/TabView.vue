@@ -20,12 +20,12 @@
     </div>
 
     <!-- Tab Description -->
-    <div class="mt-4 text-sm text-slate-600 font-accent">
+    <div class="mt-4 text-sm text-slate-600 font-accent p-2">
       {{ activeTabDescription }}
     </div>
 
     <!-- Tab Content -->
-    <div class="mt-6">
+    <div class="mt-2">
       <slot :active-tab="activeTab"></slot>
     </div>
   </div>

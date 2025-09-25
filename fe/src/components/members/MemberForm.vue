@@ -21,7 +21,6 @@
                       type="text"
                       id="firstName"
                       v-model="formData.firstName"
-                      required
                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
                     />
                   </div>
@@ -31,7 +30,6 @@
                       type="text"
                       id="lastName"
                       v-model="formData.lastName"
-                      required
                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
                     />
                   </div>
@@ -44,29 +42,19 @@
                     type="email"
                     id="email"
                     v-model="formData.email"
-                    required
                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
                   />
                 </div>
 
-                <div>
-                  <label for="phoneNumber" class="block text-sm font-medium text-gray-700">Phone Number</label>
-                  <input
-                    type="tel"
-                    id="phoneNumber"
-                    v-model="formData.phoneNumber"
-                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
-                  />
-                </div>
+       
 
                 <!-- Membership Information -->
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
+                  <!-- <div>
                     <label for="membershipLevel" class="block text-sm font-medium text-gray-700">Membership Level</label>
                     <select
                       id="membershipLevel"
                       v-model="formData.membershipLevel"
-                      required
                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
                     >
                       <option value="bronze">Bronze</option>
@@ -74,19 +62,50 @@
                       <option value="gold">Gold</option>
                       <option value="platinum">Platinum</option>
                     </select>
-                  </div>
+                  </div> -->
                   <div>
                     <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
-                    <select
-                      id="status"
-                      v-model="formData.status"
-                      required
-                      class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
-                    >
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
-                      <option value="suspended">Suspended</option>
-                    </select>
+                    <div class="mt-1 flex rounded-md shadow-sm" role="group" aria-label="Member status">
+                      <button
+                        type="button"
+                        @click="formData.status = 'active'"
+                        :class="[
+                          'relative inline-flex items-center px-4 py-2 rounded-l-md border text-sm font-medium focus:z-10 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500',
+                          formData.status === 'active'
+                            ? 'bg-amber-500 border-amber-500 text-white hover:bg-amber-600'
+                            : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                        ]"
+                      >
+                        <Icon icon="mdi:check-circle" class="h-4 w-4 mr-2" :class="formData.status === 'active' ? 'text-white' : 'text-gray-400'" />
+                        Active
+                      </button>
+                      <button
+                        type="button"
+                        @click="formData.status = 'inactive'"
+                        :class="[
+                          'relative -ml-px inline-flex items-center px-4 py-2 border text-sm font-medium focus:z-10 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500',
+                          formData.status === 'inactive'
+                            ? 'bg-amber-500 border-amber-500 text-white hover:bg-amber-600'
+                            : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                        ]"
+                      >
+                        <Icon icon="mdi:pause-circle" class="h-4 w-4 mr-2" :class="formData.status === 'inactive' ? 'text-white' : 'text-gray-400'" />
+                        Inactive
+                      </button>
+                      <button
+                        type="button"
+                        @click="formData.status = 'suspended'"
+                        :class="[
+                          'relative -ml-px inline-flex items-center px-4 py-2 rounded-r-md border text-sm font-medium focus:z-10 focus:outline-none focus:ring-1 focus:ring-amber-500 focus:border-amber-500',
+                          formData.status === 'suspended'
+                            ? 'bg-amber-500 border-amber-500 text-white hover:bg-amber-600'
+                            : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                        ]"
+                      >
+                        <Icon icon="mdi:block-helper" class="h-4 w-4 mr-2" :class="formData.status === 'suspended' ? 'text-white' : 'text-gray-400'" />
+                        Suspended
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -119,7 +138,6 @@
                     type="password"
                     id="password"
                     v-model="formData.password"
-                    required
                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
                   />
                 </div>
@@ -175,6 +193,7 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue';
+import { useStore } from 'vuex';
 import { Icon } from '@iconify/vue';
 
 const props = defineProps({
@@ -241,12 +260,29 @@ const handleSubmit = async () => {
   }
 };
 
-const adjustPoints = (operation) => {
+const store = useStore();
+
+const adjustPoints = async (operation) => {
   const points = parseInt(prompt('Enter points to add:', '0'));
   if (!isNaN(points) && points > 0) {
-    formData.value.points = operation === 'add' 
-      ? formData.value.points + points 
-      : Math.max(0, formData.value.points - points);
+    try {
+      loading.value = true;
+      error.value = null;
+      const success = await store.dispatch('members/updateMemberPoints', {
+        id: props.member._id,
+        points,
+        operation
+      });
+      if (success) {
+        formData.value.points = operation === 'add'
+          ? formData.value.points + points
+          : Math.max(0, formData.value.points - points);
+      }
+    } catch (err) {
+      error.value = 'Failed to update points';
+    } finally {
+      loading.value = false;
+    }
   }
 };
 

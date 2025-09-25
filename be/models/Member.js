@@ -26,6 +26,10 @@ const memberSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  avatar: {
+    type: String,  // Base64 encoded image
+    default: null
+  },
   createdAt: {
     type: Date,
     default: Date.now

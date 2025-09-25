@@ -1,5 +1,6 @@
 const Reward = require('../models/Reward');
 const { formatResponse, formatError } = require('../utils/responseFormatter');
+const logger = require('../utils/logger');
 
 // Get rewards list with pagination and filters
 exports.getRewards = async (req, res) => {
@@ -63,7 +64,7 @@ exports.getRewards = async (req, res) => {
       message: 'Rewards retrieved successfully'
     }));
   } catch (error) {
-    console.error('Get rewards error:', error);
+    logger.error('Get rewards error:', { error: error.message, stack: error.stack });
     res.status(500).json(formatError('Failed to retrieve rewards', error.message));
   }
 };
@@ -85,7 +86,7 @@ exports.getReward = async (req, res) => {
       message: 'Reward retrieved successfully'
     }));
   } catch (error) {
-    console.error('Get reward error:', error);
+    logger.error('Get reward error:', { error: error.message, stack: error.stack });
     res.status(500).json(formatError('Failed to retrieve reward', error.message));
   }
 };
@@ -93,7 +94,7 @@ exports.getReward = async (req, res) => {
 // Create reward
 exports.createReward = async (req, res) => {
   try {
-    console.log('Creating reward - Auth debug:', {
+    logger.info('Creating reward - Auth debug:', {
       user: req.user,
       organizationId: req.user?.organizationId,
       headers: req.headers,
@@ -101,12 +102,12 @@ exports.createReward = async (req, res) => {
     });
 
     if (!req.user) {
-      console.error('No user found in request');
+      logger.error('No user found in request');
       return res.status(401).json(formatError('User not authenticated'));
     }
 
     if (!req.user.organizationId) {
-      console.error('No organizationId found in user:', req.user);
+      logger.error('No organizationId found in user:', req.user);
       return res.status(400).json(formatError('User has no organization ID'));
     }
 
@@ -115,21 +116,21 @@ exports.createReward = async (req, res) => {
       organizationId: req.user.organizationId
     });
 
-    console.log('Attempting to save reward:', {
+    logger.info('Attempting to save reward:', {
       rewardData: reward.toObject(),
       organizationId: reward.organizationId
     });
 
     await reward.save();
 
-    console.log('Reward saved successfully:', reward.toObject());
+    logger.info('Reward saved successfully:', reward.toObject());
 
     res.status(201).json(formatResponse({
       data: reward,
       message: 'Reward created successfully'
     }));
   } catch (error) {
-    console.error('Create reward error:', error);
+    logger.error('Create reward error:', { error: error.message, stack: error.stack });
     res.status(500).json(formatError('Failed to create reward', error.message));
   }
 };
@@ -155,7 +156,7 @@ exports.updateReward = async (req, res) => {
       message: 'Reward updated successfully'
     }));
   } catch (error) {
-    console.error('Update reward error:', error);
+    logger.error('Update reward error:', { error: error.message, stack: error.stack });
     res.status(500).json(formatError('Failed to update reward', error.message));
   }
 };
@@ -177,7 +178,7 @@ exports.deleteReward = async (req, res) => {
       message: 'Reward deleted successfully'
     }));
   } catch (error) {
-    console.error('Delete reward error:', error);
+    logger.error('Delete reward error:', { error: error.message, stack: error.stack });
     res.status(500).json(formatError('Failed to delete reward', error.message));
   }
 };
@@ -205,7 +206,7 @@ exports.updateQuantity = async (req, res) => {
       message: 'Reward quantity updated successfully'
     }));
   } catch (error) {
-    console.error('Update reward quantity error:', error);
+    logger.error('Update reward quantity error:', { error: error.message, stack: error.stack });
     res.status(500).json(formatError('Failed to update reward quantity', error.message));
   }
 };

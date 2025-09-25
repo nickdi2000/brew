@@ -4,9 +4,13 @@
     @click="$emit('edit', reward)"
   >
     <div class="flex items-center p-4 space-x-4 group-hover:bg-gray-50">
-      <!-- Icon -->
+      <!-- Image or Icon -->
       <div class="flex-shrink-0">
+        <div v-if="reward.base64Image" class="w-12 h-12 rounded-lg overflow-hidden">
+          <img :src="reward.base64Image" class="w-full h-full object-cover" :alt="reward.name" />
+        </div>
         <Icon 
+          v-else
           :icon="rewardIcon" 
           class="w-12 h-12 text-amber-600 bg-amber-50 rounded-full p-2"
           aria-hidden="true" 
@@ -27,13 +31,6 @@
               <p class="text-xs text-gray-500">points</p>
             </div>
 
-            <!-- Stock -->
-            <div v-if="reward.quantity !== null && reward.quantity !== -1" class="text-right">
-              <p class="text-sm font-medium" :class="stockTextColor">
-                {{ reward.quantity }} left
-              </p>
-              <p class="text-xs text-gray-500">in stock</p>
-            </div>
 
             <!-- Toggle -->
             <div>
@@ -123,11 +120,4 @@ const rewardIcon = computed(() => {
   }
 });
 
-// Compute stock text color based on quantity
-const stockTextColor = computed(() => {
-  if (props.reward.quantity === null) return 'text-gray-500';
-  if (props.reward.quantity <= 0) return 'text-red-600';
-  if (props.reward.quantity < 10) return 'text-amber-600';
-  return 'text-green-600';
-});
 </script>

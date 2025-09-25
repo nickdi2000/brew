@@ -14,4 +14,7 @@ router.delete('/members/:id', auth, userController.deleteMember);
 router.patch('/members/:id/status', auth, userController.updateMemberStatus);
 router.patch('/members/:id/points', auth, userController.updateMemberPoints);
 
+// Profile picture proxy endpoint
+router.get('/:userId/picture', userController.getProfilePicture);
+
 module.exports = router;

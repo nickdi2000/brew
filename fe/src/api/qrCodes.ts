@@ -1,4 +1,5 @@
 import api from './index';
+import store from '@/store';
 import type { QRCode, QRCodeFormData, QRCodeResponse, QRCodesResponse } from '@/types/qrCode';
 
 export const qrCodesApi = {
@@ -7,7 +8,21 @@ export const qrCodesApi = {
    */
   getQRCodes: async (): Promise<QRCode[]> => {
     const { data } = await api.get('/qr-codes');
-    return data.data;
+    const payload = data.data;
+    if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+      const { items, organization } = payload as any;
+      try {
+        if (organization && organization._id) {
+          // Prime organization store if missing or code empty
+          const existingCode = store.getters['organization/organizationCode'];
+          if (!existingCode) {
+            store.commit('organization/SET_CONFIG', organization);
+          }
+        }
+      } catch {}
+      return items || [];
+    }
+    return Array.isArray(payload) ? payload : [];
   },
 
   /**

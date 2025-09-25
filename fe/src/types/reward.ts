@@ -7,6 +7,7 @@ export interface Reward {
   pointsCost: number;
   type: RewardType;
   imageUrl?: string;
+  base64Image?: string;
   isActive: boolean;
   quantity: number | null;
   expiresAt: string | null;
@@ -34,6 +35,7 @@ export interface RewardFormData {
   pointsCost: number;
   type: RewardType;
   imageUrl?: string;
+  base64Image?: string;
   isActive: boolean;
   quantity: number | null;
   expiresAt: string | null;

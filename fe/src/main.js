@@ -4,7 +4,6 @@ import App from './App.vue'
 import router from './router'
 import store from './store'
 import { toast } from './plugins/toast'
-import organizationPlugin from './plugins/organization'
 import vue3GoogleLogin from 'vue3-google-login'
 import './utils/logger'  // Import logger to override console methods
 
@@ -23,6 +22,16 @@ app.use(vue3GoogleLogin, {
 store.dispatch('initAuth')
   .catch(error => {
     console.warn('Auth initialization error:', error);
+  })
+  .then(async () => {
+    try {
+      // Only initialize organization when authenticated
+      if (store.getters.isAuthenticated && store.getters.token) {
+        await store.dispatch('organization/initializeStore')
+      }
+    } catch (e) {
+      console.warn('Organization initialization error:', e)
+    }
   })
   .finally(() => {
     // Mount the app after initialization

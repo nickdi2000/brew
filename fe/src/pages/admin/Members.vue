@@ -3,81 +3,28 @@
     <!-- Header -->
     <div class="flex justify-between items-center">
       <h2 class="text-2xl font-bold text-gradient-blue font-display">Members</h2>
+      <router-link
+        to="/admin/members/new"
+        class="btn btn-primary inline-flex items-center"
+      >
+        <Icon icon="mdi:plus" class="h-5 w-5 mr-2" />
+        Add Member
+      </router-link>
     </div>
 
     <div class="space-y-6">
-      <!-- Filters and Stats (only shown when there are members) -->
+      <!-- Filters (only shown when there are members) -->
       <template v-if="!loading && members.length > 0">
-        <!-- Filters -->
-        <div class="bg-white shadow rounded-lg p-6">
-          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <!-- Search -->
-            <div class="relative">
-              <input
-                type="text"
-                v-model="filters.search"
-                placeholder="Search members..."
-                class="w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500"
-              />
-              <Icon icon="mdi:magnify" class="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
-            </div>
-
-            <!-- Status Filter -->
-            <select
-              v-model="filters.status"
-              class="rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500"
-            >
-              <option value="">All Statuses</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="suspended">Suspended</option>
-            </select>
-
-            <!-- Membership Level Filter -->
-            <select
-              v-model="filters.membershipLevel"
-              class="rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500"
-            >
-              <option value="">All Levels</option>
-              <option value="bronze">Bronze</option>
-              <option value="silver">Silver</option>
-              <option value="gold">Gold</option>
-              <option value="platinum">Platinum</option>
-            </select>
-
-            <!-- Sort -->
-            <select
-              v-model="sortOption"
-              class="rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500"
-            >
-              <option value="lastName,asc">Name (A-Z)</option>
-              <option value="lastName,desc">Name (Z-A)</option>
-              <option value="points,desc">Points (High-Low)</option>
-              <option value="points,asc">Points (Low-High)</option>
-              <option value="createdAt,desc">Newest First</option>
-              <option value="createdAt,asc">Oldest First</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Stats Cards -->
-        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          <div v-for="stat in stats" :key="stat.name" class="bg-white overflow-hidden shadow rounded-lg">
-            <div class="p-5">
-              <div class="flex items-center">
-                <div class="flex-shrink-0">
-                  <Icon :icon="stat.icon" class="h-6 w-6 text-amber-600" aria-hidden="true" />
-                </div>
-                <div class="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt class="text-sm font-medium text-slate-500 truncate">{{ stat.name }}</dt>
-                    <dd class="flex items-baseline">
-                      <div class="text-2xl font-semibold text-slate-900">{{ stat.value }}</div>
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
+        <div class="mb-4">
+          <!-- Search -->
+          <div class="relative max-w-xs">
+            <input
+              type="text"
+              v-model="filters.search"
+              placeholder="Search members..."
+              class="w-full text-sm rounded-md border-0 bg-gray-50 py-1.5 pl-3 pr-8 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-amber-500"
+            />
+            <Icon icon="mdi:magnify" class="absolute right-2 top-1.5 h-5 w-5 text-gray-400" />
           </div>
         </div>
       </template>
@@ -95,9 +42,6 @@
                 Status
               </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Level
-              </th>
-              <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Points
               </th>
               <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -110,7 +54,7 @@
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
             <tr v-if="loading" class="animate-pulse">
-              <td colspan="6" class="px-6 py-4">
+              <td colspan="5" class="px-6 py-4">
                 <div class="flex items-center space-x-4">
                   <div class="h-10 w-10 bg-gray-200 rounded-full"></div>
                   <div class="flex-1 space-y-2">
@@ -121,7 +65,7 @@
               </td>
             </tr>
             <tr v-else-if="members.length === 0">
-              <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+              <td colspan="5" class="px-6 py-4 text-center text-gray-500">
                 <div class="flex flex-col items-center py-6">
                   <Icon icon="mdi:account-group" class="h-12 w-12 text-gray-400" />
                   <h3 class="mt-2 text-sm font-medium text-gray-900">No members found</h3>
@@ -151,7 +95,7 @@
                 <div class="flex items-center">
                   <div class="flex-shrink-0 h-10 w-10">
                     <div class="h-10 w-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-medium text-lg">
-                      {{ member.firstName[0] }}{{ member.lastName[0] }}
+                      {{ (member.firstName || '?')[0] }}{{ (member.lastName || '?')[0] }}
                     </div>
                   </div>
                   <div class="ml-4">
@@ -176,19 +120,6 @@
                   {{ member.status }}
                 </span>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <span :class="[
-                  'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
-                  {
-                    'bg-gray-100 text-gray-800': member.membershipLevel === 'bronze',
-                    'bg-slate-100 text-slate-800': member.membershipLevel === 'silver',
-                    'bg-amber-100 text-amber-800': member.membershipLevel === 'gold',
-                    'bg-purple-100 text-purple-800': member.membershipLevel === 'platinum'
-                  }
-                ]">
-                  {{ member.membershipLevel }}
-                </span>
-              </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {{ member.points.toLocaleString() }}
               </td>
@@ -197,12 +128,12 @@
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <div class="flex items-center justify-end space-x-2">
-                  <button
-                    @click="editMember(member)"
+                  <router-link
+                    :to="`/admin/members/${member._id}/edit`"
                     class="text-amber-600 hover:text-amber-900"
                   >
                     Edit
-                  </button>
+                  </router-link>
                   <button
                     @click="confirmDeleteMember(member)"
                     class="text-red-600 hover:text-red-900"
@@ -286,15 +217,7 @@
     </div>
 
 
-    <!-- Modals -->
-    <MemberForm
-      v-if="showAddMemberModal || showEditMemberModal"
-      :member="selectedMember"
-      :show="showAddMemberModal || showEditMemberModal"
-      @close="closeModal"
-      @save="saveMember"
-    />
-
+    <!-- Delete Confirmation Modal -->
     <ConfirmationModal
       v-if="showDeleteModal"
       :show="showDeleteModal"
@@ -310,7 +233,6 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useStore } from 'vuex';
 import { Icon } from '@iconify/vue';
-import MemberForm from '@/components/members/MemberForm.vue';
 import ConfirmationModal from '@/components/ConfirmationModal.vue';
 import { usePortalLink } from '@/composables/usePortalLink';
 
@@ -334,11 +256,7 @@ const copyToClipboard = async () => {
 const showDeleteModal = ref(false);
 const selectedMember = ref(null);
 const filters = ref({
-  search: '',
-  status: '',
-  membershipLevel: '',
-  sort: 'lastName',
-  order: 'asc'
+  search: ''
 });
 
 // Computed
@@ -348,37 +266,7 @@ const pagination = computed(() => store.getters['members/pagination']);
 const error = computed(() => store.getters['members/error']);
 
 
-const stats = computed(() => [
-  {
-    name: 'Total Members',
-    value: pagination.value.total.toLocaleString(),
-    icon: 'mdi:account-multiple'
-  },
-  {
-    name: 'Active Members',
-    value: members.value.filter(m => m.status === 'active').length.toLocaleString(),
-    icon: 'mdi:account-group'
-  },
-  {
-    name: 'Gold+ Members',
-    value: members.value.filter(m => ['gold', 'platinum'].includes(m.membershipLevel)).length.toLocaleString(),
-    icon: 'mdi:star'
-  },
-  {
-    name: 'Total Points',
-    value: store.getters['members/totalPoints'].toLocaleString(),
-    icon: 'mdi:chart-bar'
-  }
-]);
 
-const sortOption = computed({
-  get: () => `${filters.value.sort},${filters.value.order}`,
-  set: (value) => {
-    const [sort, order] = value.split(',');
-    filters.value.sort = sort;
-    filters.value.order = order;
-  }
-});
 
 const paginationRange = computed(() => {
   const range = [];
@@ -434,36 +322,9 @@ const goToPage = (page) => {
   });
 };
 
-const editMember = (member) => {
-  selectedMember.value = { ...member };
-  showEditMemberModal.value = true;
-};
-
 const confirmDeleteMember = (member) => {
   selectedMember.value = member;
   showDeleteModal.value = true;
-};
-
-const closeModal = () => {
-  showAddMemberModal.value = false;
-  showEditMemberModal.value = false;
-  selectedMember.value = null;
-};
-
-const saveMember = async (memberData) => {
-  let success;
-  if (showEditMemberModal.value) {
-    success = await store.dispatch('members/updateMember', {
-      id: selectedMember.value._id,
-      data: memberData
-    });
-  } else {
-    success = await store.dispatch('members/createMember', memberData);
-  }
-
-  if (success) {
-    closeModal();
-  }
 };
 
 const deleteMember = async () => {

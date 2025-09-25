@@ -11,6 +11,7 @@ import QRPrint from '../pages/admin/QRPrint.vue'
 import Rewards from '../pages/admin/Rewards.vue'
 import QRCodes from '../pages/admin/QRCodes.vue'
 import Analytics from '../pages/admin/Analytics.vue'
+import MyProfile from '../pages/admin/MyProfile.vue'
 import Welcome from '../pages/member/Welcome.vue'
 import MemberPortal from '../pages/member/Portal.vue'
 import ComingSoon from '../components/ComingSoon.vue'
@@ -50,6 +51,12 @@ const routes = [
     path: '/members',
     component: MemberPortalLayout,
     children: [
+      {
+        path: '',
+        name: 'members-landing',
+        component: () => import('../pages/member/MembersLanding.vue'),
+        meta: { public: true }
+      },
       {
         path: ':code',
         name: 'member-home',
@@ -100,13 +107,13 @@ const routes = [
               if (m) {
                 await store.default.commit('auth/SET_MEMBERSHIP', m);
                 console.log('✅ Membership loaded on navigation:', m);
+                return next({ name: 'member-portal', params: { code: to.params.code } });
               }
             }
           } catch (e) {
             console.log('ℹ️ Membership not found for code');
-          } finally {
-            next();
           }
+          next();
         }
       }
       ,
@@ -114,6 +121,35 @@ const routes = [
         path: ':code/portal',
         name: 'member-portal',
         component: MemberPortal,
+        meta: { public: false },
+        beforeEnter: async (to, from, next) => {
+          const store = await import('@/store');
+          let isAuthenticated = store.default.getters.isAuthenticated;
+          if (!isAuthenticated && store.default.getters.token) {
+            try { await store.default.dispatch('fetchCurrentUser'); isAuthenticated = store.default.getters.isAuthenticated; } catch {}
+          }
+          const membership = store.default.getters['auth/currentMembership'];
+          if (!isAuthenticated) {
+            return next({ name: 'member-home', params: { code: to.params.code } });
+          }
+          if (!membership) {
+            try {
+              const { default: api } = await import('@/api');
+              const resp = await api.get(`/memberships/by-code/${to.params.code}`);
+              const m = resp.data?.data || null;
+              if (m) store.default.commit('auth/SET_MEMBERSHIP', m);
+              else return next({ name: 'member-home', params: { code: to.params.code } });
+            } catch {
+              return next({ name: 'member-home', params: { code: to.params.code } });
+            }
+          }
+          next();
+        }
+      },
+      {
+        path: ':code/rewards',
+        name: 'member-rewards',
+        component: () => import('../pages/member/PortalRewards.vue'),
         meta: { public: false },
         beforeEnter: async (to, from, next) => {
           const store = await import('@/store');
@@ -162,6 +198,18 @@ const routes = [
         meta: { section: 'Members' }
       },
       {
+        path: 'members/new',
+        name: 'member-new',
+        component: () => import('../pages/admin/MemberEdit.vue'),
+        meta: { section: 'Members' }
+      },
+      {
+        path: 'members/:id/edit',
+        name: 'member-edit',
+        component: () => import('../pages/admin/MemberEdit.vue'),
+        meta: { section: 'Members' }
+      },
+      {
         path: 'settings',
         name: 'settings',
         component: Settings,
@@ -207,6 +255,12 @@ const routes = [
         name: 'analytics',
         component: Analytics,
         meta: { section: 'Analytics' }
+      },
+      {
+        path: 'profile',
+        name: 'profile',
+        component: MyProfile,
+        meta: { section: 'Profile' }
       }
     ]
   }
@@ -267,8 +321,15 @@ router.beforeEach(async (to, from, next) => {
   }
 
   // Allow access to public routes
-  if (isPublicRoute || isAuthenticated) {
-    console.log('Accessing public or authenticated route');
+  if (isPublicRoute) {
+    console.log('Accessing public route');
+    next();
+    return;
+  }
+
+  // Allow access to authenticated routes
+  if (isAuthenticated) {
+    console.log('Accessing authenticated route');
     next();
     return;
   }

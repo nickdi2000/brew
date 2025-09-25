@@ -62,6 +62,26 @@ const userSchema = new mongoose.Schema({
     of: String,
     default: {}
   },
+  sso: {
+    provider: {
+      type: String,
+      default: null
+    },
+    google: {
+      id: { type: String, default: null },
+      email: { type: String, default: null },
+      name: { type: String, default: null },
+      givenName: { type: String, default: null },
+      familyName: { type: String, default: null },
+      picture: { type: String, default: null },
+      emailVerified: { type: Boolean, default: null },
+      locale: { type: String, default: null },
+      hd: { type: String, default: null },
+      raw: { type: mongoose.Schema.Types.Mixed, default: null }
+    },
+    linkedAt: { type: Date, default: null },
+    lastLoginAt: { type: Date, default: null }
+  },
   createdAt: {
     type: Date,
     default: Date.now

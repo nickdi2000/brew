@@ -80,6 +80,19 @@ export default createStore({
   },
   
   actions: {
+    async updateProfile({ commit }, { firstName, lastName }) {
+      try {
+        const response = await api.put('/users/profile', { firstName, lastName });
+        if (response.data.success) {
+          commit('SET_USER', { ...response.data.data });
+          return response.data.data;
+        }
+        throw new Error(response.data.message || 'Failed to update profile');
+      } catch (error) {
+        throw error.response?.data?.message || 'Failed to update profile';
+      }
+    },
+
     async login({ commit, dispatch }, { credentials, redirect }) {
       try {
         const response = await api.post('/auth/login', credentials);

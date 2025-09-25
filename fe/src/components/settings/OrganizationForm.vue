@@ -3,19 +3,96 @@
     <h3 class="text-lg font-medium text-gray-900 mb-4">Organization Details</h3>
     
     <form @submit.prevent="handleSubmit" class="space-y-6">
-      <div>
-        <label for="name" class="block text-sm font-medium text-gray-700">Organization Name</label>
-        <input
-          type="text"
-          id="name"
-          v-model="formData.name"
-          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
-          required
-        />
+      <!-- Two column layout when preview is hidden -->
+      <div v-if="!showPreview" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div>
+          <label for="name" class="block text-sm font-medium text-gray-700">Organization Name</label>
+          <input
+            type="text"
+            id="name"
+            v-model="formData.name"
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
+            required
+          />
+        </div>
+
+        <div>
+          <label for="website" class="block text-sm font-medium text-gray-700">Website</label>
+          <input
+            type="url"
+            id="website"
+            v-model="formData.website"
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
+          />
+        </div>
+
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700">Support Email</label>
+          <input
+            type="email"
+            id="email"
+            v-model="formData.email"
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
+            required
+          />
+        </div>
+
+        <div>
+          <label for="orgCode" class="block text-sm font-medium text-gray-700">Organization Code</label>
+          <div class="mt-1">
+            <div class="flex items-center rounded-md shadow-sm bg-gray-50 border border-gray-300">
+              <span class="px-3 py-2 text-gray-500 text-sm border-r border-gray-300">{{ baseUrl }}/members/</span>
+              <input
+                type="text"
+                id="orgCode"
+                v-model="formData.code"
+                class="flex-1 bg-white rounded-r-md border-0 focus:ring-amber-500 sm:text-sm"
+                placeholder="your-brewery-name"
+              />
+            </div>
+            <p class="mt-1 text-xs text-gray-500">
+            {{ baseUrl }}/members/{{ formData.code }}
+            </p>
+          </div>
+        </div>
       </div>
 
- 
+      <!-- Single column layout when preview is shown -->
+      <div v-else class="space-y-6">
+        <div>
+          <label for="name" class="block text-sm font-medium text-gray-700">Organization Name</label>
+          <input
+            type="text"
+            id="name"
+            v-model="formData.name"
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
+            required
+          />
+        </div>
 
+        <div>
+          <label for="website" class="block text-sm font-medium text-gray-700">Website</label>
+          <input
+            type="url"
+            id="website"
+            v-model="formData.website"
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
+          />
+        </div>
+
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700">Support Email</label>
+          <input
+            type="email"
+            id="email"
+            v-model="formData.email"
+            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
+            required
+          />
+        </div>
+      </div>
+
+      <!-- Description field - always full width -->
       <div>
         <div class="flex justify-between items-center">
           <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
@@ -31,28 +108,6 @@
           rows="3"
           :class="{ 'border-red-300 focus:border-red-500 focus:ring-red-500': formData.description.length > 152 }"
         ></textarea>
-     
-      </div>
-
-      <div>
-        <label for="website" class="block text-sm font-medium text-gray-700">Website</label>
-        <input
-          type="url"
-          id="website"
-          v-model="formData.website"
-          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
-        />
-      </div>
-
-      <div>
-        <label for="email" class="block text-sm font-medium text-gray-700">Support Email</label>
-        <input
-          type="email"
-          id="email"
-          v-model="formData.email"
-          class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
-          required
-        />
       </div>
 
       <div class="space-y-4">
@@ -162,29 +217,10 @@
         </div>
       </div>
 
-      <div>
+      <!-- URL Preview - only show when preview is shown -->
+      <div v-if="showPreview">
         <label class="block text-sm font-medium text-gray-700 mb-2">Member Portal URL</label>
         <div class="space-y-4">
-          <!-- Organization Code Input -->
-          <div>
-            <label for="orgCode" class="block text-sm font-medium text-gray-700">Organization Code</label>
-            <div class="mt-1">
-              <div class="flex items-center rounded-md shadow-sm bg-gray-50 border border-gray-300">
-                <span class="px-3 py-2 text-gray-500 text-sm border-r border-gray-300">{{ baseUrl }}/members/</span>
-                <input
-                  type="text"
-                  id="orgCode"
-                  v-model="formData.code"
-                  class="flex-1 bg-white rounded-r-md border-0 focus:ring-amber-500 sm:text-sm"
-                  placeholder="your-brewery-name"
-                />
-              </div>
-              <p class="mt-1 text-sm text-gray-500">
-                Use only lowercase letters, numbers, and hyphens for your organization code.
-              </p>
-            </div>
-          </div>
-
           <!-- URL Preview -->
           <div class="bg-gray-50 rounded-lg border border-gray-200 p-4">
             <div class="flex items-center space-x-3">
@@ -214,25 +250,6 @@
               </div>
             </div>
           </div>
-
-          <!-- QR Code Link -->
-          <!-- <div v-if="formData.code" class="bg-amber-50 rounded-lg border border-amber-200 p-4">
-            <div class="flex items-start">
-              <Icon icon="mdi:qrcode" class="h-5 w-5 text-amber-600 mt-0.5" />
-              <div class="ml-3">
-                <p class="text-sm text-amber-800">
-                  Want to generate QR codes for your member portal?
-                </p>
-                <router-link 
-                  :to="{ name: 'qr-codes' }" 
-                  class="mt-1 inline-flex items-center text-amber-600 hover:text-amber-700 text-sm font-medium"
-                >
-                  Go to QR Code Management
-                  <Icon icon="mdi:arrow-right" class="ml-1 h-4 w-4" />
-                </router-link>
-              </div>
-            </div>
-          </div> -->
         </div>
       </div>
 
@@ -274,6 +291,10 @@ const props = defineProps({
     default: () => ({})
   },
   loading: {
+    type: Boolean,
+    default: false
+  },
+  showPreview: {
     type: Boolean,
     default: false
   }

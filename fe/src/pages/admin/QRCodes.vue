@@ -187,15 +187,15 @@
       </div>
 
     </div>
-  </div>
   
-  <!-- Award QR Drawer -->
-  <award-q-r-drawer
-    :is-open="isDrawerOpen"
-    :qr-code="selectedQRCode || undefined"
-    @close="closeDrawer"
-    @save="saveQRCode"
-  />
+    <!-- Award QR Drawer -->
+    <award-q-r-drawer
+      :is-open="isDrawerOpen"
+      :qr-code="selectedQRCode || undefined"
+      @close="closeDrawer"
+      @save="saveQRCode"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">

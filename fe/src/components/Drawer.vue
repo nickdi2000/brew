@@ -33,9 +33,9 @@
             :class="props.width"
             @click.stop
           >
-            <div class="h-full flex flex-col py-6 bg-white shadow-xl overflow-y-scroll">
+            <div class="h-full flex flex-col bg-white shadow-xl">
               <!-- Header -->
-              <div class="px-4 sm:px-6">
+              <div class="flex-shrink-0 px-4 py-6 sm:px-6 border-b">
                 <div class="flex items-start justify-between">
                   <h2 class="text-lg font-medium text-gray-900">
                     <slot name="header" />
@@ -54,14 +54,14 @@
               </div>
 
               <!-- Content -->
-              <div class="mt-6 relative flex-1 px-4 sm:px-6">
-                <div class="absolute inset-0 px-4 sm:px-6">
+              <div class="flex-1 overflow-y-scroll">
+                <div class="px-4 py-6 sm:px-6">
                   <slot name="content" />
                 </div>
               </div>
 
               <!-- Footer -->
-              <div v-if="$slots.footer" class="flex-shrink-0 px-4 py-4 flex justify-end space-x-2 border-t">
+              <div v-if="$slots.footer" class="flex-shrink-0 px-4 py-4 flex justify-end space-x-2 border-t bg-white">
                 <slot name="footer" />
               </div>
             </div>

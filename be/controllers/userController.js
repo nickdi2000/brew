@@ -1,5 +1,34 @@
 const User = require('../models/User');
 const { formatResponse, formatError } = require('../utils/responseFormatter');
+const axios = require('axios');
+
+// Proxy profile pictures to avoid CORS issues
+exports.getProfilePicture = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // Find user and get picture URL
+    const user = await User.findById(userId);
+    if (!user || !user.picture) {
+      return res.status(404).json(formatError('Profile picture not found'));
+    }
+
+    // Fetch the image from Google
+    const response = await axios.get(user.picture, {
+      responseType: 'stream'
+    });
+
+    // Set appropriate headers
+    res.setHeader('Content-Type', response.headers['content-type']);
+    res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+
+    // Pipe the image stream to our response
+    response.data.pipe(res);
+  } catch (error) {
+    console.error('Error fetching profile picture:', error);
+    res.status(500).json(formatError('Error fetching profile picture'));
+  }
+};
 
 // Get all members for an organization
 exports.getOrganizationMembers = async (req, res) => {
