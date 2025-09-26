@@ -60,29 +60,41 @@
       </div>
 
       <!-- Recent Activity Preview -->
-      <div class="mt-8 animate-fade-in-up" style="animation-delay: 0.6s">
+      <div class="mt-8 animate-fade-in-up" style="animation-delay: 0.8s">
         <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
           <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <Icon icon="mdi:clock-outline" class="h-5 w-5 text-gray-500 mr-2" />
             Recent Activity
           </h3>
-          <div class="space-y-3">
-            <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-              <div class="bg-amber-50 rounded-full p-2">
-                <Icon icon="mdi:plus" class="h-4 w-4 text-amber-600" />
-              </div>
-              <div class="flex-1">
-                <p class="text-sm font-medium text-gray-900">Points earned</p>
-                <p class="text-xs text-gray-600">Visit to {{ organization?.name }}</p>
-              </div>
-              <span class="text-sm font-semibold text-amber-600">+50</span>
-            </div>
-            <div class="text-center py-2">
-              <button class="text-sm text-amber-600 font-medium">View all activity</button>
-            </div>
-          </div>
+          <TransactionHistory 
+            :transactions="transactions"
+            :loading="transactionsLoading"
+            :error="transactionsError"
+            @view-all="viewAllTransactions"
+          />
         </div>
       </div>
+
+      <!-- Fixed Scan Button -->
+      <div class="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 animate-fade-in-up" style="animation-delay: 0.6s">
+        <button 
+          @click="goToScan"
+          class="w-full bg-black text-white rounded-xl py-4 px-6 flex items-center justify-center space-x-3 shadow-sm relative overflow-hidden"
+        >
+          <div class="barcode-pattern absolute inset-0 opacity-5"></div>
+          <QrScanIcon class="h-8 w-8 relative text-white" />
+          <span class="font-semibold text-lg relative">Scan</span>
+        </button>
+      </div>
+
+      <!-- Add Transaction Modal -->
+      <AddTransactionModal
+        v-if="membership?._id"
+        :show="showAddTransactionModal"
+        :member-id="String(membership?._id)"
+        @close="showAddTransactionModal = false"
+        @transaction-added="handleTransactionAdded"
+      />
     </div>
   </div>
 </template>
@@ -92,8 +104,11 @@ import { ref, computed, onMounted } from 'vue';
 import { useStore } from 'vuex';
 import { useRoute, useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
+import QrScanIcon from '@/components/icons/QrScanIcon.vue';
 import { useToast } from '@/plugins/toast';
 import { getOrganizationByCode } from '@/api/organization';
+import TransactionHistory from '@/components/members/TransactionHistory.vue';
+import AddTransactionModal from '@/components/members/AddTransactionModal.vue';
 
 const store = useStore();
 const route = useRoute();
@@ -103,8 +118,14 @@ const toast = useToast();
 const loading = ref(true);
 const error = ref(false);
 const organization = ref(null);
+const showAddTransactionModal = ref(false);
 const currentUser = computed(() => store.getters.currentUser);
 const membership = computed(() => store.getters['auth/currentMembership']);
+
+// Transactions state
+const transactions = computed(() => store.getters['transactions/allTransactions']);
+const transactionsLoading = computed(() => store.getters['transactions/isLoading']);
+const transactionsError = computed(() => store.getters['transactions/error']);
 
 const code = computed(() => String(route.params.code || ''));
 
@@ -120,6 +141,30 @@ const fetchOrganization = async () => {
 
 const viewRewards = () => {
   router.push(`/members/${code.value}/rewards`);
+};
+
+const viewAllTransactions = () => {
+  router.push(`/members/${code.value}/transactions`);
+};
+
+const goToScan = () => {
+  router.push(`/members/${code.value}/scan`);
+};
+
+const fetchTransactions = async () => {
+  if (membership.value?._id) {
+    try {
+      await store.dispatch('transactions/fetchTransactions', membership.value._id);
+    } catch (err) {
+      toast('Failed to load transactions', 'error');
+    }
+  }
+};
+
+const handleTransactionAdded = async () => {
+  showAddTransactionModal.value = false;
+  await fetchTransactions();
+  toast('Points added successfully', 'success');
 };
 
 onMounted(async () => {
@@ -148,7 +193,10 @@ onMounted(async () => {
       }
     }
 
-    await fetchOrganization();
+    await Promise.all([
+      fetchOrganization(),
+      fetchTransactions()
+    ]);
   } finally {
     loading.value = false;
   }
@@ -217,6 +265,18 @@ onMounted(async () => {
 .space-y-3::-webkit-scrollbar-thumb {
   background: #e2e8f0;
   border-radius: 2px;
+}
+
+/* Barcode pattern */
+.barcode-pattern {
+  background-image: repeating-linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0.15) 0px,
+    rgba(255, 255, 255, 0.15) 3px,
+    transparent 3px,
+    transparent 6px
+  );
+  transform: skewX(-15deg) scale(1.5);
 }
 </style>
 

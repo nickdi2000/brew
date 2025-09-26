@@ -11,13 +11,40 @@ exports.googleLogin = async (req, res) => {
   try {
     const { token } = req.body;
     
-    // Verify Google token
-    const ticket = await client.verifyIdToken({
-      idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID
-    });
+    let payload;
     
-    const payload = ticket.getPayload();
+    // Check if this is a demo token (development only)
+    const isDemoToken = token && token.includes('demo-signature-not-real');
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+    
+    if (isDemoToken && isDevelopment) {
+      console.log('[GoogleAuth] Processing demo token (development only)');
+      
+      // Decode the fake JWT token manually
+      try {
+        const parts = token.split('.');
+        if (parts.length !== 3) {
+          throw new Error('Invalid demo token format');
+        }
+        
+        // Decode the payload (second part)
+        const decodedPayload = JSON.parse(atob(parts[1]));
+        payload = decodedPayload;
+        console.log('[GoogleAuth] Demo token payload:', payload);
+      } catch (decodeError) {
+        console.error('[GoogleAuth] Failed to decode demo token:', decodeError);
+        throw new Error('Invalid demo token');
+      }
+    } else {
+      // Verify real Google token
+      const ticket = await client.verifyIdToken({
+        idToken: token,
+        audience: process.env.GOOGLE_CLIENT_ID
+      });
+      
+      payload = ticket.getPayload();
+    }
+    
     const { sub: googleId, email, name, picture, given_name, family_name, email_verified, locale, hd } = payload;
 
     // Find or create user

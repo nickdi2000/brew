@@ -63,6 +63,20 @@
               </div>
             </template>
           </GoogleLogin>
+          
+          <!-- Demo Login Button (Development Only) -->
+          <div v-if="isDevelopment" class="mt-3">
+            <button
+              @click="handleDemoLogin"
+              :disabled="isLoading"
+              class="w-full flex justify-center items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Icon icon="mdi:test-tube" class="h-4 w-4 mr-2" />
+              Demo Login
+            </button>
+            <p class="text-xs text-gray-500 mt-1 text-center">Development only</p>
+          </div>
+          
           <p v-if="isAdminOfThisOrg" class="text-sm text-red-600 mt-2">You're an admin of this organization. Log out to join as a member.</p>
         </div>
       </div>
@@ -133,6 +147,14 @@ const currentUser = computed(() => store.getters.currentUser);
 const isLoading = ref(false);
 const googleClientId = ref(import.meta.env.VITE_GOOGLE_CLIENT_ID);
 
+// Environment detection
+const isDevelopment = computed(() => {
+  return import.meta.env.MODE === 'development' || 
+         import.meta.env.DEV || 
+         window.location.hostname === 'localhost' ||
+         window.location.hostname.includes('.local');
+});
+
 // Determine if the logged-in user is an admin of this organization
 const isAdminOfThisOrg = computed(() => {
   const user = store.getters.currentUser;
@@ -195,6 +217,37 @@ const handleGoogleLoginSuccess = async (response) => {
 const handleGoogleLoginError = (error) => {
   console.error('❌ Google login error:', error);
   toast('Failed to sign in with Google', 'error');
+};
+
+// Handle demo login
+const handleDemoLogin = async () => {
+  const codeToUse = props.code || route.params.code;
+  if (!codeToUse) {
+    console.error('❌ Organization code not available');
+    toast('Organization code not available', 'error');
+    return;
+  }
+
+  try {
+    isLoading.value = true;
+    console.log('🧪 Demo login started');
+    
+    // Use the dedicated demo login action
+    await store.dispatch('auth/handleDemoLogin', {
+      organizationId: codeToUse
+    });
+    
+    console.log('🧪 Demo login successful');
+    toast('Demo login successful!', 'success');
+    
+    // Navigate to the authenticated member portal
+    router.push({ name: 'member-portal', params: { code: codeToUse } });
+  } catch (error) {
+    console.error('❌ Demo login error:', error);
+    toast(error.response?.data?.message || error.message || 'Demo login failed', 'error');
+  } finally {
+    isLoading.value = false;
+  }
 };
 
 const props = defineProps({

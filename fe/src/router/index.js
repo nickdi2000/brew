@@ -174,8 +174,83 @@ const routes = [
           }
           next();
         }
+      },
+      {
+        path: ':code/transactions',
+        name: 'member-transactions',
+        component: () => import('../pages/member/Transactions.vue'),
+        meta: { public: false },
+        beforeEnter: async (to, from, next) => {
+          const store = await import('@/store');
+          let isAuthenticated = store.default.getters.isAuthenticated;
+          if (!isAuthenticated && store.default.getters.token) {
+            try { await store.default.dispatch('fetchCurrentUser'); isAuthenticated = store.default.getters.isAuthenticated; } catch {}
+          }
+          const membership = store.default.getters['auth/currentMembership'];
+          if (!isAuthenticated) {
+            return next({ name: 'member-home', params: { code: to.params.code } });
+          }
+          if (!membership) {
+            try {
+              const { default: api } = await import('@/api');
+              const resp = await api.get(`/memberships/by-code/${to.params.code}`);
+              const m = resp.data?.data || null;
+              if (m) store.default.commit('auth/SET_MEMBERSHIP', m);
+              else return next({ name: 'member-home', params: { code: to.params.code } });
+            } catch {
+              return next({ name: 'member-home', params: { code: to.params.code } });
+            }
+          }
+          next();
+        }
+      },
+      {
+        path: ':code/scan',
+        name: 'member-scan',
+        component: () => import('../pages/member/Scan.vue'),
+        meta: { public: false },
+        beforeEnter: async (to, from, next) => {
+          const store = await import('@/store');
+          let isAuthenticated = store.default.getters.isAuthenticated;
+          if (!isAuthenticated && store.default.getters.token) {
+            try { await store.default.dispatch('fetchCurrentUser'); isAuthenticated = store.default.getters.isAuthenticated; } catch {}
+          }
+          const membership = store.default.getters['auth/currentMembership'];
+          if (!isAuthenticated) {
+            return next({ name: 'member-home', params: { code: to.params.code } });
+          }
+          if (!membership) {
+            try {
+              const { default: api } = await import('@/api');
+              const resp = await api.get(`/memberships/by-code/${to.params.code}`);
+              const m = resp.data?.data || null;
+              if (m) store.default.commit('auth/SET_MEMBERSHIP', m);
+              else return next({ name: 'member-home', params: { code: to.params.code } });
+            } catch {
+              return next({ name: 'member-home', params: { code: to.params.code } });
+            }
+          }
+          next();
+        }
       }
     ]
+  },
+
+  // Legacy/shortcut route: redirect /member/portal -> /members/:code/portal
+  {
+    path: '/member/portal',
+    name: 'member-portal-legacy',
+    beforeEnter: async (to, from, next) => {
+      try {
+        const storeModule = await import('@/store');
+        const code = storeModule.default.getters['organization/organizationCode'];
+        if (code) {
+          return next({ name: 'member-portal', params: { code } });
+        }
+      } catch {}
+      // Fallback to members landing if we don't have code
+      return next({ name: 'members-landing' });
+    }
   },
 
   // Admin routes
@@ -208,6 +283,12 @@ const routes = [
         name: 'member-edit',
         component: () => import('../pages/admin/MemberEdit.vue'),
         meta: { section: 'Members' }
+      },
+      {
+        path: 'snake',
+        name: 'snake',
+        component: () => import('../components/Snake.vue'),
+        meta: { section: 'Snake' }
       },
       {
         path: 'settings',

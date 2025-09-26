@@ -1,4 +1,4 @@
-import api, { googleLogin } from '@/api';
+import api, { googleLogin, demoLogin } from '@/api';
 
 export default {
   namespaced: true,
@@ -83,6 +83,60 @@ export default {
           status: error.response?.status
         });
         commit('SET_ERROR', error.response?.data?.message || error.message || 'Failed to login with Google');
+        throw error;
+      } finally {
+        commit('SET_LOADING', false);
+      }
+    },
+
+    async handleDemoLogin({ commit }, { organizationId }) {
+      try {
+        commit('SET_LOADING', true);
+        commit('SET_ERROR', null);
+        
+        const response = await demoLogin(organizationId);
+        console.log('🧪 Demo auth response:', {
+          hasData: !!response?.data,
+          data: response?.data,
+          status: response?.status
+        });
+
+        if (!response?.data) {
+          throw new Error('Invalid response from server');
+        }
+
+        // The response should be in the format { success, message, data }
+        const { success, message, data } = response.data;
+
+        if (!success) {
+          throw new Error(message || 'Demo authentication failed');
+        }
+
+        if (!data?.token || !data?.user) {
+          console.error('❌ Invalid demo response data:', data);
+          throw new Error('Missing token or user data in demo response');
+        }
+
+        // Update module state
+        commit('SET_TOKEN', data.token);
+        commit('SET_USER', data.user);
+        commit('SET_MEMBERSHIP', data.membership);
+
+        // Mirror to root store so global guards/use can see it
+        commit('SET_TOKEN', data.token, { root: true });
+        commit('SET_USER', data.user, { root: true });
+        
+        return {
+          user: data.user,
+          membership: data.membership
+        };
+      } catch (error) {
+        console.error('Demo login error:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status
+        });
+        commit('SET_ERROR', error.response?.data?.message || error.message || 'Failed to login with demo account');
         throw error;
       } finally {
         commit('SET_LOADING', false);

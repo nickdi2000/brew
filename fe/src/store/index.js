@@ -5,6 +5,7 @@ import members from './modules/members';
 import organization from './modules/organization';
 import rewards from './modules/rewards';
 import auth from './modules/auth';
+import transactions from './modules/transactions';
 
 // Helper function to handle persistent storage
 const storage = {
@@ -37,7 +38,8 @@ export default createStore({
     members,
     organization,
     rewards,
-    auth
+    auth,
+    transactions
   },
   state: {
     user: storage.get('user', true) || null,

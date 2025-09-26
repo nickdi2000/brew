@@ -149,7 +149,7 @@ exports.createMember = async (req, res) => {
 exports.updateMember = async (req, res) => {
   try {
     const { id } = req.params;
-    const { firstName, lastName, status, membershipLevel } = req.body;
+    const { firstName, lastName, status, membershipLevel, points } = req.body;
     const user = req.user;
 
     if (!user?.organization) {
@@ -158,7 +158,7 @@ exports.updateMember = async (req, res) => {
 
     const member = await Member.findOneAndUpdate(
       { _id: id, organization: user.organization },
-      { firstName, lastName, status, membershipLevel },
+      { firstName, lastName, status, membershipLevel, points },
       { new: true }
     ).populate('user', 'email');
 

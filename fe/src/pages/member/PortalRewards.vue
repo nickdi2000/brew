@@ -37,55 +37,91 @@
         </p>
       </div>
 
-      <!-- Rewards Grid -->
-      <div v-if="rewards.length > 0" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <!-- Rewards List -->
+      <div v-if="rewards.length > 0" class="space-y-6">
         <div
           v-for="reward in rewards"
           :key="reward._id"
           class="group bg-white overflow-hidden rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-200"
         >
-          <!-- Reward Image -->
-          <div class="relative aspect-[4/5] bg-gray-100">
+          <!-- Reward Banner Image -->
+          <div class="relative h-48 bg-gray-100 overflow-hidden">
             <img
               v-if="reward.base64Image"
               :src="reward.base64Image"
               :alt="reward.name"
-              class="absolute inset-0 w-full h-full object-cover"
+              class="absolute inset-0 w-full h-full object-cover object-center"
             />
-            <div v-else class="absolute inset-0 flex items-center justify-center">
-              <Icon :icon="getRewardIcon(reward)" class="h-16 w-16 text-amber-600" />
+            <div v-else class="absolute inset-0 flex items-center justify-center bg-gradient-to-r from-amber-500 to-amber-600">
+              <Icon :icon="getRewardIcon(reward)" class="h-16 w-16 text-white" />
             </div>
             <!-- Overlay gradient -->
-            <div class="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/75 to-transparent"></div>
+            <div class="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-black/50"></div>
             <!-- Title overlay -->
-            <div class="absolute bottom-0 left-0 right-0 p-4 text-white">
-              <div class="flex items-center justify-between">
-                <h3 class="text-xl font-semibold">{{ reward.name }}</h3>
-                <span class="text-lg font-medium">{{ reward.pointsCost.toLocaleString() }} pts</span>
+            <div class="absolute bottom-0 left-0 right-0 flex items-end justify-between p-6">
+              <h3 class="text-2xl font-bold text-white drop-shadow-lg">{{ reward.name }}</h3>
+              <div class="bg-white/90 backdrop-blur-sm rounded-full px-4 py-2">
+                <span class="text-lg font-bold text-amber-600">{{ reward.pointsCost.toLocaleString() }} pts</span>
               </div>
             </div>
           </div>
 
           <!-- Reward Content -->
-          <div class="p-4">
-            <p class="text-sm text-gray-500">{{ reward.description }}</p>
+          <div class="p-6">
+            <!-- Description -->
+            <div class="mb-4">
+              <p 
+                v-if="reward.description.length <= 70"
+                class="text-sm text-gray-500"
+              >
+                {{ reward.description }}
+              </p>
+              <div v-else>
+                <p 
+                  v-if="!reward.expanded"
+                  class="text-sm text-gray-500 cursor-pointer hover:text-gray-700 transition-colors"
+                  @click="toggleDescription(reward)"
+                >
+                  {{ reward.description.substring(0, 70) }}...
+                  <span class="text-amber-600 font-medium ml-1">Read more</span>
+                </p>
+                <p 
+                  v-else
+                  class="text-sm text-gray-500"
+                >
+                  {{ reward.description }}
+                  <span 
+                    class="text-amber-600 font-medium ml-1 cursor-pointer hover:text-amber-700 transition-colors"
+                    @click="toggleDescription(reward)"
+                  >
+                    Show less
+                  </span>
+                </p>
+              </div>
+            </div>
             
             <!-- Redeem Button -->
-            <button
-              @click="openRewardDetails(reward)"
-              class="mt-4 w-full py-3 px-4 rounded-lg font-medium transition-colors duration-200"
-              :class="{
-                'bg-amber-600 text-white hover:bg-amber-700': canRedeem(reward),
-                'bg-gray-100 text-gray-400 cursor-not-allowed': !canRedeem(reward)
-              }"
-              :disabled="!canRedeem(reward)"
-            >
-              <span v-if="!reward.isAvailable">Currently Unavailable</span>
-              <span v-else-if="(membership?.points ?? 0) < reward.pointsCost">
-                Need {{ reward.pointsCost - (membership?.points ?? 0) }} More Points
-              </span>
-              <span v-else>Redeem Now</span>
-            </button>
+            <div class="w-full">
+              <button
+                @click="openRewardDetails(reward)"
+                class="w-full px-6 py-3 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2"
+                :class="{
+                  'bg-black text-white hover:bg-gray-800 hover:scale-[1.02]': canRedeem(reward),
+                  'bg-gray-100 text-gray-400 cursor-not-allowed': !canRedeem(reward)
+                }"
+                :disabled="!canRedeem(reward)"
+              >
+                <Icon 
+                  :icon="canRedeem(reward) ? 'mdi:gift' : 'mdi:lock'" 
+                  class="h-5 w-5"
+                />
+                <span v-if="!reward.isAvailable">Currently Unavailable</span>
+                <span v-else-if="(membership?.points ?? 0) < reward.pointsCost">
+                  Need {{ reward.pointsCost - (membership?.points ?? 0) }} More Points
+                </span>
+                <span v-else>Redeem Now</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -97,70 +133,6 @@
         <p class="mt-1 text-sm text-gray-500">Check back later for new rewards.</p>
       </div>
 
-      <!-- Pagination -->
-      <div v-if="rewards.length > 0" class="mt-6 flex items-center justify-between bg-white px-4 py-3 shadow rounded-lg sm:px-6">
-        <div class="flex flex-1 justify-between sm:hidden">
-          <button
-            @click="prevPage"
-            :disabled="pagination.page === 1"
-            class="btn btn-secondary"
-          >
-            Previous
-          </button>
-          <button
-            @click="nextPage"
-            :disabled="pagination.page === pagination.pages"
-            class="btn btn-secondary"
-          >
-            Next
-          </button>
-        </div>
-        <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-          <div>
-            <p class="text-sm text-gray-700">
-              Showing
-              <span class="font-medium">{{ ((pagination.page - 1) * 10) + 1 }}</span>
-              to
-              <span class="font-medium">{{ Math.min(pagination.page * 10, pagination.total) }}</span>
-              of
-              <span class="font-medium">{{ pagination.total }}</span>
-              results
-            </p>
-          </div>
-          <div>
-            <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-              <button
-                @click="prevPage"
-                :disabled="pagination.page === 1"
-                class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
-              >
-                <span class="sr-only">Previous</span>
-                <Icon icon="mdi:chevron-left" class="h-5 w-5" aria-hidden="true" />
-              </button>
-              <button
-                v-for="page in paginationRange"
-                :key="page"
-                @click="goToPage(page)"
-                :class="[
-                  page === pagination.page
-                    ? 'relative z-10 inline-flex items-center bg-amber-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-600'
-                    : 'relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0',
-                ]"
-              >
-                {{ page }}
-              </button>
-              <button
-                @click="nextPage"
-                :disabled="pagination.page === pagination.pages"
-                class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0"
-              >
-                <span class="sr-only">Next</span>
-                <Icon icon="mdi:chevron-right" class="h-5 w-5" aria-hidden="true" />
-              </button>
-            </nav>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- Reward Details Modal -->
@@ -230,32 +202,11 @@ const loading = ref(true);
 const error = ref(false);
 const rewards = ref<Reward[]>([]);
 const selectedReward = ref<Reward | null>(null);
-const pagination = ref({
-  page: 1,
-  limit: 10,
-  total: 0,
-  pages: 1
-});
 
 // Computed
 const membership = computed(() => store.getters['auth/currentMembership']);
 const organization = computed(() => store.getters.organization);
 
-const paginationRange = computed(() => {
-  const range = [];
-  const maxPages = Math.min(5, pagination.value.pages);
-  let start = Math.max(1, pagination.value.page - 2);
-  let end = Math.min(pagination.value.pages, start + maxPages - 1);
-  
-  if (end - start + 1 < maxPages) {
-    start = Math.max(1, end - maxPages + 1);
-  }
-  
-  for (let i = start; i <= end; i++) {
-    range.push(i);
-  }
-  return range;
-});
 
 // Methods
 const fetchRewards = async () => {
@@ -263,13 +214,13 @@ const fetchRewards = async () => {
     loading.value = true;
     error.value = false;
     
-    const response = await rewardsApi.getRewards(
-      pagination.value.page,
-      pagination.value.limit
-    );
+    const response = await rewardsApi.getRewards();
     
-    rewards.value = response.rewards;
-    pagination.value = response.pagination;
+    // Initialize expanded property for description truncation
+    rewards.value = response.rewards.map(reward => ({
+      ...reward,
+      expanded: false
+    }));
   } catch (err) {
     error.value = true;
     toast('Failed to load rewards', 'error');
@@ -331,6 +282,10 @@ const getRewardButtonText = (reward: Reward): string => {
   return 'Redeem Reward';
 };
 
+const toggleDescription = (reward: Reward) => {
+  reward.expanded = !reward.expanded;
+};
+
 const openRewardDetails = (reward: Reward) => {
   selectedReward.value = reward;
 };
@@ -350,24 +305,6 @@ const redeemReward = async () => {
   }
 };
 
-const prevPage = () => {
-  if (pagination.value.page > 1) {
-    pagination.value.page--;
-    fetchRewards();
-  }
-};
-
-const nextPage = () => {
-  if (pagination.value.page < pagination.value.pages) {
-    pagination.value.page++;
-    fetchRewards();
-  }
-};
-
-const goToPage = (page: number) => {
-  pagination.value.page = page;
-  fetchRewards();
-};
 
 // Initial load
 onMounted(fetchRewards);

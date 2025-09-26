@@ -13,12 +13,14 @@ const qrCodeRoutes = require('./routes/qrCodeRoutes');
 const logRoutes = require('./routes/logRoutes');
 const memberRoutes = require('./routes/memberRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const transactionRoutes = require('./routes/transactionRoutes');
 
 // Import models to ensure they are registered with Mongoose
 require('./models/Organization');
 require('./models/User');
 require('./models/Reward');
 require('./models/QRCode');
+require('./models/Transaction');
 
 const app = express();
 
@@ -60,6 +62,7 @@ app.use('/api/qr-codes', qrCodeRoutes);
 app.use('/api/log', logRoutes);
 app.use('/api/memberships', memberRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/transactions', transactionRoutes);
 
 // MongoDB Connection
 const connectDB = async () => {

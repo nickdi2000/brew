@@ -311,6 +311,65 @@ const googleLogin = async (credential, organizationId) => {
   }
 };
 
+// Demo login function (development only)
+const demoLogin = async (organizationId) => {
+  try {
+    console.log('🧪 Demo login request:', { organizationId });
+
+    // Cancel any pending token refresh attempts
+    cancelPendingRequests('Demo login attempt');
+
+    // Create a fake JWT token that our backend will recognize as demo
+    const header = {
+      "alg": "RS256",
+      "kid": "demo-key-id",
+      "typ": "JWT"
+    };
+
+    const payload = {
+      "iss": "https://accounts.google.com",
+      "azp": "demo-client-id",
+      "aud": "demo-client-id", 
+      "sub": "demo123456789", // Google user ID
+      "email": "demo@brewbucks.dev",
+      "email_verified": true,
+      "name": "Demo User",
+      "picture": "https://via.placeholder.com/96x96/4F46E5/FFFFFF?text=DU",
+      "given_name": "Demo",
+      "family_name": "User",
+      "locale": "en",
+      "iat": Math.floor(Date.now() / 1000),
+      "exp": Math.floor(Date.now() / 1000) + 3600 // 1 hour from now
+    };
+
+    // Create a fake JWT (base64 encoded header.payload.signature)
+    const encodedHeader = btoa(JSON.stringify(header));
+    const encodedPayload = btoa(JSON.stringify(payload));
+    const fakeSignature = "demo-signature-not-real";
+    
+    const demoToken = `${encodedHeader}.${encodedPayload}.${fakeSignature}`;
+
+    // Send directly to our backend, bypassing Google OAuth
+    const response = await api.post('/auth/google/login', { 
+      token: demoToken, 
+      organizationCode: organizationId
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    return response;
+  } catch (error) {
+    console.error('❌ Demo login API error:', {
+      status: error.response?.status,
+      message: error.response?.data?.message,
+      data: error.response?.data
+    });
+    throw error;
+  }
+};
+
 // Export the configured axios instance and API functions
 export {
   api as default,
@@ -318,6 +377,7 @@ export {
   checkHealth,
   // Authentication
   googleLogin,
+  demoLogin,
   // Member management
   getMembers,
   getMemberDetails,

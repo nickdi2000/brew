@@ -25,7 +25,6 @@ alwaysApply: true
    - Use api service from api/index.js
    - Expect response format: { success, message, data }
    - Handle errors with try/catch
-   - Show toast messages for feedback
    - Handle loading states
 
 4. STATE MANAGEMENT:

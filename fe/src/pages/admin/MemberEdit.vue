@@ -17,8 +17,32 @@
             <h3 class="text-lg leading-6 font-medium text-gray-900">
               {{ memberId ? 'Edit Member' : 'Add New Member' }}
             </h3>
+            
+            <!-- Tabs -->
+            <div class="mt-4 border-b border-gray-200">
+              <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                <button
+                  v-for="tab in tabs"
+                  :key="tab.name"
+                  @click="currentTab = tab.name"
+                  :class="[
+                    currentTab === tab.name
+                      ? 'border-amber-500 text-amber-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+                    'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm'
+                  ]"
+                >
+                  <Icon :icon="tab.icon" class="h-5 w-5 inline-block mr-2" />
+                  {{ tab.label }}
+                </button>
+              </nav>
+            </div>
+
+            <!-- Tab Content -->
             <div class="mt-4">
-              <form @submit.prevent="handleSubmit" class="space-y-4">
+              <!-- Profile Tab -->
+              <div v-show="currentTab === 'profile'">
+                <form @submit.prevent="handleSubmit" class="space-y-4">
                 <!-- Basic Information -->
                 <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
@@ -102,23 +126,10 @@
 
                 <!-- Points -->
                 <div v-if="memberId">
-                  <label for="points" class="block text-sm font-medium text-gray-700">Points</label>
-                  <div class="mt-1 flex rounded-md shadow-sm">
-                    <input
-                      type="number"
-                      id="points"
-                      v-model.number="formData.points"
-                      min="0"
-                      class="flex-1 min-w-0 block w-full rounded-none rounded-l-md border-gray-300 focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
-                    />
-                    <button
-                      type="button"
-                      @click="adjustPoints('add')"
-                      class="relative -ml-px inline-flex items-center space-x-2 rounded-r-md border border-gray-300 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                    >
-                      <Icon icon="mdi:plus" class="h-5 w-5 text-gray-400" aria-hidden="true" />
-                      <span>Add Points</span>
-                    </button>
+                  <label class="block text-sm font-medium text-gray-700">Points Balance</label>
+                  <div class="mt-1 flex items-center">
+                    <span class="text-2xl font-semibold text-amber-600">{{ currentBalance }}</span>
+                    <span class="ml-2 text-sm text-gray-500">points</span>
                   </div>
                 </div>
 
@@ -174,20 +185,50 @@
                   </button>
                 </div>
               </form>
+              </div>
+
+              <!-- Activity Tab -->
+              <div v-show="currentTab === 'activity'" class="space-y-4">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <h4 class="text-lg font-medium text-gray-900">Points Balance</h4>
+                    <p class="text-3xl font-bold text-amber-600">{{ currentBalance }} points</p>
+                  </div>
+                </div>
+
+                <TransactionHistory 
+                  :transactions="transactions"
+                  :loading="transactionsLoading"
+                  :error="!!transactionsError"
+                  :show-add-button="true"
+                  @add-transaction="showAddTransactionModal = true"
+                />
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
   </div>
+
+  <!-- Add Transaction Modal -->
+  <AddTransactionModal
+    v-if="memberId"
+    :show="showAddTransactionModal"
+    :member-id="memberId"
+    @close="showAddTransactionModal = false"
+    @transaction-added="handleTransactionAdded"
+  />
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter, useRoute } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import { useToast } from '@/plugins/toast';
+import TransactionHistory from '@/components/members/TransactionHistory.vue';
+import AddTransactionModal from '@/components/members/AddTransactionModal.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -197,6 +238,19 @@ const toast = useToast();
 const memberId = ref(route.params.id);
 const loading = ref(false);
 const error = ref(null);
+const currentTab = ref('profile');
+const showAddTransactionModal = ref(false);
+
+const tabs = [
+  { name: 'profile', label: 'Profile', icon: 'mdi:account' },
+  { name: 'activity', label: 'Activity', icon: 'mdi:history' }
+];
+
+// Transaction-related state
+const transactions = computed(() => store.getters['transactions/allTransactions']);
+const transactionsLoading = computed(() => store.getters['transactions/isLoading']);
+const currentBalance = computed(() => store.getters['transactions/currentBalance']);
+const transactionsError = computed(() => store.getters['transactions/error']);
 
 const formData = ref({
   firstName: '',
@@ -205,7 +259,6 @@ const formData = ref({
   phoneNumber: '',
   membershipLevel: 'bronze',
   status: 'active',
-  points: 0,
   password: ''
 });
 
@@ -226,8 +279,7 @@ const initForm = async () => {
         email: member.email || '',
         phoneNumber: member.phoneNumber || '',
         membershipLevel: member.membershipLevel || 'bronze',
-        status: member.status || 'active',
-        points: member.points || 0
+        status: member.status || 'active'
       };
     } catch (err) {
       error.value = 'Failed to load member details';
@@ -257,7 +309,7 @@ const handleSubmit = async () => {
     if (memberId.value) {
       await store.dispatch('members/updateMember', {
         id: memberId.value,
-        ...formData.value
+        data: formData.value
       });
       toast('Member updated successfully', 'success');
     } else {
@@ -274,33 +326,37 @@ const handleSubmit = async () => {
   }
 };
 
-const adjustPoints = async (operation) => {
-  const points = parseInt(prompt('Enter points to add:', '0'));
-  if (!isNaN(points) && points > 0) {
+
+const handleTransactionAdded = async (transactionData) => {
+  try {
+    await store.dispatch('transactions/createTransaction', {
+      memberId: memberId.value,
+      transactionData
+    });
+    // Refresh both the balance and transaction list
+    await Promise.all([
+      store.dispatch('transactions/fetchBalance', memberId.value),
+      store.dispatch('transactions/fetchTransactions', memberId.value)
+    ]);
+    toast('Transaction added successfully', 'success');
+  } catch (err) {
+    toast('Failed to add transaction', 'error');
+  }
+};
+
+const loadTransactions = async () => {
+  if (memberId.value) {
     try {
-      loading.value = true;
-      error.value = null;
-      const success = await store.dispatch('members/updateMemberPoints', {
-        id: memberId.value,
-        points,
-        operation
-      });
-      if (success) {
-        formData.value.points = operation === 'add'
-          ? formData.value.points + points
-          : Math.max(0, formData.value.points - points);
-        toast('Points updated successfully', 'success');
-      }
+      await store.dispatch('transactions/fetchTransactions', memberId.value);
+      await store.dispatch('transactions/fetchBalance', memberId.value);
     } catch (err) {
-      error.value = 'Failed to update points';
-      toast('Failed to update points', 'error');
-    } finally {
-      loading.value = false;
+      toast('Failed to load transactions', 'error');
     }
   }
 };
 
 onMounted(() => {
   initForm();
+  loadTransactions();
 });
 </script>
