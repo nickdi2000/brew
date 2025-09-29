@@ -4,8 +4,15 @@
     <nav class="fixed top-0 z-50 w-full bg-slate-800 shadow-lg">
       <div class="px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
-          <div class="flex">
-            <div class="flex-shrink-0 flex items-center">
+          <div class="flex items-center">
+            <!-- Mobile menu button -->
+            <button
+              @click="showMobileMenu = true"
+              class="md:hidden inline-flex items-center justify-center p-2 rounded-md text-slate-300 hover:text-white hover:bg-slate-700 focus:outline-none"
+            >
+              <Icon icon="mdi:menu" class="h-6 w-6" />
+            </button>
+            <div class="flex-shrink-0 flex items-center ml-2 md:ml-0">
               <h1 class="text-xl font-bold text-white font-display">BrewTokens Admin</h1>
             </div>
           </div>
@@ -53,12 +60,26 @@
       </div>
     </nav>
 
-    <!-- Sidebar -->
-    <Sidebar />
+    <!-- Desktop Sidebar -->
+    <Sidebar class="hidden md:block" />
+
+    <!-- Mobile Drawer Menu -->
+    <Drawer
+      :show="showMobileMenu"
+      @close="showMobileMenu = false"
+      width="max-w-xs"
+    >
+      <template #header>
+        <h2 class="text-lg font-medium text-gray-900">Menu</h2>
+      </template>
+      <template #content>
+        <Sidebar class="static w-full h-full bg-transparent" />
+      </template>
+    </Drawer>
 
     <!-- Main Content -->
-    <main class="pt-16 pl-64">
-      <div class="p-8">
+    <main class="pt-16 md:pl-64">
+      <div class="p-4 md:p-8">
         <router-view v-slot="{ Component }">
           <transition
             enter-active-class="transition ease-out duration-200"
@@ -96,6 +117,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { Icon } from '@iconify/vue'
 import { onClickOutside } from '@vueuse/core'
 import Sidebar from '../components/Sidebar.vue'
+import Drawer from '../components/Drawer.vue'
 import TabView from '../components/TabView.vue'
 import ComingSoon from '../components/ComingSoon.vue'
 import adminNav from './admin_nav.json'
@@ -104,6 +126,7 @@ const store = useStore()
 const router = useRouter()
 const route = useRoute()
 const showAccountMenu = ref(false)
+const showMobileMenu = ref(false)
 const accountDropdown = ref(null)
 
 // Setup click outside handler
