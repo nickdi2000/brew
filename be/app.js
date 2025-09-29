@@ -110,8 +110,8 @@ const startServer = async () => {
           cert: fs.readFileSync(certPath)
         };
         
-        https.createServer(httpsOptions, app).listen(PORT, '192.168.0.201', () => {
-          logger.info(`HTTPS Server is running on https://192.168.0.201:${PORT}`);
+        https.createServer(httpsOptions, app).listen(PORT, () => {
+          logger.info(`HTTPS Server is running on port ${PORT}`);
         });
       } else {
         logger.error('SSL certificate files not found. Please ensure localhost.key and localhost.crt exist in the ssl/ directory.');

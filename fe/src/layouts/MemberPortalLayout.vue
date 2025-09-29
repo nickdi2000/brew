@@ -199,7 +199,7 @@ if (currentMembership.value?.points) {
 watch(
   () => currentMembership.value?.points,
   (newPoints, oldPoints) => {
-    if (newPoints !== undefined && oldPoints !== undefined && newPoints > oldPoints) {
+    if (newPoints !== undefined && oldPoints !== undefined && newPoints !== oldPoints) {
       pointsUpdated.value = true;
       animatePointsCount(oldPoints, newPoints);
     } else if (newPoints !== undefined && oldPoints === undefined) {

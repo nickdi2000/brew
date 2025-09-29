@@ -21,35 +21,38 @@
     <!-- Main Content -->
     <div v-else class="max-w-7xl mx-auto px-4 py-6">
       <!-- Success Screen - Show only when redeemed -->
-      <div v-if="route.query.redeemed === '1'" class="min-h-[70vh] flex flex-col items-center justify-center text-center">
-        <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-3xl p-12 shadow-2xl border border-green-200 max-w-2xl mx-auto">
-          <!-- Large Success Icon -->
-          <div class="mb-8">
-            <div class="mx-auto flex items-center justify-center h-32 w-32 rounded-full bg-green-100 mb-6">
-              <Icon icon="mdi:check-circle" class="h-20 w-20 text-green-600" />
+      <div v-if="route.query.redeemed === '1'" class="min-h-screen flex items-center justify-center p-4">
+        <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-8 shadow-xl border border-green-200 max-w-md w-full mx-auto">
+          <div class="flex flex-col items-center space-y-4">
+            <!-- Success Icons (Smaller) -->
+            <div class="relative">
+              <div class="flex items-center justify-center h-20 w-20 rounded-full bg-green-100">
+                <Icon icon="mdi:check-circle" class="h-12 w-12 text-green-600" />
+              </div>
+              <div class="absolute -right-2 -top-2 animate-bounce">
+                <Icon icon="mdi:party-popper" class="h-8 w-8 text-green-500" />
+              </div>
             </div>
-            <div class="animate-bounce">
-              <Icon icon="mdi:party-popper" class="h-16 w-16 text-green-500 mx-auto" />
+            
+            <!-- Success Message (Condensed) -->
+            <div class="text-center">
+              <h1 class="text-3xl font-bold text-green-800">Success!</h1>
+              <p class="text-lg text-green-700 font-medium mt-1">Reward redeemed successfully</p>
             </div>
-          </div>
-          
-          <!-- Success Message -->
-          <h1 class="text-5xl font-bold text-green-800 mb-6">Success!</h1>
-          <p class="text-2xl text-green-700 font-semibold mb-4">Reward redeemed successfully</p>
-          
-          <!-- Reward Name -->
-          <div v-if="route.query.rewardName" class="mb-8">
-            <div class="bg-white rounded-2xl p-6 shadow-lg border border-green-200">
-              <p class="text-xl text-gray-800 font-medium">{{ String(route.query.rewardName) }}</p>
+            
+            <!-- Reward Name (Compact) -->
+            <div v-if="route.query.rewardName" class="w-full">
+              <div class="bg-white rounded-xl p-4 shadow border border-green-100">
+                <p class="text-base text-gray-800 font-medium text-center">{{ String(route.query.rewardName) }}</p>
+              </div>
             </div>
-          </div>
-          
-          <!-- Action Button -->
-          <div class="flex justify-center">
+            
+            <!-- Action Button (Smaller) -->
             <button 
               @click="router.push(`/members/${route.params.code}`)" 
-              class="px-8 py-4 bg-green-600 hover:bg-green-700 text-white text-lg font-semibold rounded-xl transition-all duration-200 hover:scale-105 shadow-lg"
+              class="w-full px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-xl transition-colors shadow-md flex items-center justify-center gap-2"
             >
+              <Icon icon="mdi:arrow-left" class="h-5 w-5" />
               Back to Portal
             </button>
           </div>
@@ -201,6 +204,7 @@
           <h3 class="mt-2 text-sm font-medium text-gray-900">No rewards available</h3>
           <p class="mt-1 text-sm text-gray-500">Check back later for new rewards.</p>
         </div>
+
       </div>
 
     </div>
@@ -342,5 +346,12 @@ const clearRedeemedQuery = () => {
 
 
 // Initial load
-onMounted(fetchRewards);
+onMounted(async () => {
+  try {
+    await fetchRewards();
+  } catch (err) {
+    console.error('❌ Failed to load rewards:', err);
+    toast('Failed to load rewards', 'error');
+  }
+});
 </script>

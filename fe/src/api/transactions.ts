@@ -1,7 +1,11 @@
 import api from './index';
 
-export const getTransactions = async (memberId: string) => {
-  const response = await api.get(`/transactions/${memberId}`);
+export const getTransactions = async (memberId: string, params?: {
+  page?: number;
+  limit?: number;
+  type?: string;
+}) => {
+  const response = await api.get(`/transactions/${memberId}`, { params });
   return response.data;
 };
 

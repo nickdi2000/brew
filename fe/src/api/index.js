@@ -272,6 +272,11 @@ export const cancelPendingRequests = (message = 'Operation cancelled by user') =
 };
 
 // Authentication functions
+const getCurrentUser = async () => {
+  const response = await api.get('/auth/me');
+  return response.data;
+};
+
 const googleLogin = async (credential, organizationId) => {
   try {
     console.log('🔍 Sending Google login request:', { 
@@ -382,6 +387,7 @@ export {
   signupForBeta,
   checkHealth,
   // Authentication
+  getCurrentUser,
   googleLogin,
   demoLogin,
   // Member management

@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const Transaction = require('../models/Transaction');
 const { formatResponse, formatError } = require('../utils/responseFormatter');
 
 // Login user
@@ -155,6 +156,20 @@ exports.getCurrentUser = async (req, res) => {
     const Member = require('../models/Member');
     const memberships = await Member.find({ user: user._id }).select('organization role status points avatar');
 
+    // Get recent transactions for each membership
+    const membershipTransactions = await Promise.all(
+      memberships.map(async (membership) => {
+        const transactions = await Transaction.find({ member: membership._id })
+          .sort({ createdAt: -1 })
+          .limit(5)
+          .lean();
+        return {
+          ...membership.toObject(),
+          recentTransactions: transactions
+        };
+      })
+    );
+
     res.json(formatResponse({
       data: {
         user: {
@@ -167,12 +182,14 @@ exports.getCurrentUser = async (req, res) => {
             id: org._id,
             name: org.name
           })),
-          memberships: memberships.map(m => ({
+          memberships: membershipTransactions.map(m => ({
+            _id: m._id,
             organization: m.organization,
             role: m.role,
             status: m.status,
             points: m.points,
-            avatar: m.avatar
+            avatar: m.avatar,
+            recentTransactions: m.recentTransactions
           })),
           sso: user.sso ? {
             provider: user.sso.provider,

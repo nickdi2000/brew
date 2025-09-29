@@ -23,9 +23,16 @@ exports.list = async (req, res) => {
 exports.create = async (req, res) => {
   try {
     const orgId = req.user.organization._id;
-    const { points = 0, expiresAt = null, isActive = true } = req.body;
+    const { points = 0, expiresAt = null, isActive = true, name } = req.body;
     const code = generateCode();
-    const doc = await QRCode.create({ organization: orgId, code, points, expiresAt, isActive });
+    const doc = await QRCode.create({ 
+      organization: orgId, 
+      code, 
+      points, 
+      expiresAt, 
+      isActive,
+      name: name || `${points} Points QR Code` // Use points value in default name
+    });
     res.json(formatResponse({ data: doc, message: 'QR code created' }));
   } catch (e) {
     res.status(500).json(formatError('Failed to create QR code', e.message));
@@ -130,7 +137,7 @@ exports.redeem = async (req, res) => {
       metadata: {
         qrCodeId: qrCode._id,
         qrCodeName: qrCode.name,
-        description: `QR code scan: ${qrCode.name}`
+        description: qrCode.name ? `QR code scan: ${qrCode.name}` : `Scanned ${qrCode.points} points QR code`
       }
     });
 

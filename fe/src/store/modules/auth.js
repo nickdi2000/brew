@@ -1,4 +1,4 @@
-import api, { googleLogin, demoLogin } from '@/api';
+import api, { googleLogin, demoLogin, getCurrentUser } from '@/api';
 
 export default {
   namespaced: true,
@@ -24,7 +24,11 @@ export default {
       }
     },
     SET_MEMBERSHIP(state, membership) {
-      state.membership = membership;
+      // Ensure recentTransactions is always an array
+      state.membership = {
+        ...membership,
+        recentTransactions: membership?.recentTransactions || []
+      };
     },
     UPDATE_MEMBERSHIP_POINTS(state, points) {
       if (state.membership) {
@@ -152,6 +156,29 @@ export default {
       commit('SET_USER', null);
       commit('SET_TOKEN', null);
       commit('SET_MEMBERSHIP', null);
+    },
+
+    async refreshUserData({ commit }) {
+      try {
+        const response = await getCurrentUser();
+        console.log('🔄 Refresh user data response:', response.data);
+        const { user } = response.data;
+        
+        commit('SET_USER', user);
+        // Find the current membership and update it
+        if (user.memberships?.length > 0) {
+          const currentMembership = user.memberships[0]; // For now, just use the first membership
+          console.log('📅 Loaded membership with', currentMembership.recentTransactions?.length || 0, 'transactions');
+          commit('SET_MEMBERSHIP', currentMembership);
+        } else {
+          console.warn('⚠️ No memberships found in response');
+        }
+        
+        return response.data;
+      } catch (error) {
+        console.error('❌ Failed to refresh user data:', error);
+        throw error;
+      }
     }
   },
 

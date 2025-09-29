@@ -29,14 +29,7 @@
               <div class="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-green-200/30 blur-2xl"></div>
               <div class="absolute -bottom-12 -left-12 w-48 h-48 rounded-full bg-emerald-300/20 blur-3xl"></div>
               
-              <!-- Success Icon with Animated Ring -->
-              <div class="relative w-24 h-24 mx-auto mb-6">
-                <div class="absolute inset-0 rounded-full bg-gradient-to-r from-green-500 via-emerald-400 to-green-500 animate-spin blur" style="animation-duration: 3s;"></div>
-                <div class="absolute inset-1 rounded-full bg-white"></div>
-                <div class="absolute inset-0 flex items-center justify-center">
-                  <Icon icon="mdi:check-circle" class="h-16 w-16 text-green-500" />
-                </div>
-              </div>
+          
 
               <!-- Points Counter -->
               <div class="text-center mb-2">
@@ -57,7 +50,7 @@
               </div>
 
               <!-- Coin Animation -->
-              <div class="h-64 relative overflow-hidden mb-8 flex justify-center items-center">
+              <div class="h-64 relative overflow-hidden mb-0 flex justify-center items-center">
                 <CoinFlip :value="displayPoints" />
               </div>
 

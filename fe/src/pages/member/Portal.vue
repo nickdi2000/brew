@@ -122,10 +122,10 @@ const showAddTransactionModal = ref(false);
 const currentUser = computed(() => store.getters.currentUser);
 const membership = computed(() => store.getters['auth/currentMembership']);
 
-// Transactions state
-const transactions = computed(() => store.getters['transactions/allTransactions']);
-const transactionsLoading = computed(() => store.getters['transactions/isLoading']);
-const transactionsError = computed(() => store.getters['transactions/error']);
+// Transactions state - use transactions from membership data instead of separate store
+const transactions = computed(() => membership.value?.recentTransactions || []);
+const transactionsLoading = computed(() => store.getters['auth/isLoading']);
+const transactionsError = computed(() => store.getters['auth/error']);
 
 const code = computed(() => String(route.params.code || ''));
 
@@ -152,12 +152,11 @@ const goToScan = () => {
 };
 
 const fetchTransactions = async () => {
-  if (membership.value?._id) {
-    try {
-      await store.dispatch('transactions/fetchTransactions', membership.value._id);
-    } catch (err) {
-      toast('Failed to load transactions', 'error');
-    }
+  // Since transactions come from membership data, refresh the user data to get latest transactions
+  try {
+    await store.dispatch('auth/refreshUserData');
+  } catch (err) {
+    toast('Failed to load transactions', 'error');
   }
 };
 
@@ -193,6 +192,7 @@ onMounted(async () => {
       }
     }
 
+    // Always refresh user data on portal load to ensure we have the latest transactions
     await Promise.all([
       fetchOrganization(),
       fetchTransactions()

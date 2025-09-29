@@ -9,8 +9,11 @@ const qrCodeSchema = new mongoose.Schema({
   code: {
     type: String,
     required: true,
-    unique: true,
-    index: true
+    unique: true
+  },
+  name: {
+    type: String,
+    default: 'Points QR Code'
   },
   points: {
     type: Number,

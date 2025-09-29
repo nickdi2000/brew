@@ -30,39 +30,38 @@
       <div
         v-for="transaction in limitedTransactions"
         :key="transaction._id"
-        class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg"
+        class="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg"
       >
         <div :class="[
-          'rounded-full p-2',
+          'rounded-full p-1.5 mt-0.5',
           (transaction.amount || 0) > 0 ? 'bg-green-50' : 'bg-red-50'
         ]">
           <Icon
             :icon="(transaction.amount || 0) > 0 ? 'mdi:plus' : 'mdi:minus'"
             :class="[
-              'h-4 w-4',
+              'h-3 w-3',
               (transaction.amount || 0) > 0 ? 'text-green-600' : 'text-red-600'
             ]"
           />
         </div>
         <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium text-gray-900 truncate">
-            {{ transaction.metadata?.description || humanizeType(transaction.type) }}
-          </p>
-          <div class="flex items-center space-x-2">
-            <span class="text-xs text-gray-600">{{ formatDate(transaction.createdAt) }}</span>
-            <span class="text-gray-300">•</span>
-            <span class="text-xs text-gray-600">Method:</span>
-            <span class="text-xs font-medium text-gray-700">
-              {{ humanizeMethod(transaction.method) }}
+          <div class="flex items-start justify-between">
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-gray-900 truncate">
+                {{ transaction.metadata?.description || humanizeType(transaction.type) }}
+              </p>
+              <p class="text-xs text-gray-500 mt-0.5">
+                {{ formatDate(transaction.createdAt) }}
+              </p>
+            </div>
+            <span :class="[
+              'text-sm font-semibold ml-3 flex-shrink-0',
+              (transaction.amount || 0) > 0 ? 'text-green-600' : 'text-red-600'
+            ]">
+              {{ (transaction.amount || 0) > 0 ? '+' : '' }}{{ transaction.amount || 0 }}
             </span>
           </div>
         </div>
-        <span :class="[
-          'text-sm font-semibold',
-          (transaction.amount || 0) > 0 ? 'text-green-600' : 'text-red-600'
-        ]">
-          {{ (transaction.amount || 0) > 0 ? '+' : '-' }}{{ Math.abs(transaction.amount || 0) }}
-        </span>
       </div>
 
       <div v-if="showViewAll" class="text-center py-2">
@@ -119,7 +118,22 @@ function formatDate(dateValue) {
   try {
     const date = typeof dateValue === 'string' || typeof dateValue === 'number' ? new Date(dateValue) : dateValue;
     if (!date || isNaN(date.getTime())) return '';
-    return format(date, 'MMM d, yyyy h:mm a');
+    
+    const now = new Date();
+    const diffInHours = Math.abs(now - date) / (1000 * 60 * 60);
+    
+    // If less than 24 hours ago, show relative time
+    if (diffInHours < 24) {
+      return format(date, 'h:mm a');
+    }
+    // If this year, show month and day
+    else if (date.getFullYear() === now.getFullYear()) {
+      return format(date, 'MMM d');
+    }
+    // Otherwise show month, day, year
+    else {
+      return format(date, 'MMM d, yyyy');
+    }
   } catch (e) {
     return '';
   }
