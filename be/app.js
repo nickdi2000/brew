@@ -2,6 +2,9 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const https = require('https');
+const fs = require('fs');
+const path = require('path');
 const logger = require('./utils/logger');
 const userRoutes = require('./routes/userRoutes');
 const waitlistRoutes = require('./routes/waitlistRoutes');
@@ -47,7 +50,7 @@ app.use((req, res, next) => {
 });
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
+app.get('/api/test', (req, res) => {
   res.json({ message: 'BrewTokens! The API is healthy.' });
 });
 
@@ -89,13 +92,37 @@ app.use((err, req, res, next) => {
 
 // Start server
 const PORT = process.env.PORT || 3000;
+const USE_HTTPS = process.env.USE_HTTPS === 'true';
 
 const startServer = async () => {
   try {
     await connectDB();
-    app.listen(PORT, () => {
-      logger.info(`Server is running on port ${PORT}`);
-    });
+    
+    if (USE_HTTPS) {
+      // HTTPS server setup
+      const sslDir = path.resolve(__dirname, 'ssl');
+      const keyPath = path.join(sslDir, 'localhost.key');
+      const certPath = path.join(sslDir, 'localhost.crt');
+      
+      if (fs.existsSync(keyPath) && fs.existsSync(certPath)) {
+        const httpsOptions = {
+          key: fs.readFileSync(keyPath),
+          cert: fs.readFileSync(certPath)
+        };
+        
+        https.createServer(httpsOptions, app).listen(PORT, '192.168.0.201', () => {
+          logger.info(`HTTPS Server is running on https://192.168.0.201:${PORT}`);
+        });
+      } else {
+        logger.error('SSL certificate files not found. Please ensure localhost.key and localhost.crt exist in the ssl/ directory.');
+        process.exit(1);
+      }
+    } else {
+      // HTTP server (fallback)
+      app.listen(PORT, () => {
+        logger.info(`HTTP Server is running on port ${PORT}`);
+      });
+    }
   } catch (error) {
     logger.error('Failed to start server:', { error: error.message, stack: error.stack });
     process.exit(1);

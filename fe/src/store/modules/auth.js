@@ -26,6 +26,11 @@ export default {
     SET_MEMBERSHIP(state, membership) {
       state.membership = membership;
     },
+    UPDATE_MEMBERSHIP_POINTS(state, points) {
+      if (state.membership) {
+        state.membership.points = points;
+      }
+    },
     SET_LOADING(state, loading) {
       state.loading = loading;
     },

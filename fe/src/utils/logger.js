@@ -7,6 +7,7 @@ const originalConsoleInfo = console.info;
 // Get environment variables
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'; // Fallback URL
 const ENV = import.meta.env.VITE_ENV;
+const ENABLE_LOGS = import.meta.env.VITE_ENABLE_LOGS === 'true'; // Default to false if not set
 
 // Batch logging configuration
 const BATCH_TIMEOUT = 2000; // 2 seconds
@@ -50,8 +51,8 @@ const scheduleBatchProcess = () => {
 };
 
 const sendLogToServer = (level, args) => {
-  // Only send logs to server in local environment
-  if (ENV !== 'local') {
+  // Only send logs to server if ENABLE_LOGS is true and in local environment
+  if (!ENABLE_LOGS || ENV !== 'local') {
     return;
   }
 

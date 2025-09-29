@@ -16,6 +16,8 @@ import Welcome from '../pages/member/Welcome.vue'
 import MemberPortal from '../pages/member/Portal.vue'
 import ComingSoon from '../components/ComingSoon.vue'
 import adminNav from '../layouts/admin_nav.json'
+import TestBench from '../pages/dev/TestBench.vue'
+import QRTest from '../pages/QRTest.vue'
 
 const routes = [
   // Public routes
@@ -23,6 +25,18 @@ const routes = [
     path: '/',
     name: 'landing',
     component: Landing,
+    meta: { public: true }
+  },
+  {
+    path: '/qr-test',
+    name: 'qr-test',
+    component: QRTest,
+    meta: { public: true }
+  },
+  {
+    path: '/dev/test',
+    name: 'dev-test',
+    component: TestBench,
     meta: { public: true }
   },
   {
@@ -64,7 +78,11 @@ const routes = [
         meta: { public: true },
         beforeEnter: async (to, from, next) => {
           const store = await import('@/store');
-
+          // persist member code
+          if (to.params.code) {
+            store.default.commit('SET_LAST_MEMBER_CODE', String(to.params.code))
+          }
+          
           // Ensure we pull latest auth state if token exists but user not loaded
           let isAuthenticated = store.default.getters.isAuthenticated;
           if (!isAuthenticated && store.default.getters.token) {
@@ -77,41 +95,10 @@ const routes = [
           const currentUser = store.default.getters.currentUser;
           const membership = store.default.getters['auth/currentMembership'];
 
-          console.log('🔒 Member portal guard:', {
-            path: to.fullPath,
-            isAuthenticated,
-            hasUser: !!currentUser,
-            hasMembership: !!membership,
-            membershipDetails: membership,
-            userDetails: {
-              id: currentUser?.id,
-              email: currentUser?.email,
-              memberships: currentUser?.memberships
-            }
-          });
-
           // If authenticated and has membership, redirect to portal
           if (isAuthenticated && currentUser && membership) {
-            console.log('✅ Member portal access granted - redirecting to portal');
             next({ name: 'member-portal', params: { code: to.params.code } });
             return;
-          }
-
-          // Not authenticated or membership missing: allow, but attempt to fetch membership by code if logged in
-          console.log('⚠️ No membership access yet - showing welcome page');
-          try {
-            if (isAuthenticated && to.params.code) {
-              const { default: api } = await import('@/api');
-              const resp = await api.get(`/memberships/by-code/${to.params.code}`);
-              const m = resp.data?.data || null;
-              if (m) {
-                await store.default.commit('auth/SET_MEMBERSHIP', m);
-                console.log('✅ Membership loaded on navigation:', m);
-                return next({ name: 'member-portal', params: { code: to.params.code } });
-              }
-            }
-          } catch (e) {
-            console.log('ℹ️ Membership not found for code');
           }
           next();
         }
@@ -124,6 +111,10 @@ const routes = [
         meta: { public: false },
         beforeEnter: async (to, from, next) => {
           const store = await import('@/store');
+          // persist member code
+          if (to.params.code) {
+            store.default.commit('SET_LAST_MEMBER_CODE', String(to.params.code))
+          }
           let isAuthenticated = store.default.getters.isAuthenticated;
           if (!isAuthenticated && store.default.getters.token) {
             try { await store.default.dispatch('fetchCurrentUser'); isAuthenticated = store.default.getters.isAuthenticated; } catch {}
@@ -179,6 +170,35 @@ const routes = [
         path: ':code/transactions',
         name: 'member-transactions',
         component: () => import('../pages/member/Transactions.vue'),
+        meta: { public: false },
+        beforeEnter: async (to, from, next) => {
+          const store = await import('@/store');
+          let isAuthenticated = store.default.getters.isAuthenticated;
+          if (!isAuthenticated && store.default.getters.token) {
+            try { await store.default.dispatch('fetchCurrentUser'); isAuthenticated = store.default.getters.isAuthenticated; } catch {}
+          }
+          const membership = store.default.getters['auth/currentMembership'];
+          if (!isAuthenticated) {
+            return next({ name: 'member-home', params: { code: to.params.code } });
+          }
+          if (!membership) {
+            try {
+              const { default: api } = await import('@/api');
+              const resp = await api.get(`/memberships/by-code/${to.params.code}`);
+              const m = resp.data?.data || null;
+              if (m) store.default.commit('auth/SET_MEMBERSHIP', m);
+              else return next({ name: 'member-home', params: { code: to.params.code } });
+            } catch {
+              return next({ name: 'member-home', params: { code: to.params.code } });
+            }
+          }
+          next();
+        }
+      },
+      {
+        path: ':code/rewards/:id/redeem',
+        name: 'member-redeem',
+        component: () => import('../pages/member/Redeem.vue'),
         meta: { public: false },
         beforeEnter: async (to, from, next) => {
           const store = await import('@/store');
@@ -372,52 +392,56 @@ router.beforeEach(async (to, from, next) => {
   const token = store.getters.token;
   let isAuthenticated = store.getters.isAuthenticated;
 
+  // Persist member code globally on any members route
+  if (to.path.startsWith('/members/') && to.params.code) {
+    store.commit('SET_LAST_MEMBER_CODE', String(to.params.code))
+  }
+
   // If we have a token but no user, try to fetch the user
   if (token && !isAuthenticated) {
     try {
-      console.log('Fetching current user...');
       await store.dispatch('fetchCurrentUser');
       isAuthenticated = store.getters.isAuthenticated;
-      console.log('User fetched, authenticated:', isAuthenticated);
     } catch (error) {
-      console.error('Failed to fetch user:', error);
       const { cancelPendingRequests } = await import('../api');
       cancelPendingRequests('Auth check failed - logging out');
       await store.dispatch('logout', { redirect: false });
     }
   }
 
+  // Do not redirect member routes to admin login; keep them in members flow
+  const isMemberRoute = to.path.startsWith('/members');
+
   // If authenticated admin user trying to access public routes
-  if (isAuthenticated && to.path === '/login') {
-    console.log('Authenticated admin accessing public route, redirecting to admin dashboard');
+  if (!isMemberRoute && isAuthenticated && to.path === '/login') {
     next('/admin/dashboard');
     return;
   }
 
   // Handle authentication for admin routes
-  if (requiresAuth && !isAuthenticated) {
-    console.log('Auth required but not authenticated, redirecting to admin login');
+  if (!isMemberRoute && requiresAuth && !isAuthenticated) {
     next({ name: 'admin-login', query: { redirect: to.fullPath } });
     return;
   }
 
   // Allow access to public routes
   if (isPublicRoute) {
-    console.log('Accessing public route');
     next();
     return;
   }
 
   // Allow access to authenticated routes
   if (isAuthenticated) {
-    console.log('Accessing authenticated route');
     next();
     return;
   }
 
-  // Catch-all redirect to admin login
-  console.log('Redirecting to admin login');
-  next({ name: 'admin-login' });
+  // For non-member unauthenticated, default to admin-login; for member routes, keep them in member landing
+  if (isMemberRoute) {
+    next();
+  } else {
+    next({ name: 'admin-login' });
+  }
 })
 
 export default router

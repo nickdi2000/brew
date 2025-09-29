@@ -74,7 +74,6 @@
               <Icon icon="mdi:test-tube" class="h-4 w-4 mr-2" />
               Demo Login
             </button>
-            <p class="text-xs text-gray-500 mt-1 text-center">Development only</p>
           </div>
           
           <p v-if="isAdminOfThisOrg" class="text-sm text-red-600 mt-2">You're an admin of this organization. Log out to join as a member.</p>

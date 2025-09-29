@@ -33,18 +33,49 @@
                 <span class="text-sm font-medium text-white">
                   {{ currentUser.firstName }} {{ currentUser.lastName }}
                 </span>
-                <span class="text-xs text-gray-300">
-                  {{ currentMembership?.points || 0 }} points
+                <span 
+                  class="text-xs text-gray-300 transition-all duration-300"
+                  :class="{ 'text-amber-300 font-bold': pointsUpdated }"
+                >
+                  {{ displayPoints.toLocaleString() }} points
                 </span>
               </div>
             </div>
             
             <!-- Right: Points Badge -->
-            <div class="flex items-center">
-              <div class="bg-amber-500/20 rounded-full px-3 py-1 flex items-center">
-                <Icon icon="mdi:star" class="h-4 w-4 text-amber-400 mr-1" />
-                <span class="text-sm font-medium text-amber-300">
-                  {{ currentMembership?.points || 0 }}
+            <div class="flex items-center relative">
+              <!-- Celebration particles effect -->
+              <div 
+                v-if="pointsUpdated"
+                class="absolute -top-2 -right-2 flex space-x-1"
+              >
+                <div class="w-1 h-1 bg-amber-400 rounded-full animate-ping"></div>
+                <div class="w-1 h-1 bg-yellow-400 rounded-full animate-ping" style="animation-delay: 0.2s"></div>
+                <div class="w-1 h-1 bg-amber-300 rounded-full animate-ping" style="animation-delay: 0.4s"></div>
+              </div>
+              
+              <div 
+                class="bg-amber-500/20 rounded-full px-3 py-1 flex items-center transition-all duration-300 relative overflow-hidden"
+                :class="{ 
+                  'animate-pulse bg-amber-500/40 scale-110 shadow-lg shadow-amber-500/25': pointsUpdated,
+                  'animate-bounce': pointsUpdated
+                }"
+              >
+                <!-- Animated background effect during counting -->
+                <div 
+                  v-if="pointsUpdated"
+                  class="absolute inset-0 bg-gradient-to-r from-amber-400/20 to-yellow-400/20 animate-pulse"
+                ></div>
+                <Icon 
+                  icon="mdi:star" 
+                  class="h-4 w-4 text-amber-400 mr-1 transition-all duration-300 relative z-10"
+                  :class="{ 'animate-spin': pointsUpdated }"
+                />
+                <span 
+                  class="text-sm font-medium text-amber-300 transition-all duration-300 relative z-10"
+                  :class="{ 'text-amber-200 font-bold': pointsUpdated }"
+                >
+                  {{ displayPoints.toLocaleString() }}
                 </span>
               </div>
             </div>
@@ -72,7 +103,9 @@
                 <a href="mailto:support@brewtokens.com" class="block hover:text-amber-500 transition-colors">
                   Contact Support
                 </a>
-            
+                <router-link to="/login" class="block hover:text-amber-500 transition-colors">
+                  Admin
+                </router-link>
               </div>
             </div>
 
@@ -142,7 +175,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useStore } from 'vuex';
 import { useRoute, useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
@@ -152,8 +185,61 @@ const store = useStore();
 const route = useRoute();
 const router = useRouter();
 const showMenu = ref(false);
+const pointsUpdated = ref(false);
+const displayPoints = ref(0);
 const currentUser = computed(() => store.getters.currentUser);
 const currentMembership = computed(() => store.getters['auth/currentMembership']);
+
+// Initialize display points
+if (currentMembership.value?.points) {
+  displayPoints.value = currentMembership.value.points;
+}
+
+// Watch for points changes and trigger counting animation
+watch(
+  () => currentMembership.value?.points,
+  (newPoints, oldPoints) => {
+    if (newPoints !== undefined && oldPoints !== undefined && newPoints > oldPoints) {
+      pointsUpdated.value = true;
+      animatePointsCount(oldPoints, newPoints);
+    } else if (newPoints !== undefined && oldPoints === undefined) {
+      // Initial load
+      displayPoints.value = newPoints;
+    }
+  },
+  { immediate: true }
+);
+
+// Animate points counting up
+const animatePointsCount = (startValue, endValue) => {
+  const duration = 1500; // 1.5 seconds
+  const startTime = Date.now();
+  const difference = endValue - startValue;
+  
+  const updateCount = () => {
+    const elapsed = Date.now() - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    
+    // Easing function for smooth deceleration (ease-out)
+    const easeOut = 1 - Math.pow(1 - progress, 3);
+    const currentValue = Math.floor(startValue + (difference * easeOut));
+    
+    displayPoints.value = currentValue;
+    
+    if (progress < 1) {
+      requestAnimationFrame(updateCount);
+    } else {
+      // Ensure we end exactly at the target value
+      displayPoints.value = endValue;
+      // Reset animation state after counting is complete
+      setTimeout(() => {
+        pointsUpdated.value = false;
+      }, 500);
+    }
+  };
+  
+  requestAnimationFrame(updateCount);
+};
 
 const goToProfile = () => {
   // For now, route to the portal root; can be replaced with a dedicated profile page

@@ -90,7 +90,7 @@
                 </div>
               </td>
             </tr>
-            <tr v-for="member in members" :key="member._id" class="hover:bg-gray-50">
+            <tr v-for="member in members" :key="member._id" class="hover:bg-gray-50 cursor-pointer" @click="goToEdit(member._id)">
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center">
                   <div class="flex-shrink-0 h-10 w-10">
@@ -128,17 +128,11 @@
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <div class="flex items-center justify-end space-x-2">
-                  <router-link
-                    :to="`/admin/members/${member._id}/edit`"
-                    class="text-amber-600 hover:text-amber-900"
-                  >
-                    Edit
-                  </router-link>
                   <button
-                    @click="confirmDeleteMember(member)"
+                    @click.stop="confirmDeleteMember(member)"
                     class="text-red-600 hover:text-red-900"
                   >
-                    Delete
+                    <Icon icon="mdi:trash-can" class="h-5 w-5" />
                   </button>
                 </div>
               </td>
@@ -231,6 +225,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import { Icon } from '@iconify/vue';
 import ConfirmationModal from '@/components/ConfirmationModal.vue';
@@ -335,6 +330,11 @@ const deleteMember = async () => {
       selectedMember.value = null;
     }
   }
+};
+
+const goToEdit = (memberId) => {
+  const router = useRouter();
+  router.push(`/admin/members/${memberId}/edit`);
 };
 
 // Watchers

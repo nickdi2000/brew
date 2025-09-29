@@ -31,7 +31,7 @@
         <div class="bg-white rounded-xl p-8 shadow-sm border border-gray-100">
           <div class="text-center">
             <div class="text-6xl font-bold text-gray-900 mb-2 animate-count-up">
-              {{ membership?.points ?? 0 }}
+              {{ (membership?.points ?? 0).toLocaleString() }}
             </div>
             <p class="text-gray-600 text-lg">Points Available</p>
           </div>

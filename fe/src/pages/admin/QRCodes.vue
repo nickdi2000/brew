@@ -115,69 +115,101 @@
           </div>
 
           <!-- Award Points Content -->
-          <div v-if="activeTab === 'points'" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
-            <div class="flex items-start justify-between mb-4">
+          <div v-if="activeTab === 'points'" class="bg-white border border-gray-200 rounded-lg p-6">
+            <div class="flex items-start justify-between mb-6">
               <div>
                 <h3 class="text-lg font-semibold text-gray-900">Award Points</h3>
                 <p class="text-gray-600 text-sm mb-4">Create and manage QR codes for awarding points to members.</p>
               </div>
-              <button class="btn btn-primary text-sm" @click="openDrawer(null)">New QR Code</button>
+              <button 
+                class="btn btn-primary text-sm flex items-center gap-2" 
+                @click="openDrawer(null)"
+                title="Create New QR Code"
+              >
+                <Icon icon="mdi:plus" class="h-5 w-5" />
+                New QR Code
+              </button>
             </div>
-            <div class="border-t border-gray-100 pt-4">
-              <div v-if="qrLoading" class="py-6 text-center text-gray-500">Loading QR codes...</div>
-              <div v-else-if="awardQRCodes.length === 0" class="py-6 text-center text-gray-500 flex flex-col items-center justify-center gap-2">
-                <Icon icon="mdi:qrcode" class="h-12 w-12 text-gray-400" />
-                <p>No QR codes created yet. Click "New QR Code" to create one.</p>
+            <div class="border-t border-gray-100 pt-6">
+              <div v-if="qrLoading" class="py-12 text-center text-gray-500">
+                <Icon icon="mdi:loading" class="h-8 w-8 animate-spin mx-auto mb-2" />
+                <p>Loading QR codes...</p>
               </div>
-              <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[calc(100vh-300px)] overflow-y-auto pr-1">
-                <div 
-                  v-for="qr in awardQRCodes" 
-                  :key="qr._id" 
-                  class="relative group bg-white rounded-lg border border-gray-200 hover:border-amber-500 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden"
-                  @click="openDrawer(qr)"
-                >
-                  <!-- Status Badge -->
+              <div v-else-if="awardQRCodes.length === 0" class="py-12 text-center text-gray-500 flex flex-col items-center justify-center gap-3">
+                <Icon icon="mdi:qrcode" class="h-16 w-16 text-gray-300" />
+                <div>
+                  <h4 class="text-lg font-medium text-gray-900 mb-1">No QR codes created yet</h4>
+                  <p class="text-sm">Click the plus button to create your first QR code for awarding points.</p>
+                </div>
+              </div>
+              <div v-else class="w-full">
+                <!-- QR Codes Table/List -->
+                <div class="space-y-3">
                   <div 
-                    class="absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-medium"
-                    :class="qr.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'"
+                    v-for="qr in awardQRCodes" 
+                    :key="qr._id" 
+                    class="group bg-white rounded-lg border border-gray-200 hover:border-amber-500 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden"
+                    @click="openDrawer(qr)"
                   >
-                    {{ qr.isActive ? 'Active' : 'Inactive' }}
-                  </div>
+                    <div class="p-6">
+                      <div class="flex items-center justify-between">
+                        <!-- Left side: QR Icon and Points -->
+                        <div class="flex items-center gap-4">
+                          <div class="flex-shrink-0">
+                            <div class="w-12 h-12 bg-amber-50 rounded-lg flex items-center justify-center">
+                              <Icon icon="mdi:qrcode" class="h-7 w-7 text-amber-600" />
+                            </div>
+                          </div>
+                          <div>
+                            <div class="flex items-center gap-3">
+                              <h3 class="text-2xl font-bold text-gray-900">{{ qr.points }}</h3>
+                              <span class="text-sm text-gray-500">Points</span>
+                            </div>
+                            <div class="mt-1">
+                              <span class="text-xs text-gray-400 font-mono bg-gray-50 px-2 py-1 rounded">
+                                Code: {{ qr.code }}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
 
-                  <!-- Content -->
-                  <div class="p-4">
-                    <div class="flex items-center justify-center mb-4">
-                      <Icon icon="mdi:qrcode" class="h-12 w-12 text-amber-600" />
-                    </div>
-                    <div class="text-center">
-                      <h3 class="text-xl font-bold text-gray-900">{{ qr.points }}</h3>
-                      <p class="text-sm text-gray-500">Points</p>
-                    </div>
-                  </div>
+                        <!-- Right side: Status and Actions -->
+                        <div class="flex items-center gap-3">
+                          <!-- Status Badge -->
+                          <div 
+                            class="px-3 py-1 rounded-full text-xs font-medium"
+                            :class="qr.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'"
+                          >
+                            {{ qr.isActive ? 'Active' : 'Inactive' }}
+                          </div>
 
-                  <!-- Action Bar -->
-                  <div class="border-t border-gray-100 bg-gray-50 p-2 flex justify-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button 
-                      class="p-2 text-gray-500 hover:text-amber-600 rounded-full hover:bg-white"
-                      @click.stop="printQRCode(qr)"
-                      title="Print QR Code"
-                    >
-                      <Icon icon="mdi:printer" class="h-5 w-5" />
-                    </button>
-                    <button 
-                      class="p-2 text-gray-500 hover:text-amber-600 rounded-full hover:bg-white"
-                      @click.stop="downloadQRCode(qr)"
-                      title="Download QR Code"
-                    >
-                      <Icon icon="mdi:download" class="h-5 w-5" />
-                    </button>
-                    <button 
-                      class="p-2 text-gray-500 hover:text-red-600 rounded-full hover:bg-white"
-                      @click.stop="deleteQRCodeItem(qr)"
-                      title="Delete QR Code"
-                    >
-                      <Icon icon="mdi:delete" class="h-5 w-5" />
-                    </button>
+                          <!-- Action Buttons -->
+                          <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button 
+                              class="p-2 text-gray-400 hover:text-amber-600 rounded-lg hover:bg-amber-50"
+                              @click.stop="printQRCode(qr)"
+                              title="Print QR Code"
+                            >
+                              <Icon icon="mdi:printer" class="h-4 w-4" />
+                            </button>
+                            <button 
+                              class="p-2 text-gray-400 hover:text-amber-600 rounded-lg hover:bg-amber-50"
+                              @click.stop="downloadQRCode(qr)"
+                              title="Download QR Code"
+                            >
+                              <Icon icon="mdi:download" class="h-4 w-4" />
+                            </button>
+                            <button 
+                              class="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50"
+                              @click.stop="deleteQRCodeItem(qr)"
+                              title="Delete QR Code"
+                            >
+                              <Icon icon="mdi:delete" class="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -12,6 +12,9 @@ router.get('/', rewardController.getRewards);
 // Get single reward
 router.get('/:id', rewardController.getReward);
 
+// Redeem a reward
+router.post('/:id/redeem', rewardController.redeemReward);
+
 // Create new reward
 router.post('/', rewardController.createReward);
 

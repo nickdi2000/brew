@@ -52,6 +52,12 @@ api.interceptors.request.use(
       }
       config.params.organizationId = currentOrganizationId;
     }
+
+    // Add membership ID to headers if available
+    const currentMembership = store.getters['auth/currentMembership'];
+    if (currentMembership?.id && !isPublicEndpoint) {
+      config.headers['X-Membership-ID'] = currentMembership.id;
+    }
     
     // Add cancel token to request
     config.cancelToken = cancelTokenSource.token;

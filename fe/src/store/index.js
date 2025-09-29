@@ -45,14 +45,16 @@ export default createStore({
     user: storage.get('user', true) || null,
     token: storage.get('token', false) || null,
     isAuthenticated: false,
-    lastActivity: storage.get('lastActivity', true) || null
+    lastActivity: storage.get('lastActivity', true) || null,
+    lastMemberCode: storage.get('lastMemberCode', false) || null
   },
   
   getters: {
     isAuthenticated: state => state.isAuthenticated,
     currentUser: state => state.user,
     token: state => state.token,
-    lastActivity: state => state.lastActivity
+    lastActivity: state => state.lastActivity,
+    lastMemberCode: state => state.lastMemberCode
   },
   
   mutations: {
@@ -70,6 +72,10 @@ export default createStore({
       state.lastActivity = timestamp;
       storage.set('lastActivity', timestamp, true);
     },
+    SET_LAST_MEMBER_CODE(state, code) {
+      state.lastMemberCode = code || null;
+      storage.set('lastMemberCode', code || '', false);
+    },
     CLEAR_AUTH(state) {
       state.user = null;
       state.token = null;
@@ -78,6 +84,7 @@ export default createStore({
       storage.set('user', null, true);
       storage.set('token', null, false);
       storage.set('lastActivity', null, true);
+      // intentionally keep lastMemberCode persisted across logouts
     }
   },
   
@@ -155,7 +162,7 @@ export default createStore({
       }
     },
     
-    async logout({ commit }, { redirect = true } = {}) {
+    async logout({ commit, state }, { redirect = true } = {}) {
       try {
         // Try to call logout endpoint if we have a token
         if (this.state.token) {
@@ -164,9 +171,14 @@ export default createStore({
       } catch (error) {
         console.error('Error during logout:', error);
       } finally {
+        const memberCode = state.lastMemberCode;
         commit('CLEAR_AUTH');
         if (redirect) {
-          router.push('/login');
+          if (memberCode) {
+            router.push(`/members/${memberCode}`);
+          } else {
+            router.push('/members');
+          }
         }
       }
     },

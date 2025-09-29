@@ -38,12 +38,16 @@ exports.authenticateToken = async (req, res, next) => {
       resolvedOrgId = resolvedOrgId._id;
     }
 
+    // Get membership ID from headers
+    const membershipId = req.headers['x-membership-id'];
+
     req.user = {
       ...userObj,
       organizations: userObj.organizations, // Contains the populated organizations data
       // Provide a consistent shape for controllers expecting organization._id
       organization: resolvedOrgId ? { _id: resolvedOrgId } : null,
-      organizationId: resolvedOrgId || null
+      organizationId: resolvedOrgId || null,
+      membershipId: membershipId || null
     };
     req.organizationId = resolvedOrgId || null; // Make it easily accessible
     req.token = decoded;

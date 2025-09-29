@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QR Code Test</title>
+    <script src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+</head>
+<body>
+    <h1>QR Code Test</h1>
+    <p>Scan this QR code with the BrewBucks scanner:</p>
+    <div id="qr-code"></div>
+
+    <script>
+        const qrCode = new QRCodeStyling({
+            width: 300,
+            height: 300,
+            type: "canvas",
+            data: "POINTS:10:test123",
+            image: "",
+            dotsOptions: {
+                color: "#000000",
+                type: "rounded"
+            },
+            backgroundOptions: {
+                color: "#ffffff"
+            },
+            cornersSquareOptions: {
+                color: "#000000",
+                type: "extra-rounded"
+            },
+            cornersDotOptions: {
+                color: "#000000",
+                type: "dot"
+            }
+        });
+
+        qrCode.append(document.getElementById("qr-code"));
+    </script>
+</body>
+</html>

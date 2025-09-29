@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QR Code Detection Test</title>
+    <script src="https://unpkg.com/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .qr-container {
+            display: inline-block;
+            margin: 20px;
+            text-align: center;
+        }
+        .qr-container h3 {
+            margin-bottom: 10px;
+        }
+        .qr-code {
+            border: 2px solid #ccc;
+            padding: 10px;
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            margin: 20px 0;
+            padding: 20px;
+        }
+        .test-section h2 {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>QR Code Detection Test</h1>
+    <p>Open the BrewBucks scanner and try scanning these QR codes.</p>
+
+    <div class="test-section">
+        <h2>Test 1: Simple QR Codes</h2>
+        <div class="qr-container">
+            <h3>Small (200px)</h3>
+            <div class="qr-code" id="qr-small"></div>
+        </div>
+        <div class="qr-container">
+            <h3>Medium (300px)</h3>
+            <div class="qr-code" id="qr-medium"></div>
+        </div>
+        <div class="qr-container">
+            <h3>Large (400px)</h3>
+            <div class="qr-code" id="qr-large"></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Text Content</h2>
+        <div class="qr-container">
+            <h3>Simple Text</h3>
+            <div class="qr-code" id="qr-text"></div>
+        </div>
+        <div class="qr-container">
+            <h3>Expected Format</h3>
+            <div class="qr-code" id="qr-points"></div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Different Styles</h2>
+        <div class="qr-container">
+            <h3>Classic QR</h3>
+            <div class="qr-code" id="qr-classic"></div>
+        </div>
+        <div class="qr-container">
+            <h3>Rounded Dots</h3>
+            <div class="qr-code" id="qr-rounded"></div>
+        </div>
+    </div>
+
+    <script>
+        // Test different QR codes
+        const qrCodes = [
+            { id: 'qr-small', size: 200, data: 'POINTS:10:test123' },
+            { id: 'qr-medium', size: 300, data: 'POINTS:10:test123' },
+            { id: 'qr-large', size: 400, data: 'POINTS:10:test123' },
+            { id: 'qr-text', size: 300, data: 'HELLO WORLD TEST' },
+            { id: 'qr-points', size: 300, data: 'POINTS:10:test123' },
+            { id: 'qr-classic', size: 300, data: 'POINTS:10:test123', style: 'classic' },
+            { id: 'qr-rounded', size: 300, data: 'POINTS:10:test123', style: 'rounded' }
+        ];
+
+        qrCodes.forEach(({ id, size, data, style }) => {
+            const element = document.getElementById(id);
+            if (!element) return;
+
+            const options = {
+                width: size,
+                height: size,
+                type: "canvas",
+                data: data,
+                image: "",
+                dotsOptions: {
+                    color: "#000000",
+                    type: style === 'rounded' ? "rounded" : "square"
+                },
+                backgroundOptions: {
+                    color: "#ffffff"
+                },
+                cornersSquareOptions: {
+                    color: "#000000",
+                    type: style === 'rounded' ? "extra-rounded" : "square"
+                },
+                cornersDotOptions: {
+                    color: "#000000",
+                    type: "square"
+                }
+            };
+
+            const qrCode = new QRCodeStyling(options);
+            qrCode.append(element);
+        });
+    </script>
+</body>
+</html>

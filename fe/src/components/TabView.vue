@@ -11,7 +11,7 @@
             activeTab === tab.tab_name
               ? 'border-amber-500 text-amber-600'
               : 'border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700',
-            'whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium font-accent'
+            'whitespace-nowrap border-b-2 py-4 px-4 text-sm font-medium font-accent'
           ]"
         >
           {{ tab.tab_name }}
@@ -20,7 +20,7 @@
     </div>
 
     <!-- Tab Description -->
-    <div class="mt-4 text-sm text-slate-600 font-accent p-2">
+    <div class="mt-4 text-sm text-slate-600 font-accent px-4 py-3">
       {{ activeTabDescription }}
     </div>
 

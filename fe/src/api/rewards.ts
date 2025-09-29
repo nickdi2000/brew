@@ -1,4 +1,5 @@
 import api from './index';
+import store from '@/store';
 import type {
   Reward,
   RewardFormData,
@@ -66,5 +67,23 @@ export const rewardsApi = {
   updateQuantity: async (id: string, quantity: number): Promise<Reward> => {
     const { data } = await api.patch(`/rewards/${id}/quantity`, { quantity });
     return data.data;
+  },
+
+  /**
+   * Redeem a reward
+   */
+  redeemReward: async (id: string, membershipId?: string): Promise<{ success: boolean; message: string }> => {
+    const currentMembership = store.getters['auth/currentMembership'];
+    const currentMembershipId = membershipId || currentMembership?.id;
+
+    const { data } = await api.post(`/rewards/${id}/redeem`, {}, {
+      params: {
+        organizationId: store.getters['organization/currentOrganizationId']
+      },
+      headers: currentMembershipId ? {
+        'X-Membership-ID': currentMembershipId
+      } : undefined
+    });
+    return data;
   }
 };

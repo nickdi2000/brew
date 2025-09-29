@@ -34,7 +34,7 @@ export default {
         commit('SET_LOADING', true);
         commit('SET_ERROR', null);
         const response = await getTransactions(memberId);
-        commit('SET_TRANSACTIONS', response.data.transactions);
+        commit('SET_TRANSACTIONS', response.data.data.transactions);
       } catch (error) {
         commit('SET_ERROR', error.message);
         throw error;
@@ -48,7 +48,7 @@ export default {
         commit('SET_LOADING', true);
         commit('SET_ERROR', null);
         const response = await addTransaction(memberId, transactionData);
-        commit('ADD_TRANSACTION', response.data.transaction);
+        commit('ADD_TRANSACTION', response.data.data.transaction);
         return response.data;
       } catch (error) {
         commit('SET_ERROR', error.message);

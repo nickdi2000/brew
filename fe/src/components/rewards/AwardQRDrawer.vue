@@ -94,7 +94,14 @@
       </div>
       <div class="p-6 border-t border-gray-200 flex justify-end gap-2">
         <button class="btn btn-secondary" @click="closeDrawer">Cancel</button>
-        <button class="btn btn-primary" @click="saveQRCode" :disabled="hasErrors">{{ isEditing ? 'Update' : 'Create' }}</button>
+        <button 
+          v-if="!isEditing || showForm" 
+          class="btn btn-primary" 
+          @click="saveQRCode" 
+          :disabled="hasErrors"
+        >
+          {{ isEditing ? 'Update' : 'Create' }}
+        </button>
       </div>
     </div>
   </div>
