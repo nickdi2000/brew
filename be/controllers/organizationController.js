@@ -122,9 +122,40 @@ exports.uploadBannerImage = async (req, res) => {
       return res.status(400).json(formatError('No image data provided'));
     }
 
-    // Validate image data format
-    if (!imageData.startsWith('data:image/') && !imageData.startsWith('http')) {
-      return res.status(400).json(formatError('Invalid image format. Must be base64 image data or URL'));
+    // Handle URLs separately from base64
+    if (imageData.startsWith('http')) {
+      // Validate URL format
+      try {
+        new URL(imageData);
+      } catch (e) {
+        console.error('Invalid image URL format:', e);
+        return res.status(400).json(formatError('Invalid image URL format'));
+      }
+    } else {
+      // Validate base64 image
+      if (!imageData.startsWith('data:image/')) {
+        console.error('Invalid image format: Image data must start with data:image/');
+        return res.status(400).json(formatError('Invalid image format. Must be base64 image data or URL'));
+      }
+
+      // Extract mime type and validate
+      const mimeType = imageData.split(';')[0].split(':')[1];
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(mimeType)) {
+        console.error(`Invalid image type: ${mimeType}. Allowed types:`, allowedTypes);
+        return res.status(400).json(formatError(`Invalid image type. Allowed types: ${allowedTypes.join(', ')}`));
+      }
+
+      // Check base64 size (5MB limit)
+      const base64Data = imageData.split(',')[1];
+      const sizeInBytes = Buffer.from(base64Data, 'base64').length;
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      
+      if (sizeInBytes > maxSize) {
+        const sizeInMB = (sizeInBytes / (1024 * 1024)).toFixed(2);
+        console.error(`Image too large: ${sizeInMB}MB. Max size: 5MB`);
+        return res.status(400).json(formatError(`Image too large (${sizeInMB}MB). Maximum size is 5MB`));
+      }
     }
 
     // Update only the banner image field
@@ -139,10 +170,25 @@ exports.uploadBannerImage = async (req, res) => {
       message: 'Banner image uploaded successfully'
     }));
   } catch (error) {
-    console.error('Error uploading banner image:', error);
+    console.error('Error uploading banner image:', {
+      error: error.message,
+      stack: error.stack,
+      name: error.name,
+      code: error.code
+    });
+    
     if (error.name === 'ValidationError') {
       return res.status(400).json(formatError('Invalid image data', error.errors));
     }
-    res.status(500).json(formatError('Error uploading banner image', error.message));
+    
+    // Handle specific error types
+    switch(error.name) {
+      case 'URIError':
+        return res.status(400).json(formatError('Invalid image URL format'));
+      case 'RangeError':
+        return res.status(400).json(formatError('Image data too large or malformed'));
+      default:
+        return res.status(500).json(formatError('Error uploading banner image', error.message));
+    }
   }
 };

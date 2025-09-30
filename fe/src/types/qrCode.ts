@@ -11,6 +11,7 @@ export interface QRCode {
 export interface QRCodeFormData {
   points: number;
   isActive: boolean;
+  code?: string; // Optional for creating new QR codes, can be updated
 }
 
 export interface QRCodeResponse {

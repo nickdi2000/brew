@@ -1,214 +1,282 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <div class="container mx-auto px-4 py-8">
-      <div class="flex items-center justify-between mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">QR Code Management</h1>
-        <div class="text-sm text-gray-500">Last updated: {{ lastUpdated }}</div>
-      </div>
-      
-      <div class="flex">
-        <!-- Vertical Tabs -->
-        <div class="w-64 flex-shrink-0 border-r border-gray-200 pr-4">
-          <nav class="space-y-1" aria-label="QR Code Types">
-            <button
-              v-for="tab in tabs"
-              :key="tab.id"
-              @click="activeTab = tab.id"
-              :class="[
-                activeTab === tab.id
-                  ? 'bg-amber-50 border-amber-500 text-amber-700'
-                  : 'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900',
-                'flex items-center w-full px-3 py-2 text-sm font-medium border-l-4 group'
-              ]"
-            >
-              <Icon 
-                :icon="tab.icon"
-                :class="[
-                  activeTab === tab.id ? 'text-amber-500' : 'text-gray-400 group-hover:text-gray-500',
-                  'mr-3 flex-shrink-0 h-6 w-6'
-                ]"
-                aria-hidden="true" 
-              />
-              {{ tab.name }}
-            </button>
-          </nav>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+      <!-- Header -->
+      <div class="mb-6 sm:mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-3 sm:gap-0">
+          <div class="min-w-0">
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 truncate">QR Code Management</h1>
+            <p class="text-gray-600 mt-1 text-sm sm:text-base">Manage your portal access and point-awarding QR codes</p>
+          </div>
+          <div class="text-xs sm:text-sm text-gray-500 bg-white px-2 sm:px-3 py-1 sm:py-2 rounded-lg border border-gray-200 flex-shrink-0 self-start sm:self-auto">
+            Last updated: {{ lastUpdated }}
+          </div>
         </div>
 
-        <!-- Content Area -->
-        <div class="flex-1 pl-6">
-          <!-- Portal QR Content -->
-          <div v-if="activeTab === 'portal'" class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow duration-200">
-            <div class="flex items-start justify-between mb-4">
-              <div>
-                <h3 class="text-lg font-semibold text-gray-900">Portal Access</h3>
-                <p class="text-gray-600 text-sm mb-4">This public QR code serves as your brewery's universal access point. Members can use it to log in to their accounts, and new customers can scan it to register - making it perfect for display at your venue.</p>
+        <!-- Horizontal Tabs -->
+        <div class="flex flex-wrap gap-0">
+          <button
+            v-for="tab in tabs"
+            :key="tab.id"
+            @click="activeTab = tab.id"
+            :class="[
+              activeTab === tab.id
+                ? 'bg-white text-gray-900 border-gray-300 border-t border-l border-r -mb-px z-20'
+                : 'bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-gray-200 border-gray-300 border-t border-l border-r border-b z-10',
+              'flex items-center px-4 sm:px-6 py-3 text-sm font-medium rounded-t-lg transition-colors duration-200 relative whitespace-nowrap'
+            ]"
+          >
+            <Icon 
+              :icon="tab.icon"
+              :class="[
+                activeTab === tab.id ? 'text-gray-700' : 'text-gray-500',
+                'mr-2 h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0'
+              ]"
+              aria-hidden="true" 
+            />
+            <span class="hidden sm:inline">{{ tab.name }}</span>
+            <span class="sm:hidden">{{ tab.name.split(' ')[0] }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Content Area -->
+      <div class="relative">
+        <!-- Portal QR Content -->
+        <div 
+          v-if="activeTab === 'portal'" 
+          class="bg-white border-t border-l border-r border-b border-gray-300 shadow-sm"
+          style="border-radius: 0.75rem 0 0.75rem 0.75rem;"
+        >
+          <div class="p-4 sm:p-6 lg:p-8">
+            <div class="flex flex-col sm:flex-row sm:items-start justify-between mb-6 sm:mb-8 gap-4">
+              <div class="flex-1 min-w-0">
+                <h2 class="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">Portal Access QR Code</h2>
+                <p class="text-gray-600 leading-relaxed text-sm sm:text-base">
+                  This public QR code serves as your brewery's universal access point. Members can use it to log in to their accounts, and new customers can scan it to register - making it perfect for display at your venue.
+                </p>
               </div>
-              <div v-if="organization?.code" class="flex gap-2">
-                <button class="btn btn-secondary text-sm" @click="printPortalQR">Print</button>
-                <button class="btn btn-primary text-sm" @click="downloadPortalQR">Download</button>
+              <div v-if="organization?.code" class="flex flex-col sm:flex-row gap-2 sm:gap-3 flex-shrink-0">
+                <button 
+                  class="inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200" 
+                  @click="printPortalQR"
+                >
+                  <Icon icon="mdi:printer" class="h-4 w-4 mr-2" />
+                  Print
+                </button>
+                <button 
+                  class="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors duration-200" 
+                  @click="downloadPortalQR"
+                >
+                  <Icon icon="mdi:download" class="h-4 w-4 mr-2" />
+                  Download
+                </button>
               </div>
             </div>
 
-            <!-- QR Code and URL Management -->
-            <div class="border-t border-gray-100 pt-4">
-              <div v-if="!organization?.code" class="flex flex-col items-center gap-4 py-8">
-                <Icon icon="mdi:qrcode-off" class="h-16 w-16 text-gray-300" />
-                <div class="text-center max-w-sm">
-                  <h3 class="text-lg font-medium text-gray-900 mb-2">No Portal URL Set</h3>
-                  <p class="text-gray-600 mb-4">
-                    You need to set up your organization code in Settings to generate your portal QR code.
-                  </p>
-                  <router-link 
-                    :to="{ name: 'settings' }" 
-                    class="btn btn-primary"
-                  >
-                    Go to Settings
-                  </router-link>
+            <!-- QR Code Display -->
+            <div v-if="!organization?.code" class="flex flex-col items-center py-16">
+              <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+                <Icon icon="mdi:qrcode-off" class="h-10 w-10 text-gray-400" />
+              </div>
+              <div class="text-center max-w-md">
+                <h3 class="text-lg font-medium text-gray-900 mb-3">No Portal URL Set</h3>
+                <p class="text-gray-600 mb-6">
+                  You need to set up your organization code in Settings to generate your portal QR code.
+                </p>
+                <router-link 
+                  :to="{ name: 'settings' }" 
+                  class="inline-flex items-center px-6 py-3 bg-amber-600 text-white rounded-lg font-medium hover:bg-amber-700 transition-colors duration-200"
+                >
+                  <Icon icon="mdi:cog" class="h-4 w-4 mr-2" />
+                  Go to Settings
+                </router-link>
+              </div>
+            </div>
+
+            <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+              <!-- QR Code -->
+              <div class="flex justify-center lg:justify-end">
+                <div class="relative group">
+                  <div class="w-80 h-80 bg-white rounded-2xl border-2 border-gray-200 p-6 shadow-lg">
+                    <vue-qrcode 
+                      :value="memberPortalUrl" 
+                      :options="{ width: 320 }" 
+                      tag="img" 
+                      class="w-full h-full portal-qr-code rounded-lg" 
+                    />
+                  </div>
+                  <div class="absolute -top-3 -right-3 bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-medium">
+                    Portal Access
+                  </div>
                 </div>
               </div>
 
-              <div v-else class="flex flex-col items-center gap-6">
-                <!-- QR Code -->
-                <div class="w-64 h-64 rounded-lg border border-gray-200 shadow-sm flex items-center justify-center bg-white overflow-hidden">
-                  <vue-qrcode 
-                    :value="memberPortalUrl" 
-                    :options="{ width: 256 }" 
-                    tag="img" 
-                    class="w-full h-full portal-qr-code" 
-                  />
-                </div>
-
-                <!-- URL Display -->
-                <div class="text-center">
-                  <p class="text-sm font-medium text-gray-700 mb-1">Your Portal URL:</p>
-                  <div class="flex items-center justify-center gap-2">
-                    <a 
-                      :href="memberPortalUrl" 
-                      target="_blank" 
-                      class="text-amber-600 hover:text-amber-700 font-mono"
-                    >
-                      {{ memberPortalUrl }}
-                    </a>
-                    <router-link 
-                      :to="{ name: 'settings' }" 
-                      class="text-gray-400 hover:text-gray-500"
-                      title="Edit in Settings"
-                    >
-                      <Icon icon="mdi:pencil" class="h-4 w-4" />
-                    </router-link>
+              <!-- URL and Info -->
+              <div class="space-y-6">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-3">Portal URL</label>
+                  <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <div class="flex items-center justify-between">
+                      <a 
+                        :href="memberPortalUrl" 
+                        target="_blank" 
+                        class="text-amber-600 hover:text-amber-700 font-mono text-sm break-all"
+                      >
+                        {{ memberPortalUrl }}
+                      </a>
+                      <router-link 
+                        :to="{ name: 'settings' }" 
+                        class="ml-3 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                        title="Edit in Settings"
+                      >
+                        <Icon icon="mdi:pencil" class="h-4 w-4" />
+                      </router-link>
+                    </div>
                   </div>
                 </div>
 
-                <!-- Action Buttons -->
-                <div class="flex gap-3">
-                  <button class="btn btn-secondary text-sm" @click="printPortalQR">
-                    <Icon icon="mdi:printer" class="h-4 w-4 mr-1" />
-                    Print
-                  </button>
-                  <button class="btn btn-secondary text-sm" @click="downloadPortalQR">
-                    <Icon icon="mdi:download" class="h-4 w-4 mr-1" />
-                    Download
-                  </button>
+                <div class="space-y-4">
+                  <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0 w-5 h-5 bg-green-100 rounded-full flex items-center justify-center mt-0.5">
+                      <Icon icon="mdi:check" class="h-3 w-3 text-green-600" />
+                    </div>
+                    <div>
+                      <p class="text-sm font-medium text-gray-900">Member Login</p>
+                      <p class="text-sm text-gray-600">Existing members can scan to access their account</p>
+                    </div>
+                  </div>
+                  <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0 w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center mt-0.5">
+                      <Icon icon="mdi:account-plus" class="h-3 w-3 text-blue-600" />
+                    </div>
+                    <div>
+                      <p class="text-sm font-medium text-gray-900">New Member Registration</p>
+                      <p class="text-sm text-gray-600">New customers can scan to join your loyalty program</p>
+                    </div>
+                  </div>
+                  <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0 w-5 h-5 bg-purple-100 rounded-full flex items-center justify-center mt-0.5">
+                      <Icon icon="mdi:store" class="h-3 w-3 text-purple-600" />
+                    </div>
+                    <div>
+                      <p class="text-sm font-medium text-gray-900">Perfect for Display</p>
+                      <p class="text-sm text-gray-600">Place at your venue for easy customer access</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- Award Points Content -->
-          <div v-if="activeTab === 'points'" class="bg-white border border-gray-200 rounded-lg p-6">
-            <div class="flex items-start justify-between mb-6">
-              <div>
-                <h3 class="text-lg font-semibold text-gray-900">Award Points</h3>
-                <p class="text-gray-600 text-sm mb-4">Create and manage QR codes for awarding points to members.</p>
+        <!-- Award Points Content -->
+        <div 
+          v-if="activeTab === 'points'" 
+          class="bg-white border-t border-l border-r border-b border-gray-300 shadow-sm"
+          style="border-radius: 0 0.75rem 0.75rem 0.75rem;"
+        >
+          <div class="p-4 sm:p-6 lg:p-8">
+            <div class="flex items-start justify-between mb-6 sm:mb-8">
+              <div class="flex-1 min-w-0 pr-4">
+                <h2 class="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">Point Award QR Codes</h2>
+                <p class="text-gray-600 leading-relaxed text-sm sm:text-base">
+                  Create and manage QR codes that automatically award points to members when scanned.
+                </p>
               </div>
               <button 
-                class="btn btn-primary text-sm flex items-center gap-2" 
+                class="flex-shrink-0 w-8 h-8 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors duration-200 flex items-center justify-center" 
                 @click="openDrawer(null)"
                 title="Create New QR Code"
               >
-                <Icon icon="mdi:plus" class="h-5 w-5" />
-                New QR Code
+                <Icon icon="mdi:plus" class="h-4 w-4" />
               </button>
             </div>
-            <div class="border-t border-gray-100 pt-6">
-              <div v-if="qrLoading" class="py-12 text-center text-gray-500">
-                <Icon icon="mdi:loading" class="h-8 w-8 animate-spin mx-auto mb-2" />
-                <p>Loading QR codes...</p>
-              </div>
-              <div v-else-if="awardQRCodes.length === 0" class="py-12 text-center text-gray-500 flex flex-col items-center justify-center gap-3">
-                <Icon icon="mdi:qrcode" class="h-16 w-16 text-gray-300" />
-                <div>
-                  <h4 class="text-lg font-medium text-gray-900 mb-1">No QR codes created yet</h4>
-                  <p class="text-sm">Click the plus button to create your first QR code for awarding points.</p>
-                </div>
-              </div>
-              <div v-else class="w-full">
-                <!-- QR Codes Table/List -->
-                <div class="space-y-3">
-                  <div 
-                    v-for="qr in awardQRCodes" 
-                    :key="qr._id" 
-                    class="group bg-white rounded-lg border border-gray-200 hover:border-amber-500 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden"
-                    @click="openDrawer(qr)"
-                  >
-                    <div class="p-6">
-                      <div class="flex items-center justify-between">
-                        <!-- Left side: QR Icon and Points -->
-                        <div class="flex items-center gap-4">
-                          <div class="flex-shrink-0">
-                            <div class="w-12 h-12 bg-amber-50 rounded-lg flex items-center justify-center">
-                              <Icon icon="mdi:qrcode" class="h-7 w-7 text-amber-600" />
-                            </div>
-                          </div>
-                          <div>
-                            <div class="flex items-center gap-3">
-                              <h3 class="text-2xl font-bold text-gray-900">{{ qr.points }}</h3>
-                              <span class="text-sm text-gray-500">Points</span>
-                            </div>
-                            <div class="mt-1">
-                              <span class="text-xs text-gray-400 font-mono bg-gray-50 px-2 py-1 rounded">
-                                Code: {{ qr.code }}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
 
-                        <!-- Right side: Status and Actions -->
-                        <div class="flex items-center gap-3">
-                          <!-- Status Badge -->
-                          <div 
-                            class="px-3 py-1 rounded-full text-xs font-medium"
-                            :class="qr.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'"
-                          >
-                            {{ qr.isActive ? 'Active' : 'Inactive' }}
-                          </div>
+            <!-- Loading State -->
+            <div v-if="qrLoading" class="flex flex-col items-center py-16">
+              <Icon icon="mdi:loading" class="h-8 w-8 animate-spin text-amber-600 mb-4" />
+              <p class="text-gray-600">Loading QR codes...</p>
+            </div>
 
-                          <!-- Action Buttons -->
-                          <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button 
-                              class="p-2 text-gray-400 hover:text-amber-600 rounded-lg hover:bg-amber-50"
-                              @click.stop="printQRCode(qr)"
-                              title="Print QR Code"
-                            >
-                              <Icon icon="mdi:printer" class="h-4 w-4" />
-                            </button>
-                            <button 
-                              class="p-2 text-gray-400 hover:text-amber-600 rounded-lg hover:bg-amber-50"
-                              @click.stop="downloadQRCode(qr)"
-                              title="Download QR Code"
-                            >
-                              <Icon icon="mdi:download" class="h-4 w-4" />
-                            </button>
-                            <button 
-                              class="p-2 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50"
-                              @click.stop="deleteQRCodeItem(qr)"
-                              title="Delete QR Code"
-                            >
-                              <Icon icon="mdi:delete" class="h-4 w-4" />
-                            </button>
-                          </div>
-                        </div>
+            <!-- Empty State -->
+            <div v-else-if="awardQRCodes.length === 0" class="flex flex-col items-center py-16">
+              <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+                <Icon icon="mdi:qrcode" class="h-10 w-10 text-gray-400" />
+              </div>
+              <div class="text-center max-w-md">
+                <h3 class="text-lg font-medium text-gray-900 mb-3">No QR Codes Created Yet</h3>
+                <p class="text-gray-600 mb-6">
+                  Create your first point-awarding QR code to start engaging with your customers.
+                </p>
+                <button 
+                  class="inline-flex items-center px-6 py-3 bg-black text-white rounded-lg font-medium hover:bg-gray-800 transition-colors duration-200" 
+                  @click="openDrawer(null)"
+                >
+                  <Icon icon="mdi:plus" class="h-5 w-5 mr-2" />
+                  Create Your First QR Code
+                </button>
+              </div>
+            </div>
+
+            <!-- QR Codes List -->
+            <div v-else class="space-y-4">
+              <div 
+                v-for="qr in awardQRCodes" 
+                :key="qr._id" 
+                class="bg-white rounded-xl border-2 border-gray-200 p-4 sm:p-6 cursor-pointer hover:border-amber-300 transition-colors duration-200"
+                @click="openDrawer(qr)"
+              >
+                <div class="flex items-center justify-between">
+                  <!-- Left side: QR Icon, Points, and Code -->
+                  <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <Icon icon="mdi:qrcode" class="h-6 w-6 text-amber-600" />
+                    </div>
+                    <div class="min-w-0">
+                      <div class="flex items-center space-x-3 mb-1">
+                        <div class="text-2xl font-bold text-gray-900">{{ qr.points }}</div>
+                        <div class="text-sm text-gray-500">Points</div>
                       </div>
+                      <div class="font-mono text-sm text-gray-600 bg-gray-50 px-2 py-1 rounded inline-block">
+                        {{ qr.code }}
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Right side: Status and Actions -->
+                  <div class="flex items-center space-x-4 flex-shrink-0">
+                    <!-- Status Badge -->
+                    <div 
+                      class="px-3 py-1 rounded-full text-xs font-medium"
+                      :class="qr.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'"
+                    >
+                      {{ qr.isActive ? 'Active' : 'Inactive' }}
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="flex space-x-1">
+                      <button 
+                        class="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors duration-200"
+                        @click.stop="printQRCode(qr)"
+                        title="Print QR Code"
+                      >
+                        <Icon icon="mdi:printer" class="h-4 w-4" />
+                      </button>
+                      <button 
+                        class="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors duration-200"
+                        @click.stop="downloadQRCode(qr)"
+                        title="Download QR Code"
+                      >
+                        <Icon icon="mdi:download" class="h-4 w-4" />
+                      </button>
+                      <button 
+                        class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                        @click.stop="deleteQRCodeItem(qr)"
+                        title="Delete QR Code"
+                      >
+                        <Icon icon="mdi:delete" class="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -217,7 +285,6 @@
           </div>
         </div>
       </div>
-
     </div>
   
     <!-- Award QR Drawer -->
@@ -252,21 +319,21 @@ const awardQRCodes = ref<QRCode[]>([]);
 const lastUpdatedTime = ref(new Date());
 const isDrawerOpen = ref(false);
 const selectedQRCode = ref<QRCode | null>(null);
-const activeTab = ref('portal');
+const activeTab = ref('points');
 
 // Get organization from Vuex store
 const organization = computed(() => store.getters['organization/config']);
 
 const tabs = [
   {
-    id: 'portal',
-    name: 'Portal Access',
-    icon: 'mdi:door'
-  },
-  {
     id: 'points',
     name: 'Award Points',
     icon: 'mdi:gift'
+  },
+  {
+    id: 'portal',
+    name: 'Portal Access',
+    icon: 'mdi:door'
   }
 ];
 
@@ -321,12 +388,18 @@ const closeDrawer = () => {
   selectedQRCode.value = null;
 };
 
-const saveQRCode = async (data: { points: number; isActive: boolean; _id?: string }) => {
+const saveQRCode = async (data: { points: number; isActive: boolean; code?: string; _id?: string }) => {
   try {
     if (data._id) {
       const updatedQR = await qrCodesApi.updateQRCode(data._id, data);
       const index = awardQRCodes.value.findIndex(x => x._id === data._id);
-      if (index !== -1) awardQRCodes.value[index] = updatedQR;
+      if (index !== -1) {
+        awardQRCodes.value[index] = updatedQR;
+        // Update selectedQRCode reference if it's the same QR being edited
+        if (selectedQRCode.value?._id === data._id) {
+          selectedQRCode.value = updatedQR;
+        }
+      }
     } else {
       const newQR = await qrCodesApi.createQRCode(data);
       awardQRCodes.value.unshift(newQR);

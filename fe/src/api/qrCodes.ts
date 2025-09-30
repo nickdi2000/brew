@@ -46,5 +46,13 @@ export const qrCodesApi = {
    */
   deleteQRCode: async (id: string): Promise<void> => {
     await api.delete(`/qr-codes/${id}`);
+  },
+
+  /**
+   * Lookup QR code by code and get organization information
+   */
+  lookupQRCode: async (code: string): Promise<{ qrCode: QRCode; organization: any }> => {
+    const { data } = await api.get(`/qr-codes/lookup/${encodeURIComponent(code)}`);
+    return data.data;
   }
 };

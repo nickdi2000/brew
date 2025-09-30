@@ -76,16 +76,29 @@ export default createStore({
       state.lastMemberCode = code || null;
       storage.set('lastMemberCode', code || '', false);
     },
+    SET_FETCHING_USER(state, value) {
+      state.fetchingUser = value;
+    },
     CLEAR_AUTH(state) {
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;
       state.lastActivity = null;
+      state.fetchingUser = false;
       storage.set('user', null, true);
       storage.set('token', null, false);
       storage.set('lastActivity', null, true);
       // intentionally keep lastMemberCode persisted across logouts
     }
+  },
+  
+  state: {
+    user: storage.get('user', true) || null,
+    token: storage.get('token', false) || null,
+    isAuthenticated: false,
+    lastActivity: storage.get('lastActivity', true) || null,
+    lastMemberCode: storage.get('lastMemberCode', false) || null,
+    fetchingUser: false // Add flag to prevent duplicate calls
   },
   
   actions: {
@@ -135,7 +148,9 @@ export default createStore({
     async fetchCurrentUser({ commit, state }) {
       console.log('👤 fetchCurrentUser called:', {
         hasToken: !!state.token,
-        tokenValue: state.token ? `${state.token.substring(0, 10)}...` : 'none'
+        tokenValue: state.token ? `${state.token.substring(0, 10)}...` : 'none',
+        alreadyFetching: state.fetchingUser,
+        isAuthenticated: state.isAuthenticated
       });
 
       if (!state.token) {
@@ -143,7 +158,30 @@ export default createStore({
         return null;
       }
       
+      // Prevent duplicate calls
+      if (state.fetchingUser) {
+        console.log('🔄 fetchCurrentUser already in progress, skipping duplicate call');
+        return new Promise((resolve) => {
+          // Wait for the current fetch to complete
+          const checkCompletion = () => {
+            if (!state.fetchingUser) {
+              resolve(state.user);
+            } else {
+              setTimeout(checkCompletion, 50);
+            }
+          };
+          checkCompletion();
+        });
+      }
+      
+      // If user is already authenticated, skip the call
+      if (state.isAuthenticated && state.user) {
+        console.log('✅ User already authenticated, skipping fetch');
+        return state.user;
+      }
+      
       try {
+        commit('SET_FETCHING_USER', true);
         console.log('🔄 Fetching current user from /auth/me');
         const response = await api.get('/auth/me');
         const { user } = response.data.data;
@@ -159,6 +197,8 @@ export default createStore({
         });
         commit('CLEAR_AUTH');
         throw error;
+      } finally {
+        commit('SET_FETCHING_USER', false);
       }
     },
     

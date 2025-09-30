@@ -100,7 +100,7 @@ const props = defineProps({
   },
   showViewAll: {
     type: Boolean,
-    default: true
+    default: false
   },
   showAddButton: {
     type: Boolean,

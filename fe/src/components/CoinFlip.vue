@@ -21,7 +21,7 @@ const props = defineProps({
   value: { type: [Number, String], default: 100 }
 });
 
-const spinDuration = ref(2); // Start at 2 seconds
+const spinDuration = ref(3); // Start at 2 seconds
 
 const handleClick = () => {
   // Make it spin 25% faster with each click, but don't go faster than 0.1s

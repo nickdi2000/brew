@@ -4,7 +4,7 @@
       <!-- Mobile Container -->
       <div class="w-full max-w-[420px] bg-white min-h-[640px] shadow-2xl flex flex-col">
         <!-- Top Nav -->
-        <nav v-if="currentUser" class="bg-gray-900 text-white border-b border-gray-800">
+        <nav v-if="currentUser" class="bg-gray-900 text-white border-b border-gray-800 sticky top-0 z-50">
           <div class="px-4 py-3 flex items-center justify-between">
             <!-- Left: Menu Button -->
             <button
@@ -32,12 +32,6 @@
               <div class="flex flex-col">
                 <span class="text-sm font-medium text-white">
                   {{ currentUser.firstName }} {{ currentUser.lastName }}
-                </span>
-                <span 
-                  class="text-xs text-gray-300 transition-all duration-300"
-                  :class="{ 'text-amber-300 font-bold': pointsUpdated }"
-                >
-                  {{ displayPoints.toLocaleString() }} points
                 </span>
               </div>
             </div>

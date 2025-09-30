@@ -70,22 +70,7 @@
           <span>Back</span>
         </button>
 
-        <!-- Header -->
-        <div class="mb-8 bg-gradient-to-r from-amber-50 via-amber-100 to-amber-50 rounded-2xl p-8 shadow-sm border border-amber-100">
-          <div class="flex items-center gap-3 mb-2">
-            <Icon icon="mdi:star" class="h-8 w-8 text-amber-500" />
-            <h1 class="text-3xl font-bold bg-gradient-to-r from-amber-700 to-amber-500 bg-clip-text text-transparent">
-              Available Rewards
-            </h1>
-          </div>
-          <p class="mt-3 text-gray-600 text-lg flex items-center gap-2">
-            You have 
-            <span class="font-semibold text-2xl bg-gradient-to-r from-amber-600 to-amber-500 bg-clip-text text-transparent">
-              {{ (membership?.points ?? 0).toLocaleString() }}
-            </span> 
-            points available
-          </p>
-        </div>
+
 
         <!-- Rewards List -->
         <div v-if="rewards.length > 0" class="space-y-6">

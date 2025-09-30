@@ -8,6 +8,7 @@ router.post('/', authenticateToken, controller.create);
 router.put('/:id', authenticateToken, controller.update);
 router.delete('/:id', authenticateToken, controller.remove);
 router.post('/:id/redeem', controller.redeem); // No auth required for QR code redemption
+router.get('/lookup/:code', controller.lookup); // No auth required for QR code lookup
 
 module.exports = router;
 

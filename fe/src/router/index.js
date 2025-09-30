@@ -18,6 +18,8 @@ import ComingSoon from '../components/ComingSoon.vue'
 import adminNav from '../layouts/admin_nav.json'
 import TestBench from '../pages/dev/TestBench.vue'
 import QRTest from '../pages/QRTest.vue'
+import Gold from '../pages/Gold.vue'
+import OrgOnboarding from '../pages/OrgOnboarding.vue'
 
 const routes = [
   // Public routes
@@ -43,6 +45,18 @@ const routes = [
     path: '/login',
     name: 'admin-login',
     component: Login,
+    meta: { public: true }
+  },
+  {
+    path: '/gold',
+    name: 'gold',
+    component: Gold,
+    meta: { public: true }
+  },
+  {
+    path: '/onboarding',
+    name: 'org-onboarding',
+    component: OrgOnboarding,
     meta: { public: true }
   },
 
@@ -345,12 +359,12 @@ const routes = [
         component: QRCodes,
         meta: { section: 'QR Codes' }
       },
-      {
-        path: 'challenges',
-        name: 'challenges',
-        component: ComingSoon,
-        meta: { section: 'Challenges & Events' }
-      },
+      // {
+      //   path: 'challenges',
+      //   name: 'challenges',
+      //   component: ComingSoon,
+      //   meta: { section: 'Challenges & Events' }
+      // },
       {
         path: 'analytics',
         name: 'analytics',

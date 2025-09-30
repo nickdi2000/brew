@@ -37,7 +37,7 @@ const navItems = ref([
   { name: 'Members', route: 'members', section: 'Members' },
   { name: 'Rewards', route: 'rewards', section: 'Rewards' },
   { name: 'QR Codes', route: 'qr-codes', section: 'QR Codes' },
-  { name: 'Challenges & Events', route: 'challenges', section: 'Challenges & Events' },
+  //{ name: 'Challenges & Events', route: 'challenges', section: 'Challenges & Events' },
   { name: 'Analytics', route: 'analytics', section: 'Analytics' },
   { name: 'Settings', route: 'settings', section: 'Settings' }
 ])
@@ -48,7 +48,7 @@ const getIconForRoute = (route) => {
     'members': 'mdi:account-group',
     'rewards': 'mdi:gift',
     'qr-codes': 'mdi:qrcode',
-    'challenges': 'mdi:trophy',
+   // 'challenges': 'mdi:trophy',
     'analytics': 'mdi:chart-bar',
     'settings': 'mdi:cog'
   }

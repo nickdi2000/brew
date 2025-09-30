@@ -43,12 +43,21 @@ exports.update = async (req, res) => {
   try {
     const orgId = req.user.organization._id;
     const { id } = req.params;
-    const { points, expiresAt, isActive } = req.body;
+    const { points, expiresAt, isActive, code } = req.body;
+    
+    // Build update object - only include fields that are provided
+    const updateFields = {};
+    if (points !== undefined) updateFields.points = points;
+    if (expiresAt !== undefined) updateFields.expiresAt = expiresAt;
+    if (isActive !== undefined) updateFields.isActive = isActive;
+    if (code !== undefined) updateFields.code = code;
+    
     const doc = await QRCode.findOneAndUpdate(
       { _id: id, organization: orgId },
-      { $set: { points, expiresAt, isActive } },
+      { $set: updateFields },
       { new: true }
     );
+    
     if (!doc) return res.status(404).json(formatError('QR code not found'));
     res.json(formatResponse({ data: doc, message: 'QR code updated' }));
   } catch (e) {
@@ -163,4 +172,69 @@ exports.redeem = async (req, res) => {
   }
 };
 
-
+exports.lookup = async (req, res) => {
+  try {
+    const { code } = req.params;
+    
+    if (!code || typeof code !== 'string' || code.trim() === '') {
+      return res.status(400).json(formatError('QR code is required'));
+    }
+    
+    const trimmedCode = code.trim().toUpperCase();
+    console.log('Looking up QR code:', trimmedCode);
+    
+    // Find the QR code
+    const qrCode = await QRCode.findOne({ code: trimmedCode });
+    if (!qrCode) {
+      return res.status(404).json(formatError('QR code not found'));
+    }
+    
+    // Check if QR code is active
+    if (!qrCode.isActive) {
+      return res.status(400).json(formatError('QR code is not active'));
+    }
+    
+    // Check if QR code has expired
+    if (qrCode.expiresAt && new Date() > qrCode.expiresAt) {
+      return res.status(400).json(formatError('QR code has expired'));
+    }
+    
+    // Get organization information
+    const organization = await Organization.findById(qrCode.organization);
+    if (!organization) {
+      return res.status(404).json(formatError('Organization not found'));
+    }
+    
+    console.log('QR code lookup successful:', {
+      qrCodeId: qrCode._id,
+      organizationId: organization._id,
+      organizationCode: organization.code,
+      organizationName: organization.name
+    });
+    
+    res.json(formatResponse({
+      data: {
+        qrCode: {
+          _id: qrCode._id,
+          code: qrCode.code,
+          name: qrCode.name,
+          points: qrCode.points,
+          isActive: qrCode.isActive,
+          expiresAt: qrCode.expiresAt
+        },
+        organization: {
+          _id: organization._id,
+          code: organization.code,
+          name: organization.name,
+          description: organization.description,
+          bannerImage: organization.bannerImage
+        }
+      },
+      message: 'QR code found successfully'
+    }));
+    
+  } catch (e) {
+    console.error('QR code lookup error:', e);
+    res.status(500).json(formatError('Failed to lookup QR code', e.message));
+  }
+};

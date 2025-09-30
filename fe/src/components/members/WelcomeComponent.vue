@@ -2,8 +2,25 @@
   <div class="h-full flex flex-col">
     <!-- Main Content -->
     <main class="flex-grow flex flex-col">
+      <!-- Sticky Header -->
+      <div 
+        class="fixed left-0 right-0 z-40 transition-all duration-300"
+        :class="{
+          'opacity-0 pointer-events-none translate-y-[-100%]': !isHeaderSticky,
+          'opacity-100 translate-y-0': isHeaderSticky
+        }"
+        style="top: 56px;"
+      >
+        <div class="bg-black/80 backdrop-blur-sm shadow-lg">
+          <div class="max-w-[420px] mx-auto px-4 py-3 flex items-center justify-between">
+            <h1 class="text-xl font-bold text-white">{{ name || 'Welcome' }}</h1>
+          </div>
+        </div>
+      </div>
+
       <!-- Hero Section -->
       <div 
+        ref="heroSection"
         class="relative min-h-[360px] flex items-center justify-center bg-cover bg-center"
         :style="{
           backgroundImage: `url(${bannerImage || '/images/brewery-beers-coins.png'})`
@@ -13,7 +30,10 @@
         <div class="absolute inset-0 bg-gradient-to-b from-black/30 to-black/70 backdrop-blur-[1px]"></div>
         
         <!-- Content -->
-        <div class="relative z-10 w-full mx-auto text-center px-6 pt-12 pb-32">
+        <div 
+          class="relative z-10 w-full mx-auto text-center px-6 pt-12 pb-32 transition-opacity duration-300"
+          :class="{ 'opacity-0': isHeaderSticky }"
+        >
           <h1 class="text-3xl font-bold text-white mb-3 animate-fade-in">
             {{ name || 'Welcome' }}
           </h1>
@@ -64,8 +84,8 @@
             </template>
           </GoogleLogin>
           
-          <!-- Demo Login Button (Development Only) -->
-          <div v-if="isDevelopment" class="mt-3">
+          <!-- Demo Login Button (Development or Easter Egg) -->
+          <div v-if="isDevelopment || bellClickCount === 3" class="mt-3">
             <button
               @click="handleDemoLogin"
               :disabled="isLoading"
@@ -115,7 +135,11 @@
             <div class="bg-sky-50 rounded-xl p-4 flex items-center space-x-4">
               <div class="flex-shrink-0">
                 <div class="bg-sky-100 rounded-lg p-2">
-                  <Icon icon="mdi:bell" class="h-6 w-6 text-sky-600" />
+                  <Icon 
+                    icon="mdi:bell" 
+                    class="h-6 w-6 text-sky-600 cursor-pointer transition-transform hover:scale-110" 
+                    @click="handleBellClick" 
+                  />
                 </div>
               </div>
               <div>
@@ -132,7 +156,7 @@
 
 <script setup>
 import { Icon } from '@iconify/vue';
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import { useToast } from '@/plugins/toast';
@@ -145,6 +169,31 @@ const toast = useToast();
 const currentUser = computed(() => store.getters.currentUser);
 const isLoading = ref(false);
 const googleClientId = ref(import.meta.env.VITE_GOOGLE_CLIENT_ID);
+const bellClickCount = ref(0);
+
+// Sticky header logic
+const heroSection = ref(null);
+const isHeaderSticky = ref(false);
+
+const handleScroll = () => {
+  if (!heroSection.value) return;
+  
+  const heroRect = heroSection.value.getBoundingClientRect();
+  const navHeight = 56; // Height of the main nav bar
+  const triggerPoint = heroRect.height - (navHeight + 50); // Account for nav height in calculation
+  
+  // Check if the hero section is scrolled up enough (accounting for nav bar)
+  isHeaderSticky.value = heroRect.top < navHeight;
+};
+
+// Add and remove scroll listener
+onMounted(() => {
+  window.addEventListener('scroll', handleScroll);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll);
+});
 
 // Environment detection
 const isDevelopment = computed(() => {
@@ -219,6 +268,11 @@ const handleGoogleLoginError = (error) => {
 };
 
 // Handle demo login
+// Handle bell icon clicks for easter egg
+const handleBellClick = () => {
+  bellClickCount.value++;
+};
+
 const handleDemoLogin = async () => {
   const codeToUse = props.code || route.params.code;
   if (!codeToUse) {

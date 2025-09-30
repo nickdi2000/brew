@@ -65,6 +65,22 @@
             />
             <p v-if="errors.points" class="text-red-600 text-sm mt-1">{{ errors.points }}</p>
           </div>
+          <div v-if="isEditing">
+            <label 
+              @dblclick="handleCodeLabelDoubleClick" 
+              class="block text-sm font-medium text-gray-700 mb-1 cursor-pointer select-none"
+            >
+              Code
+            </label>
+            <input 
+              v-model="formData.code" 
+              type="text" 
+              :disabled="!isCodeUnlocked"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500" 
+              :class="{ 'bg-gray-100 cursor-not-allowed': !isCodeUnlocked }"
+              placeholder="QR Code identifier" 
+            />
+          </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
             <div class="flex items-center gap-4">
@@ -102,6 +118,33 @@
         >
           {{ isEditing ? 'Update' : 'Create' }}
         </button>
+      </div>
+    </div>
+    
+    <!-- Password Prompt Modal -->
+    <div v-if="showPasswordPrompt" class="fixed inset-0 bg-black/75 flex items-center justify-center z-60" @click.self="cancelPasswordPrompt">
+      <div class="bg-white rounded-lg shadow-xl max-w-sm w-full mx-4 p-6" @click.stop>
+        <div class="text-center mb-4">
+          <h4 class="text-lg font-semibold text-gray-900 mb-2">🔐 Code Editing</h4>
+          <p class="text-sm text-gray-600">Enter the password to unlock code editing</p>
+        </div>
+        <form @submit.prevent="handlePasswordSubmit" class="space-y-4">
+          <input 
+            v-model="passwordInput" 
+            type="password" 
+            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500" 
+            placeholder="Enter password" 
+            autofocus
+          />
+          <div class="flex gap-2">
+            <button type="button" @click="cancelPasswordPrompt" class="flex-1 btn btn-secondary">
+              Cancel
+            </button>
+            <button type="submit" class="flex-1 btn btn-primary">
+              Unlock
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   </div>
@@ -145,24 +188,36 @@ const isEditing = computed(() => !!props.qrCode);
 const showForm = ref(false);
 const formData = ref({
   points: 10,
-  isActive: true
+  isActive: true,
+  code: ''
 });
 const errors = ref({
   points: ''
 });
 
+// Password protection for code field
+const isCodeUnlocked = ref(false);
+const showPasswordPrompt = ref(false);
+const passwordInput = ref('');
+
 watch(() => props.qrCode, (newQrCode) => {
   if (newQrCode) {
     formData.value = {
       points: newQrCode.points || 1,
-      isActive: newQrCode.isActive !== undefined ? newQrCode.isActive : true
+      isActive: newQrCode.isActive !== undefined ? newQrCode.isActive : true,
+      code: newQrCode.code || ''
     };
   } else {
     formData.value = {
       points: 1,
-      isActive: true
+      isActive: true,
+      code: ''
     };
   }
+  // Reset password protection when switching QR codes
+  isCodeUnlocked.value = false;
+  showPasswordPrompt.value = false;
+  passwordInput.value = '';
 }, { immediate: true });
 
 watch(() => formData.value.points, (newPoints) => {
@@ -177,14 +232,46 @@ const hasErrors = computed(() => {
   return !!errors.value.points;
 });
 
+// Password validation functions
+const handleCodeLabelDoubleClick = () => {
+  if (!isEditing.value) return; // Only allow for editing existing QR codes
+  showPasswordPrompt.value = true;
+  passwordInput.value = '';
+};
+
+const handlePasswordSubmit = () => {
+  if (passwordInput.value === 'brewpass') {
+    isCodeUnlocked.value = true;
+    showPasswordPrompt.value = false;
+    passwordInput.value = '';
+  } else {
+    // Could add an error message here if needed
+    passwordInput.value = '';
+  }
+};
+
+const cancelPasswordPrompt = () => {
+  showPasswordPrompt.value = false;
+  passwordInput.value = '';
+};
+
 const closeDrawer = () => {
   showForm.value = false;
+  // Reset password protection state
+  isCodeUnlocked.value = false;
+  showPasswordPrompt.value = false;
+  passwordInput.value = '';
   emit('close');
 };
 
 const saveQRCode = () => {
   if (!hasErrors.value) {
-    emit('save', { ...formData.value, _id: isEditing.value ? props.qrCode._id : undefined });
+    const saveData = { ...formData.value, _id: isEditing.value ? props.qrCode._id : undefined };
+    // Include code field only if it was unlocked and modified, or if creating new
+    if (!isEditing.value || isCodeUnlocked.value) {
+      saveData.code = formData.value.code;
+    }
+    emit('save', saveData);
   }
 };
 </script>
