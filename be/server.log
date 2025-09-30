@@ -1,0 +1,8 @@
+MongoDB connected successfully
+HTTP Server is running on port 3391
+POST /api/auth/register
+Generated organization code: 9ARN0K
+Organization pre-save complete, code: 9ARN0K
+✅ Created organization: Test Brewery Co with code: 9ARN0K
+✅ Created default QR code for Test Brewery Co: A8NXU561
+POST /register - 201

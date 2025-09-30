@@ -25,17 +25,17 @@ export default defineConfig(({ mode }) => {
     plugins: [vue()],
     server: {
       port: 5644,
-      host: mode === 'production' ? 'localhost' : '192.168.0.201',
+      host: 'localhost',
       strictPort: true,
-      https: httpsOptions,
+      https: false,
       hmr: {
-        host: mode === 'production' ? 'localhost' : '192.168.0.201',
-        protocol: useHttps ? 'wss' : 'ws',
+        host: 'localhost',
+        protocol: 'ws',
         clientPort: 5644
       },
       proxy: {
         '/api': {
-          target: `http://${mode === 'production' ? 'localhost' : '192.168.0.201'}:3391`,
+          target: 'http://localhost:3391',
           changeOrigin: true,
           secure: false
         }

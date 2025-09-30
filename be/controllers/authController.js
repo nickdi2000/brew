@@ -1,7 +1,184 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const Organization = require('../models/Organization');
+const QRCode = require('../models/QRCode');
 const Transaction = require('../models/Transaction');
 const { formatResponse, formatError } = require('../utils/responseFormatter');
+
+// Helper function to generate a unique QR code string
+const generateQRCodeString = () => Math.random().toString(36).substring(2, 10).toUpperCase();
+
+// Helper function to create a default rewards QR code for new organizations
+const createDefaultQRCode = async (organizationId, organizationName) => {
+  try {
+    const qrCode = await QRCode.create({
+      organization: organizationId,
+      code: generateQRCodeString(),
+      name: 'Welcome Reward',
+      points: 5,
+      isActive: true,
+      expiresAt: null // No expiration for the default reward
+    });
+    console.log(`✅ Created default QR code for ${organizationName}:`, qrCode.code);
+    return qrCode;
+  } catch (error) {
+    console.error(`❌ Failed to create default QR code for ${organizationName}:`, error);
+    throw error;
+  }
+};
+
+// Register user and brewery
+exports.register = async (req, res) => {
+  try {
+    const { breweryName, email, password } = req.body;
+
+    // Validation
+    if (!breweryName || !email || !password) {
+      return res.status(400).json(formatError('Brewery name, email, and password are required'));
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json(formatError('Password must be at least 6 characters long'));
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json(formatError('A user with this email already exists'));
+    }
+
+    // Check if brewery name is already taken
+    const existingOrganization = await Organization.findOne({ name: breweryName });
+    if (existingOrganization) {
+      return res.status(400).json(formatError('A brewery with this name already exists'));
+    }
+
+    // Generate a unique organization code
+    const generateOrganizationCode = () => {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let result = '';
+      for (let i = 0; i < 6; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return result;
+    };
+
+    // Generate unique organization code
+    let organizationCode;
+    let attempts = 0;
+    const maxAttempts = 10;
+    
+    do {
+      organizationCode = generateOrganizationCode();
+      attempts++;
+      
+      const existingOrg = await Organization.findOne({ code: organizationCode });
+      if (!existingOrg) {
+        break;
+      }
+      
+      if (attempts >= maxAttempts) {
+        return res.status(500).json(formatError('Failed to generate unique organization code'));
+      }
+    } while (attempts < maxAttempts);
+
+    console.log(`Generated organization code: ${organizationCode}`);
+
+    // Create organization (brewery)
+    const organization = new Organization({
+      name: breweryName,
+      email: email, // Use the same email for the brewery initially
+      description: `${breweryName} - A BrewTokens brewery`,
+      code: organizationCode
+    });
+    await organization.save();
+    console.log(`✅ Created organization: ${organization.name} with code: ${organization.code}`);
+
+    // Create default rewards QR code for the new brewery
+    let defaultQRCode = null;
+    try {
+      defaultQRCode = await createDefaultQRCode(organization._id, organization.name);
+    } catch (qrError) {
+      // Log the error but don't fail registration if QR code creation fails
+      console.error('Warning: Failed to create default QR code during registration:', qrError);
+    }
+
+    // Create user
+    const user = new User({
+      email,
+      password,
+      firstName: breweryName.split(' ')[0], // Use first word of brewery name as first name
+      lastName: 'Admin', // Default last name
+      isAdmin: true, // Make the brewery owner an admin
+      organizations: [organization._id]
+    });
+    await user.save();
+
+    // Generate access token
+    const token = jwt.sign(
+      {
+        userId: user._id,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        organization: organization._id,
+        organizations: [organization._id]
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    // Generate refresh token
+    const refreshToken = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    // Store refresh token and its expiry
+    const refreshTokenExpiresAt = new Date();
+    refreshTokenExpiresAt.setDate(refreshTokenExpiresAt.getDate() + 7);
+    
+    user.refreshToken = refreshToken;
+    user.refreshTokenExpiresAt = refreshTokenExpiresAt;
+    await user.save();
+
+    // Return user info and token
+    res.status(201).json(formatResponse({
+      data: {
+        token,
+        refreshToken,
+        refreshTokenExpiresAt,
+        user: {
+          id: user._id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          isAdmin: user.isAdmin,
+          organizations: [{
+            id: organization._id,
+            name: organization.name
+          }]
+        },
+        organization: {
+          id: organization._id,
+          name: organization.name,
+          code: organization.code,
+          description: organization.description
+        },
+        defaultQRCode: defaultQRCode ? {
+          id: defaultQRCode._id,
+          code: defaultQRCode.code,
+          name: defaultQRCode.name,
+          points: defaultQRCode.points
+        } : null
+      },
+      message: `Registration successful! Welcome to BrewTokens! ${defaultQRCode ? 'Your first 5-point reward QR code has been created.' : ''}`
+    }));
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json(formatError('An error occurred during registration', error.message));
+  }
+};
 
 // Login user
 exports.login = async (req, res) => {

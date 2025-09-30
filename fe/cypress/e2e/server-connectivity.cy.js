@@ -7,7 +7,7 @@ describe('Server Connectivity', () => {
     cy.get('body').should('exist')
     
     // Log the current URL to verify we're on the right server
-    cy.url().should('include', '192.168.0.201:5644')
+    cy.url().should('include', 'localhost:5644')
     
     // Check if we can reach the login page specifically
     cy.visit('/login')

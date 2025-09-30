@@ -35,7 +35,8 @@ const organizationSchema = new mongoose.Schema({
     type: String,
     required: true,
     trim: true,
-    unique: true
+    unique: true,
+    uppercase: true
   },
   createdAt: {
     type: Date,
@@ -47,19 +48,59 @@ const organizationSchema = new mongoose.Schema({
   }
 });
 
-organizationSchema.index({ code: 1 }, { unique: true });
+// Helper function to generate a unique 6-character alphanumeric code
+const generateOrganizationCode = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+};
 
-//on creation a random 5 digit alpha string is generated
-organizationSchema.pre('save', function(next) {
-  this.code = Math.random().toString(36).substring(2, 15);
-  next();
-});
-
-
-// Update the updatedAt timestamp before saving
-organizationSchema.pre('save', function(next) {
-  this.updatedAt = new Date();
-  next();
+// Pre-save hook to generate code and update timestamp
+organizationSchema.pre('save', async function(next) {
+  try {
+    // Generate random code on creation (if not already set)
+    if (this.isNew && !this.code) {
+      let code;
+      let attempts = 0;
+      const maxAttempts = 10;
+      const Organization = this.constructor;
+      
+      console.log('Generating organization code...');
+      
+      // Try to generate a unique code (with retry logic for collisions)
+      do {
+        code = generateOrganizationCode();
+        attempts++;
+        
+        console.log(`Attempt ${attempts}: Generated code ${code}`);
+        
+        // Check if this code already exists
+        const existingOrg = await Organization.findOne({ code }).exec();
+        if (!existingOrg) {
+          console.log(`Code ${code} is unique, assigning to organization`);
+          this.code = code;
+          break;
+        }
+        
+        console.log(`Code ${code} already exists, trying again...`);
+        
+        if (attempts >= maxAttempts) {
+          throw new Error('Failed to generate unique organization code after multiple attempts');
+        }
+      } while (attempts < maxAttempts);
+    }
+    
+    // Update the updatedAt timestamp
+    this.updatedAt = new Date();
+    console.log('Organization pre-save complete, code:', this.code);
+    next();
+  } catch (error) {
+    console.error('Organization pre-save error:', error);
+    next(error);
+  }
 });
 
 module.exports = mongoose.model('Organization', organizationSchema);

@@ -1,0 +1,10 @@
+MongoDB connected successfully
+HTTPS Server is running on port 3391
+GET /api/test
+GET /api/test - 200
+POST /api/auth/register
+Generated organization code: 4WS93U
+Organization pre-save complete, code: 4WS93U
+✅ Created organization: HTTPS Test Brewery with code: 4WS93U
+✅ Created default QR code for HTTPS Test Brewery: B05BOBOZ
+POST /register - 201

@@ -1,7 +1,14 @@
 const postmark = require('postmark');
 
-// Initialize Postmark client
-const client = new postmark.ServerClient(process.env.POSTMARK_API_KEY);
+// Initialize Postmark client only if API key is valid
+let client = null;
+if (process.env.POSTMARK_API_KEY && process.env.POSTMARK_API_KEY !== 'placeholder-key') {
+  try {
+    client = new postmark.ServerClient(process.env.POSTMARK_API_KEY);
+  } catch (error) {
+    console.warn('Failed to initialize Postmark client:', error.message);
+  }
+}
 
 const joinWaitlist = async (req, res) => {
 
@@ -26,8 +33,9 @@ const joinWaitlist = async (req, res) => {
       });
     }
 
-    // Send notification email to brewtokens@triviarat.com
-    await client.sendEmail({
+    // Send notification email to brewtokens@triviarat.com (if Postmark is configured)
+    if (client) {
+      await client.sendEmail({
       From: process.env.FROM_EMAIL || 'brewtokens@triviarat.com',
       To: 'nickdifelice+brewtokens@gmail.com',
       Subject: 'New BrewTokens Waitlist Signup',
@@ -67,9 +75,12 @@ IP Address: ${req.ip || req.connection.remoteAddress || 'Unknown'}
 
 This signup was automatically generated from the BrewTokens website.
       `
-    });
+      });
+    } else {
+      console.log('Postmark not configured - email notification skipped for:', email);
+    }
 
-    res.json({ 
+    res.json({
       success: true, 
       message: 'Successfully joined the waitlist! We\'ll notify you when BrewTokens launches.',
       data: { email }

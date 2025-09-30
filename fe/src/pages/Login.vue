@@ -31,23 +31,62 @@
       <div class="sm:mx-auto sm:w-full sm:max-w-md text-center">
         <img src="/images/brewtokens-logo-trans.png" alt="BrewTokens" class="mx-auto h-20 w-auto mb-6 animate-fade-in" />
         <h2 class="text-center text-3xl font-extrabold text-gray-900 mb-2">
-          Welcome Back!
+          {{ activeTab === 'login' ? 'Welcome Back!' : 'Join BrewTokens' }}
         </h2>
-        <p class="text-gray-600">Sign in to manage your rewards</p>
+        <p class="text-gray-600">
+          {{ activeTab === 'login' ? 'Sign in to manage your rewards' : 'Create your brewery account today' }}
+        </p>
       </div>
 
       <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div class="bg-white py-8 px-4 shadow-lg ring-1 ring-black/5 sm:rounded-xl sm:px-10 transform transition-all duration-300 hover:shadow-xl">
-          <form class="space-y-6" data-cy="login-form" @submit.prevent="handleSubmit">
+          <!-- Tab Navigation -->
+          <div class="flex mb-6 bg-gray-100 rounded-lg p-1">
+            <button
+              type="button"
+              :class="[
+                'flex-1 py-2 px-4 rounded-md font-medium text-sm transition-all duration-300',
+                activeTab === 'login' 
+                  ? 'bg-white text-gray-900 shadow-sm' 
+                  : 'text-gray-500 hover:text-gray-700'
+              ]"
+              @click="setActiveTab('login')"
+            >
+              <Icon icon="mdi:login" class="inline-block w-4 h-4 mr-2" />
+              Login
+            </button>
+            <button
+              type="button"
+              :class="[
+                'flex-1 py-2 px-4 rounded-md font-medium text-sm transition-all duration-300',
+                activeTab === 'register' 
+                  ? 'bg-white text-gray-900 shadow-sm' 
+                  : 'text-gray-500 hover:text-gray-700'
+              ]"
+              @click="setActiveTab('register')"
+            >
+              <Icon icon="mdi:account-plus" class="inline-block w-4 h-4 mr-2" />
+              Register
+            </button>
+          </div>
+
+          <!-- Login Form -->
+          <form 
+            v-show="activeTab === 'login'" 
+            class="space-y-6 transition-all duration-300" 
+            :class="{ 'opacity-100': activeTab === 'login', 'opacity-0': activeTab !== 'login' }"
+            data-cy="login-form" 
+            @submit.prevent="handleLoginSubmit"
+          >
             <div class="group">
-              <label for="email" class="block text-sm font-medium text-gray-700 group-hover:text-amber-700 transition-colors">
+              <label for="login-email" class="block text-sm font-medium text-gray-700 group-hover:text-amber-700 transition-colors">
                 <Icon icon="mdi:email" class="inline-block w-4 h-4 mr-1" />
                 Email address
               </label>
               <div class="mt-1">
                 <input
-                  id="email"
-                  v-model="form.email"
+                  id="login-email"
+                  v-model="loginForm.email"
                   type="email"
                   required
                   data-cy="email-input"
@@ -58,14 +97,14 @@
             </div>
 
             <div class="group">
-              <label for="password" class="block text-sm font-medium text-gray-700 group-hover:text-amber-700 transition-colors">
+              <label for="login-password" class="block text-sm font-medium text-gray-700 group-hover:text-amber-700 transition-colors">
                 <Icon icon="mdi:lock" class="inline-block w-4 h-4 mr-1" />
                 Password
               </label>
               <div class="mt-1">
                 <input
-                  id="password"
-                  v-model="form.password"
+                  id="login-password"
+                  v-model="loginForm.password"
                   type="password"
                   required
                   data-cy="password-input"
@@ -110,7 +149,92 @@
               </button>
             </div>
 
-            <div v-if="error" class="mt-4 p-3 bg-red-50 rounded-lg border border-red-200">
+            <div v-if="error && activeTab === 'login'" class="mt-4 p-3 bg-red-50 rounded-lg border border-red-200">
+              <p class="text-red-600 text-sm text-center flex items-center justify-center gap-2">
+                <Icon icon="mdi:alert-circle" class="w-5 h-5" />
+                {{ error }}
+              </p>
+            </div>
+          </form>
+
+          <!-- Registration Form -->
+          <form 
+            v-show="activeTab === 'register'" 
+            class="space-y-6 transition-all duration-300" 
+            :class="{ 'opacity-100': activeTab === 'register', 'opacity-0': activeTab !== 'register' }"
+            data-cy="register-form" 
+            @submit.prevent="handleRegisterSubmit"
+          >
+            <div class="group">
+              <label for="brewery-name" class="block text-sm font-medium text-gray-700 group-hover:text-amber-700 transition-colors">
+                <Icon icon="mdi:store" class="inline-block w-4 h-4 mr-1" />
+                Brewery Name
+              </label>
+              <div class="mt-1">
+                <input
+                  id="brewery-name"
+                  v-model="registerForm.breweryName"
+                  type="text"
+                  required
+                  data-cy="brewery-name-input"
+                  class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm transition-all duration-200 hover:border-amber-300"
+                  placeholder="Enter your brewery name"
+                />
+              </div>
+            </div>
+
+            <div class="group">
+              <label for="register-email" class="block text-sm font-medium text-gray-700 group-hover:text-amber-700 transition-colors">
+                <Icon icon="mdi:email" class="inline-block w-4 h-4 mr-1" />
+                Email address
+              </label>
+              <div class="mt-1">
+                <input
+                  id="register-email"
+                  v-model="registerForm.email"
+                  type="email"
+                  required
+                  data-cy="register-email-input"
+                  class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm transition-all duration-200 hover:border-amber-300"
+                  placeholder="Enter your email"
+                />
+              </div>
+            </div>
+
+            <div class="group">
+              <label for="register-password" class="block text-sm font-medium text-gray-700 group-hover:text-amber-700 transition-colors">
+                <Icon icon="mdi:lock" class="inline-block w-4 h-4 mr-1" />
+                Password
+              </label>
+              <div class="mt-1">
+                <input
+                  id="register-password"
+                  v-model="registerForm.password"
+                  type="password"
+                  required
+                  minlength="6"
+                  data-cy="register-password-input"
+                  class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm transition-all duration-200 hover:border-amber-300"
+                  placeholder="Enter your password (min. 6 characters)"
+                />
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <button
+                type="submit"
+                :disabled="isLoading"
+                data-cy="register-button"
+                class="btn btn-primary w-full group relative overflow-hidden transition-all duration-300"
+              >
+                <span class="relative z-10 flex items-center justify-center gap-2">
+                  <Icon icon="mdi:account-plus" class="w-5 h-5" />
+                  {{ isLoading ? 'Creating Account...' : 'Create Brewery Account' }}
+                </span>
+              </button>
+            </div>
+
+            <div v-if="error && activeTab === 'register'" class="mt-4 p-3 bg-red-50 rounded-lg border border-red-200">
               <p class="text-red-600 text-sm text-center flex items-center justify-center gap-2">
                 <Icon icon="mdi:alert-circle" class="w-5 h-5" />
                 {{ error }}
@@ -148,7 +272,18 @@ const DEMO_PASSWORD = 'Password123!'
 const store = useStore()
 const router = useRouter()
 
-const form = reactive({
+// Tab state
+const activeTab = ref('login')
+
+// Login form
+const loginForm = reactive({
+  email: '',
+  password: ''
+})
+
+// Registration form
+const registerForm = reactive({
+  breweryName: '',
   email: '',
   password: ''
 })
@@ -156,7 +291,13 @@ const form = reactive({
 const isLoading = ref(false)
 const error = ref('')
 
-const handleSubmit = async () => {
+// Tab switching
+const setActiveTab = (tab) => {
+  activeTab.value = tab
+  error.value = '' // Clear errors when switching tabs
+}
+
+const handleLoginSubmit = async () => {
   try {
     isLoading.value = true
     error.value = ''
@@ -165,7 +306,7 @@ const handleSubmit = async () => {
     const redirect = router.currentRoute.value.query.redirect || '/admin'
     
     await store.dispatch('login', { 
-      credentials: form,
+      credentials: loginForm,
       redirect
     })
   } catch (err) {
@@ -176,12 +317,32 @@ const handleSubmit = async () => {
   }
 }
 
+const handleRegisterSubmit = async () => {
+  try {
+    isLoading.value = true
+    error.value = ''
+    
+    // Get redirect from query params or default to /admin
+    const redirect = router.currentRoute.value.query.redirect || '/admin'
+    
+    await store.dispatch('register', { 
+      userData: registerForm,
+      redirect
+    })
+  } catch (err) {
+    console.error('Registration error:', err);
+    error.value = err.response?.data?.message || err.message || 'An error occurred during registration'
+  } finally {
+    isLoading.value = false
+  }
+}
+
 const handleDemoLogin = async () => {
   // Populate form with demo credentials
-  form.email = DEMO_EMAIL
-  form.password = DEMO_PASSWORD
+  loginForm.email = DEMO_EMAIL
+  loginForm.password = DEMO_PASSWORD
   
-  // Submit the form
-  await handleSubmit()
+  // Submit the login form
+  await handleLoginSubmit()
 }
 </script>

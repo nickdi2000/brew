@@ -272,6 +272,34 @@ export const cancelPendingRequests = (message = 'Operation cancelled by user') =
 };
 
 // Authentication functions
+const register = async (userData) => {
+  try {
+    console.log('📝 Sending registration request:', {
+      breweryName: userData.breweryName,
+      email: userData.email,
+      hasPassword: !!userData.password
+    });
+
+    // Cancel any pending token refresh attempts
+    cancelPendingRequests('New registration attempt');
+
+    const response = await api.post('/auth/register', userData);
+    console.log('✅ Registration successful:', {
+      hasToken: !!response.data.data.token,
+      organizationName: response.data.data.organization?.name
+    });
+    
+    return response;
+  } catch (error) {
+    console.error('❌ Registration API error:', {
+      status: error.response?.status,
+      message: error.response?.data?.message,
+      data: error.response?.data
+    });
+    throw error;
+  }
+};
+
 const getCurrentUser = async () => {
   const response = await api.get('/auth/me');
   return response.data;
@@ -387,6 +415,7 @@ export {
   signupForBeta,
   checkHealth,
   // Authentication
+  register,
   getCurrentUser,
   googleLogin,
   demoLogin,

@@ -30,7 +30,7 @@
 import { ref } from 'vue'
 import QRComponent from '@/components/QRComponent.vue'
 
-const qrValue = ref('https://example.com')
+const qrValue = ref('https://brewtokens.com/gold?code=123456')
 // Defaults are now: signature shown, full opacity, no quiet zone
 </script>
 

@@ -11,8 +11,9 @@
 - do not use any "scale" hover animations
 
 # local development #
-- always run vue (vite) on the port we have defined: 5644. do not start another one, just stop this one first and re-run it if necessary.
-- always run the backend on 3391
+- when starting the backend or frontend server, always just kill the port first, then run it in the background
+- be port: 3391
+- fe port: 5644
 
 ## Backend ##
 - backend is node express, in /Users/nick/repos/brewbucks/be

@@ -1,5 +1,5 @@
 import { createStore } from 'vuex';
-import api from '../api';
+import api, { register } from '../api';
 import router from '../router';
 import members from './modules/members';
 import organization from './modules/organization';
@@ -112,6 +112,42 @@ export default createStore({
         throw new Error(response.data.message || 'Failed to update profile');
       } catch (error) {
         throw error.response?.data?.message || 'Failed to update profile';
+      }
+    },
+
+    async register({ commit, dispatch }, { userData, redirect }) {
+      try {
+        const response = await register(userData);
+        console.log('Registration response:', response.data); // Debug log
+        
+        if (!response.data.success) {
+          throw new Error(response.data.message);
+        }
+
+        const { token, user, organization } = response.data.data;
+        
+        // Store auth data
+        commit('SET_TOKEN', token);
+        commit('SET_USER', user);
+        commit('SET_LAST_ACTIVITY');
+
+        // Store organization data if available
+        if (organization) {
+          // You might want to add organization to a separate module
+          console.log('New organization created:', organization.name, 'with code:', organization.code);
+        }
+
+        // Handle redirect after registration
+        const redirectPath = redirect || '/admin';
+        await router.push(redirectPath);
+        
+        // Start session monitoring
+        dispatch('startSessionMonitor');
+        
+        return response.data;
+      } catch (error) {
+        commit('CLEAR_AUTH');
+        throw error;
       }
     },
 
