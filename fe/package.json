@@ -25,6 +25,7 @@
     "axios": "^1.12.2",
     "date-fns": "^4.1.0",
     "gsap": "^3.12.5",
+    "html2canvas": "^1.4.1",
     "vue": "^3.5.18",
     "vue-qrcode": "^2.2.2",
     "vue-qrcode-reader": "^5.7.3",

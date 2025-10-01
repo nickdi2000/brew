@@ -59,11 +59,13 @@
               type="button"
               :class="[
                 'flex-1 py-2 px-4 rounded-md font-medium text-sm transition-all duration-300',
+                !ENABLE_SIGNUP ? 'opacity-50 cursor-not-allowed' : '',
                 activeTab === 'register' 
                   ? 'bg-white text-gray-900 shadow-sm' 
                   : 'text-gray-500 hover:text-gray-700'
               ]"
-              @click="setActiveTab('register')"
+              @click="ENABLE_SIGNUP ? setActiveTab('register') : router.push('/coming-soon')"
+              :disabled="!ENABLE_SIGNUP"
             >
               <Icon icon="mdi:account-plus" class="inline-block w-4 h-4 mr-2" />
               Register
@@ -150,6 +152,54 @@
             </div>
 
             <div v-if="error && activeTab === 'login'" class="mt-4 p-3 bg-red-50 rounded-lg border border-red-200">
+              <p class="text-red-600 text-sm text-center flex items-center justify-center gap-2">
+                <Icon icon="mdi:alert-circle" class="w-5 h-5" />
+                {{ error }}
+              </p>
+            </div>
+          </form>
+
+          <!-- Onboarding Form -->
+          <form 
+            v-show="activeTab === 'onboarding'" 
+            class="space-y-6 transition-all duration-300" 
+            :class="{ 'opacity-100': activeTab === 'onboarding', 'opacity-0': activeTab !== 'onboarding' }"
+            data-cy="onboarding-form" 
+            @submit.prevent="handleOnboardingSubmit"
+          >
+            <div class="group">
+              <label for="brewery-name" class="block text-sm font-medium text-gray-700 group-hover:text-amber-700 transition-colors">
+                <Icon icon="mdi:store" class="inline-block w-4 h-4 mr-1" />
+                Brewery Name
+              </label>
+              <div class="mt-1">
+                <input
+                  id="brewery-name"
+                  v-model="onboardingForm.breweryName"
+                  type="text"
+                  required
+                  data-cy="brewery-name-input"
+                  class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm transition-all duration-200 hover:border-amber-300"
+                  placeholder="Enter your brewery name"
+                />
+              </div>
+            </div>
+
+            <div class="space-y-4">
+              <button
+                type="submit"
+                :disabled="isLoading"
+                data-cy="onboarding-button"
+                class="btn btn-primary w-full group relative overflow-hidden transition-all duration-300"
+              >
+                <span class="relative z-10 flex items-center justify-center gap-2">
+                  <Icon icon="mdi:check-circle" class="w-5 h-5" />
+                  {{ isLoading ? 'Creating Account...' : 'Continue' }}
+                </span>
+              </button>
+            </div>
+
+            <div v-if="error && activeTab === 'onboarding'" class="mt-4 p-3 bg-red-50 rounded-lg border border-red-200">
               <p class="text-red-600 text-sm text-center flex items-center justify-center gap-2">
                 <Icon icon="mdi:alert-circle" class="w-5 h-5" />
                 {{ error }}
@@ -253,6 +303,9 @@ import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import { Icon } from '@iconify/vue'
 
+// Get signup status from environment variable
+const ENABLE_SIGNUP = import.meta.env.VITE_ENABLE_SIGNUP === 'true'
+
 // Add fade-in animation to Tailwind
 const style = document.createElement('style')
 style.textContent = `
@@ -288,6 +341,19 @@ const registerForm = reactive({
   password: ''
 })
 
+// Onboarding form
+const onboardingForm = reactive({
+  breweryName: '',
+  qrCode: '' // This will be passed from the URL
+})
+
+// Get QR code from URL if present
+const qrCode = router.currentRoute.value.query.qrCode
+if (qrCode) {
+  onboardingForm.qrCode = qrCode
+  activeTab.value = 'onboarding'
+}
+
 const isLoading = ref(false)
 const error = ref('')
 
@@ -318,6 +384,12 @@ const handleLoginSubmit = async () => {
 }
 
 const handleRegisterSubmit = async () => {
+  // If registration is disabled, redirect to coming soon
+  if (!ENABLE_SIGNUP) {
+    router.push('/coming-soon')
+    return
+  }
+
   try {
     isLoading.value = true
     error.value = ''
@@ -344,5 +416,48 @@ const handleDemoLogin = async () => {
   
   // Submit the login form
   await handleLoginSubmit()
+}
+
+const validateOnboardingForm = () => {
+  if (!onboardingForm.breweryName.trim()) {
+    error.value = 'Please enter your brewery name'
+    return false
+  }
+  if (!onboardingForm.qrCode) {
+    error.value = 'Missing QR code parameter'
+    return false
+  }
+  return true
+}
+
+const handleOnboardingSubmit = async () => {
+  try {
+    isLoading.value = true
+    error.value = ''
+
+    // Validate form
+    if (!validateOnboardingForm()) {
+      isLoading.value = false
+      return
+    }
+    
+    // Get redirect from query params or default to /admin
+    const redirect = router.currentRoute.value.query.redirect || '/admin'
+    
+    await store.dispatch('register', { 
+      userData: {
+        breweryName: onboardingForm.breweryName.trim(),
+        email: '', // Empty email as requested
+        password: Math.random().toString(36).slice(-12), // Random password since we won't be using it
+        qrCode: onboardingForm.qrCode // Pass the QR code to use
+      },
+      redirect
+    })
+  } catch (err) {
+    console.error('Onboarding error:', err);
+    error.value = err.response?.data?.message || err.message || 'An error occurred during onboarding'
+  } finally {
+    isLoading.value = false
+  }
 }
 </script>

@@ -1,16 +1,16 @@
 <template>
-  <div class="inline-flex" :style="{ height: size + 'px' }">
+  <div class="inline-flex" :style="{ height: size + 'px', backgroundColor: backgroundColor }">
     <component
       :is="qrcodeTag"
       :value="safeValue"
       :options="{ width: size, margin: qrMargin }"
       :tag="tag"
       class="block"
-      :style="{ width: size + 'px', height: size + 'px' }"
+      :style="{ width: size + 'px', height: size + 'px', backgroundColor: 'white' }"
     />
     <div
       v-if="showSignature"
-      :style="{ width: blockSize + 'px', height: size + 'px', opacity: signatureOpacity }"
+      :style="{ width: blockSize + 'px', height: size + 'px', opacity: signatureOpacity, backgroundColor: 'white' }"
       aria-hidden="true"
       class="flex flex-col"
     >
@@ -20,7 +20,7 @@
         :style="{
           width: blockSize + 'px',
           height: blockHeight + 'px',
-          backgroundColor: on ? '#000' : 'transparent'
+          backgroundColor: on ? '#000' : '#fff'
         }"
       />
     </div>
@@ -58,6 +58,10 @@ const props = defineProps({
     // quiet zone around QR modules; set 0 to have modules touch image edge
     type: Number,
     default: 0
+  },
+  backgroundColor: {
+    type: String,
+    default: 'transparent'
   }
 })
 

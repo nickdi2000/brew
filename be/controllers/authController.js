@@ -3,6 +3,7 @@ const User = require('../models/User');
 const Organization = require('../models/Organization');
 const QRCode = require('../models/QRCode');
 const Transaction = require('../models/Transaction');
+const Reward = require('../models/Reward');
 const { formatResponse, formatError } = require('../utils/responseFormatter');
 
 // Helper function to generate a unique QR code string
@@ -14,8 +15,8 @@ const createDefaultQRCode = async (organizationId, organizationName) => {
     const qrCode = await QRCode.create({
       organization: organizationId,
       code: generateQRCodeString(),
-      name: 'Welcome Reward',
-      points: 5,
+      name: 'Earn 100 Points!',
+      points: 100,
       isActive: true,
       expiresAt: null // No expiration for the default reward
     });
@@ -27,24 +28,47 @@ const createDefaultQRCode = async (organizationId, organizationName) => {
   }
 };
 
+// Helper function to create a default "Free Point!" reward for new organizations
+const createDefaultReward = async (organizationId, organizationName) => {
+  try {
+    const reward = await Reward.create({
+      name: 'Free Point!',
+      description: 'Redeem 1000 points for a free point reward!',
+      pointsCost: 1000,
+      type: 'product',
+      isActive: true,
+      organizationId,
+      redemptionInstructions: 'Show this reward to the staff to redeem.',
+      termsAndConditions: 'No cash value. Cannot be combined with other offers.'
+    });
+    console.log(`✅ Created default reward for ${organizationName}`);
+    return reward;
+  } catch (error) {
+    console.error(`❌ Failed to create default reward for ${organizationName}:`, error);
+    throw error;
+  }
+};
+
 // Register user and brewery
 exports.register = async (req, res) => {
   try {
-    const { breweryName, email, password } = req.body;
+    const { breweryName, email, password, qrCode } = req.body;
 
     // Validation
-    if (!breweryName || !email || !password) {
-      return res.status(400).json(formatError('Brewery name, email, and password are required'));
+    if (!breweryName || !password) {
+      return res.status(400).json(formatError('Brewery name and password are required'));
     }
 
     if (password.length < 6) {
       return res.status(400).json(formatError('Password must be at least 6 characters long'));
     }
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json(formatError('A user with this email already exists'));
+    // Only check for existing user if email is provided (not in onboarding case)
+    if (email) {
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res.status(400).json(formatError('A user with this email already exists'));
+      }
     }
 
     // Check if brewery name is already taken
@@ -88,19 +112,40 @@ exports.register = async (req, res) => {
     const organization = new Organization({
       name: breweryName,
       email: email, // Use the same email for the brewery initially
-      description: `${breweryName} - A BrewTokens brewery`,
+      description: `${breweryName} - A cool brewery, if I've ever seen one`,
       code: organizationCode
     });
     await organization.save();
     console.log(`✅ Created organization: ${organization.name} with code: ${organization.code}`);
 
-    // Create default rewards QR code for the new brewery
+    // Create QR code and default reward for the new brewery
     let defaultQRCode = null;
+    let defaultReward = null;
     try {
-      defaultQRCode = await createDefaultQRCode(organization._id, organization.name);
+      if (qrCode) {
+        // Create QR code with provided code
+        defaultQRCode = await QRCode.create({
+          organization: organization._id,
+          code: qrCode,
+          name: 'Earn 100 Points!',
+          points: 100,
+          isActive: true,
+          expiresAt: null
+        });
+        console.log(`✅ Created QR code with provided code for ${organization.name}:`, defaultQRCode.code);
+      } else {
+        // Create default QR code
+        defaultQRCode = await createDefaultQRCode(organization._id, organization.name);
+      }
     } catch (qrError) {
       // Log the error but don't fail registration if QR code creation fails
-      console.error('Warning: Failed to create default QR code during registration:', qrError);
+      console.error('Warning: Failed to create QR code during registration:', qrError);
+    }
+    try {
+      defaultReward = await createDefaultReward(organization._id, organization.name);
+    } catch (rewardError) {
+      // Log the error but don't fail registration if reward creation fails
+      console.error('Warning: Failed to create default reward during registration:', rewardError);
     }
 
     // Create user
@@ -170,9 +215,15 @@ exports.register = async (req, res) => {
           code: defaultQRCode.code,
           name: defaultQRCode.name,
           points: defaultQRCode.points
+        } : null,
+        defaultReward: defaultReward ? {
+          id: defaultReward._id,
+          name: defaultReward.name,
+          description: defaultReward.description,
+          pointsCost: defaultReward.pointsCost
         } : null
       },
-      message: `Registration successful! Welcome to BrewTokens! ${defaultQRCode ? 'Your first 5-point reward QR code has been created.' : ''}`
+      message: `Registration successful! Welcome to BrewTokens! ${defaultQRCode ? 'Your first QR code has been created' : ''}${defaultQRCode && defaultReward ? ' and' : ''}${defaultReward ? ' a "Free Point!" reward is ready for your members' : ''}.`
     }));
   } catch (error) {
     console.error('Registration error:', error);

@@ -88,10 +88,53 @@
         </div>
       </div>
       
-      <!-- SCREEN 2: User Type Selection -->
+      <!-- SCREEN 2: Account Status Selection -->
       <div 
         class="screen min-h-screen flex flex-col items-center justify-center px-6 py-8"
         :class="getScreenClass(2)"
+      >
+        <div class="text-center max-w-2xl space-y-8">
+          <h2 class="text-4xl md:text-6xl font-black bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent leading-tight">
+            Welcome to BrewTokens!
+          </h2>
+          
+          <p class="text-xl md:text-2xl text-gray-300 font-light leading-relaxed">
+            Are you already registered or is this your first time?
+          </p>
+          
+          <div class="space-y-6 pt-8">
+            <!-- Primary: New Account -->
+            <button 
+              class="group w-full relative bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-600 hover:via-yellow-600 hover:to-amber-700 text-black font-black py-6 px-8 rounded-2xl text-lg md:text-xl transition-all duration-500 transform hover:scale-105 hover:shadow-[0_0_40px_rgba(251,191,36,0.4)] focus:outline-none focus:ring-4 focus:ring-amber-500/50 shadow-xl"
+              @click="selectAccountStatus('new')"
+            >
+              <span class="relative z-10 flex items-center justify-center space-x-3">
+                <Icon icon="mdi:account-plus" class="w-6 h-6" />
+                <span>I need to create a new account</span>
+              </span>
+              
+              <!-- Shine sweep -->
+              <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-1000 rounded-2xl"></div>
+            </button>
+            
+            <!-- Secondary: Existing Account -->
+            <button 
+              class="group w-full relative bg-gray-800 hover:bg-gray-700 text-white border-2 border-gray-600 hover:border-gray-500 py-6 px-8 rounded-2xl text-lg md:text-xl transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-gray-500/50"
+              @click="selectAccountStatus('existing')"
+            >
+              <span class="flex items-center justify-center space-x-3">
+                <Icon icon="mdi:account-check" class="w-6 h-6" />
+                <span>I already have an account</span>
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- SCREEN 3: User Type Selection -->
+      <div 
+        class="screen min-h-screen flex flex-col items-center justify-center px-6 py-8"
+        :class="getScreenClass(3)"
       >
         <div class="text-center max-w-2xl space-y-8">
           <h2 class="text-4xl md:text-6xl font-black bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent leading-tight">
@@ -131,11 +174,11 @@
         </div>
       </div>
       
-      <!-- SCREEN 3A: Customer End Screen -->
+      <!-- SCREEN 4A: Customer End Screen -->
       <div 
-        v-show="currentStep === 3 && userType === 'customer'"
+        v-show="currentStep === 4 && userType === 'customer'"
         class="screen min-h-screen flex flex-col items-center justify-center px-6 py-8"
-        :class="getScreenClass(3, 'customer')"
+        :class="getScreenClass(4, 'customer')"
       >
         <div class="text-center max-w-2xl space-y-8">
           <div class="text-amber-400 mb-6">
@@ -171,11 +214,11 @@
         </div>
       </div>
       
-      <!-- SCREEN 3B: Brewery Form -->
+      <!-- SCREEN 4B: Brewery Form -->
       <div 
-        v-show="currentStep === 3 && userType === 'brewery'"
+        v-show="currentStep === 4 && userType === 'brewery'"
         class="screen min-h-screen flex flex-col items-center justify-center px-6 py-8"
-        :class="getScreenClass(3, 'brewery')"
+        :class="getScreenClass(4, 'brewery')"
       >
         <div class="text-center max-w-lg space-y-8">
           <h2 class="text-4xl md:text-5xl font-black bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent leading-tight">
@@ -249,6 +292,7 @@ const currentStep = ref(1);
 const previousStep = ref(0);
 const isTransitioning = ref(false);
 const transitionDirection = ref('forward'); // 'forward' or 'backward'
+const accountStatus = ref(''); // 'new' or 'existing'
 const userType = ref(''); // 'brewery' or 'customer'
 const breweryName = ref('');
 const isSubmitting = ref(false);
@@ -259,7 +303,7 @@ const hasAttemptedCode = computed(() => !!attemptedCode.value);
 // Screen class management for smooth transitions
 const getScreenClass = (stepNumber, requiredUserType = null) => {
   // Check if this screen should be shown based on user type
-  if (stepNumber === 3 && requiredUserType && userType.value !== requiredUserType) {
+  if (stepNumber === 4 && requiredUserType && userType.value !== requiredUserType) {
     return 'screen-hidden';
   }
   
@@ -280,7 +324,7 @@ const getScreenClass = (stepNumber, requiredUserType = null) => {
 
 // Navigation functions with smooth transitions
 const goToNextStep = async () => {
-  if (currentStep.value < 3 && !isTransitioning.value) {
+  if (currentStep.value < 4 && !isTransitioning.value) {
     isTransitioning.value = true;
     transitionDirection.value = 'forward';
     previousStep.value = currentStep.value;
@@ -317,6 +361,22 @@ const goToPreviousStep = async () => {
       previousStep.value = 0;
     }, 600); // Match CSS transition duration
   }
+};
+
+const selectAccountStatus = (status) => {
+  accountStatus.value = status;
+  console.log('📝 Account status selected:', status);
+  
+  if (status === 'existing') {
+    // TODO: Redirect to login flow for existing users
+    console.log('🔄 Redirecting to login for existing users...');
+    // For now, show an alert - this should be replaced with actual login flow
+    alert('Login flow for existing users will be implemented here.');
+    return;
+  }
+  
+  // If new account, continue to user type selection
+  goToNextStep();
 };
 
 const selectUserType = (type) => {
