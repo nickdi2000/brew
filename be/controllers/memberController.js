@@ -352,3 +352,82 @@ exports.getMembershipByCode = async (req, res) => {
   }
 };
 
+// Get current user's membership for an organization by organization ID
+exports.getMembershipByOrganization = async (req, res) => {
+  try {
+    const user = req.user;
+    const { organizationId } = req.params;
+
+    if (!user) {
+      return res.status(401).json(formatError('Authentication required'));
+    }
+
+    if (!organizationId) {
+      return res.status(400).json(formatError('Organization ID is required'));
+    }
+
+    // Verify organization exists
+    const organization = await Organization.findById(organizationId);
+    if (!organization) {
+      return res.status(404).json(formatError('Organization not found'));
+    }
+
+    // Find the user's membership in this organization
+    const membership = await Member.findOne({ 
+      user: user._id, 
+      organization: organizationId 
+    })
+    .populate('user', 'email picture')
+    .populate('organization', 'name code');
+
+    if (!membership) {
+      return res.status(404).json(formatError('Membership not found for this organization'));
+    }
+
+    // Get recent transactions for this membership (last 10 transactions)
+    const Transaction = require('../models/Transaction');
+    const recentTransactions = await Transaction.find({
+      member: membership._id,
+      organization: organizationId
+    })
+    .sort({ createdAt: -1 })
+    .limit(10)
+    .populate('reward', 'name')
+    .populate('performedBy', 'email');
+
+    return res.json(formatResponse({
+      data: {
+        _id: membership._id,
+        organization: membership.organization,
+        role: membership.role,
+        status: membership.status,
+        points: membership.points,
+        user: {
+          email: membership.user?.email,
+          picture: membership.user?.picture
+        },
+        recentTransactions: recentTransactions.map(transaction => ({
+          _id: transaction._id,
+          amount: transaction.amount,
+          type: transaction.type,
+          method: transaction.method,
+          reward: transaction.reward ? {
+            name: transaction.reward.name
+          } : null,
+          performedBy: transaction.performedBy ? {
+            email: transaction.performedBy.email
+          } : null,
+          metadata: transaction.metadata,
+          createdAt: transaction.createdAt
+        })),
+        createdAt: membership.createdAt,
+        updatedAt: membership.updatedAt
+      },
+      message: 'Membership retrieved successfully'
+    }));
+  } catch (error) {
+    console.error('Error fetching membership by organization:', error);
+    return res.status(500).json(formatError('Error fetching membership by organization', error.message));
+  }
+};
+

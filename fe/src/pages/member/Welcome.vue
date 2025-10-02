@@ -161,7 +161,7 @@ const signInWithGoogle = async () => {
           const authResult = await store.dispatch('auth/handleGoogleLogin', {
             credential: response.credential,
             // Send public organization code (backend expects code, not _id)
-            organizationId: organization.value?.code
+            code: organization.value?.code
           });
           
           console.log('🔑 Google login completed:', {
@@ -175,13 +175,13 @@ const signInWithGoogle = async () => {
             }
           });
 
-          if (authResult.membership) {
-            toast('Successfully signed in!', 'success');
-            // Navigate to member portal
-            router.push({ name: 'member-portal', params: { code: organization.value?.code } });
-          } else {
-            toast('Signed in, but no membership found', 'warning');
+          if (!authResult.membership) {
+            toast('No membership found for this brewery', 'error');
+            return;
           }
+
+          toast('Successfully signed in!', 'success');
+          router.push({ name: 'member-portal', params: { code: organization.value?.code } });
         } catch (error) {
           console.error('Google login error:', error);
           toast(error.message || 'Failed to authenticate with server', 'error');

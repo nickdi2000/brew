@@ -1,9 +1,6 @@
 ---
-description:
-globs:
-alwaysApply: true
+alwaysApply: false
 ---
-
 1. ALWAYS:
    - Use composition API with `<script setup>`
    - use Iconify for icons ( ie <Icon icon="mdi:beer" class="h-6 w-6 text-gray-500" />)

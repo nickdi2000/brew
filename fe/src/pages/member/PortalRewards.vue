@@ -21,7 +21,7 @@
     <!-- Main Content -->
     <div v-else class="max-w-7xl mx-auto px-4 py-6">
       <!-- Success Screen - Show only when redeemed -->
-      <div v-if="route.query.redeemed === '1'" class="min-h-screen flex items-center justify-center p-4">
+      <div v-if="route.query.redeemed === '1'" class="min-h-xl flex items-center justify-center p-4">
         <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-8 shadow-xl border border-green-200 max-w-md w-full mx-auto">
           <div class="flex flex-col items-center space-y-4">
             <!-- Success Icons (Smaller) -->

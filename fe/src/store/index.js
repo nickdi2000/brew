@@ -42,15 +42,17 @@ export default createStore({
     transactions
   },
   state: {
-    user: storage.get('user', true) || null,
-    token: storage.get('token', false) || null,
+    user: storage.get('adminUser', true) || null,
+    token: storage.get('adminToken', false) || null,
     refreshToken: storage.get('refreshToken', false) || null,
     refreshTokenExpiresAt: storage.get('refreshTokenExpiresAt', true) || null,
-    isAuthenticated: false,
+    isAuthenticated: !!storage.get('adminUser', true),
     lastActivity: storage.get('lastActivity', true) || null,
     lastMemberCode: storage.get('lastMemberCode', false) || null,
     fetchingUser: false,
-    isDemoSession: storage.get('isDemoSession', true) || false
+    isDemoSession: storage.get('isDemoSession', true) || false,
+    memberLastActivity: storage.get('memberLastActivity', true) || null,
+    memberSessionMonitorId: null
   },
   
   getters: {
@@ -68,11 +70,11 @@ export default createStore({
     SET_USER(state, user) {
       state.user = user;
       state.isAuthenticated = !!user;
-      storage.set('user', user, true);
+      storage.set('adminUser', user, true);
     },
     SET_TOKEN(state, token) {
       state.token = token;
-      storage.set('token', token, false);
+      storage.set('adminToken', token, false);
     },
     SET_REFRESH_TOKEN(state, token) {
       state.refreshToken = token;
@@ -83,9 +85,17 @@ export default createStore({
       storage.set('refreshTokenExpiresAt', timestamp, true);
     },
     SET_LAST_ACTIVITY(state) {
-      const timestamp = new Date().getTime();
+      const timestamp = Date.now();
       state.lastActivity = timestamp;
       storage.set('lastActivity', timestamp, true);
+    },
+    SET_MEMBER_LAST_ACTIVITY(state) {
+      const timestamp = Date.now();
+      state.memberLastActivity = timestamp;
+      storage.set('memberLastActivity', timestamp, true);
+    },
+    SET_MEMBER_SESSION_MONITOR_ID(state, intervalId) {
+      state.memberSessionMonitorId = intervalId;
     },
     SET_LAST_MEMBER_CODE(state, code) {
       state.lastMemberCode = code || null;
@@ -107,11 +117,12 @@ export default createStore({
       state.lastActivity = null;
       state.fetchingUser = false;
       state.isDemoSession = false;
-      storage.set('user', null, true);
-      storage.set('token', null, false);
+      storage.set('adminUser', null, true);
+      storage.set('adminToken', null, false);
       storage.set('refreshToken', null, false);
       storage.set('refreshTokenExpiresAt', null, true);
       storage.set('lastActivity', null, true);
+      storage.set('memberLastActivity', null, true);
       storage.set('isDemoSession', false, true);
       // intentionally keep lastMemberCode persisted across logouts
     }
@@ -271,7 +282,7 @@ export default createStore({
       }
     },
     
-    async logout({ commit, state }, { redirect = true, routeType = 'member' } = {}) {
+    async logout({ commit, state, dispatch }, { redirect = true, routeType = 'member' } = {}) {
       try {
         // Try to call logout endpoint if we have a token
         if (this.state.token && !state.isDemoSession) {
@@ -282,6 +293,7 @@ export default createStore({
       } finally {
         const memberCode = state.lastMemberCode;
         commit('CLEAR_AUTH');
+        dispatch('auth/resetAuthState', null, { root: true });
         if (redirect) {
           if (routeType === 'admin') {
             router.push('/login');

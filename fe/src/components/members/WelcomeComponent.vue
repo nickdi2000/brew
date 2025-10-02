@@ -166,7 +166,7 @@ const store = useStore();
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
-const currentUser = computed(() => store.getters.currentUser);
+const currentUser = computed(() => store.getters['auth/currentUser'] || store.getters.currentUser);
 const isLoading = ref(false);
 const googleClientId = ref(import.meta.env.VITE_GOOGLE_CLIENT_ID);
 const bellClickCount = ref(0);
@@ -205,7 +205,7 @@ const isDevelopment = computed(() => {
 
 // Determine if the logged-in user is an admin of this organization
 const isAdminOfThisOrg = computed(() => {
-  const user = store.getters.currentUser;
+  const user = store.getters['auth/currentUser'] || store.getters.currentUser;
   const memberships = user?.memberships || [];
   if (!props.code && !route.params.code) return false;
   // We need to know if user has admin membership for this org code.
@@ -220,7 +220,7 @@ onMounted(async () => {
   if (!codeToUse) return;
 
   // If user is already logged in, redirect to member portal
-  if (store.getters.token) {
+  if (store.getters['auth/token']) {
     router.push({ name: 'member-portal', params: { code: codeToUse } });
     return;
   }
@@ -245,13 +245,15 @@ const handleGoogleLoginSuccess = async (response) => {
 
   try {
     isLoading.value = true;
-    await store.dispatch('auth/handleGoogleLogin', {
+    const authResult = await store.dispatch('auth/handleGoogleLogin', {
       credential: response.code,
-      // Our auth module expects organizationId param, which the API layer maps
-      organizationId: codeToUse
+      code: codeToUse
     });
-    
-    // Navigate to the authenticated member portal
+
+    if (!authResult?.membership) {
+      throw new Error('No membership found for this organization');
+    }
+
     router.push({ name: 'member-portal', params: { code: codeToUse } });
   } catch (error) {
     console.error('❌ Google login error:', error);
@@ -285,7 +287,11 @@ const handleDemoLogin = async () => {
     isLoading.value = true;
     console.log('🧪 Demo login started');
     
-    await store.dispatch('auth/handleDemoLogin', { organizationId: codeToUse });
+    const authResult = await store.dispatch('auth/handleDemoLogin', { code: codeToUse });
+
+    if (!authResult?.membership) {
+      throw new Error('No membership found for this organization');
+    }
 
     store.commit('SET_DEMO_SESSION', true);
 

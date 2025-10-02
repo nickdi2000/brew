@@ -84,7 +84,7 @@ const fetchTransactions = async () => {
 onMounted(async () => {
   try {
     // Require auth + membership
-    const isAuthenticated = store.getters.isAuthenticated;
+    const isAuthenticated = store.getters['auth/isAuthenticated'];
     if (!isAuthenticated || !membership.value) {
       router.replace(`/members/${route.params.code}`);
       return;

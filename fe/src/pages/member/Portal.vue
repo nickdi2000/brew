@@ -119,13 +119,13 @@ const loading = ref(true);
 const error = ref(false);
 const organization = ref(null);
 const showAddTransactionModal = ref(false);
-const currentUser = computed(() => store.getters.currentUser);
+const currentUser = computed(() => store.getters['auth/currentUser']);
 const membership = computed(() => store.getters['auth/currentMembership']);
 
 // Transactions state - use transactions from membership data instead of separate store
-const transactions = computed(() => membership.value?.recentTransactions || []);
-const transactionsLoading = computed(() => store.getters['auth/isLoading']);
-const transactionsError = computed(() => store.getters['auth/error']);
+const transactionsLoading = ref(false);
+const transactionsError = ref(false);
+const transactions = computed(() => membership.value?.recentTransactions ?? []);
 
 const code = computed(() => String(route.params.code || ''));
 
@@ -152,11 +152,17 @@ const goToScan = () => {
 };
 
 const fetchTransactions = async () => {
-  // Since transactions come from membership data, refresh the user data to get latest transactions
+  transactionsLoading.value = true;
+  transactionsError.value = false;
+
   try {
-    await store.dispatch('auth/refreshUserData');
+    await store.dispatch('auth/fetchMembershipForCode', { code: code.value });
   } catch (err) {
+    console.error('Failed to fetch membership for transactions', err);
+    transactionsError.value = true;
     toast('Failed to load transactions', 'error');
+  } finally {
+    transactionsLoading.value = false;
   }
 };
 
@@ -169,7 +175,7 @@ const handleTransactionAdded = async () => {
 onMounted(async () => {
   try {
     // Require auth + membership; otherwise, go back to login/welcome
-    const isAuthenticated = store.getters.isAuthenticated;
+    const isAuthenticated = store.getters['auth/isAuthenticated'];
     if (!isAuthenticated) {
       router.replace(`/members/${code.value}`);
       return;
@@ -185,24 +191,13 @@ onMounted(async () => {
     store.commit('organization/SET_CURRENT_ORGANIZATION_ID', organization.value._id);
 
     if (!membership.value) {
-      // Try to load membership by code
-      try {
-        const { default: api } = await import('@/api');
-        const resp = await api.get(`/memberships/by-code/${code.value}`);
-        const m = resp.data?.data || null;
-        if (m) {
-          store.commit('auth/SET_MEMBERSHIP', m);
-        } else {
-          router.replace(`/members/${code.value}`);
-          return;
-        }
-      } catch {
+      const resolvedMembership = await store.dispatch('auth/fetchMembershipForCode', { code: code.value });
+      if (!resolvedMembership) {
         router.replace(`/members/${code.value}`);
         return;
       }
     }
 
-    // Always refresh user data on portal load to ensure we have the latest transactions
     await fetchTransactions();
   } finally {
     loading.value = false;

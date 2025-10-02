@@ -181,7 +181,7 @@ const router = useRouter();
 const showMenu = ref(false);
 const pointsUpdated = ref(false);
 const displayPoints = ref(0);
-const currentUser = computed(() => store.getters.currentUser);
+const currentUser = computed(() => store.getters['auth/currentUser'] || store.getters.currentUser);
 const currentMembership = computed(() => store.getters['auth/currentMembership']);
 
 // Initialize display points

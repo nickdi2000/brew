@@ -111,15 +111,15 @@ const routes = [
           }
           
           // Ensure we pull latest auth state if token exists but user not loaded
-          let isAuthenticated = store.default.getters.isAuthenticated;
-          if (!isAuthenticated && store.default.getters.token) {
+          let isAuthenticated = store.default.getters['auth/isAuthenticated'];
+          if (!isAuthenticated && store.default.getters['auth/token']) {
             try {
-              await store.default.dispatch('fetchCurrentUser');
-              isAuthenticated = store.default.getters.isAuthenticated;
+              await store.default.dispatch('auth/refreshUserData');
+              isAuthenticated = store.default.getters['auth/isAuthenticated'];
             } catch {}
           }
 
-          const currentUser = store.default.getters.currentUser;
+          const currentUser = store.default.getters['auth/currentUser'];
           const membership = store.default.getters['auth/currentMembership'];
 
           // If authenticated and has membership, redirect to portal
@@ -142,9 +142,9 @@ const routes = [
           if (to.params.code) {
             store.default.commit('SET_LAST_MEMBER_CODE', String(to.params.code))
           }
-          let isAuthenticated = store.default.getters.isAuthenticated;
-          if (!isAuthenticated && store.default.getters.token) {
-            try { await store.default.dispatch('fetchCurrentUser'); isAuthenticated = store.default.getters.isAuthenticated; } catch {}
+          let isAuthenticated = store.default.getters['auth/isAuthenticated'];
+          if (!isAuthenticated && store.default.getters['auth/token']) {
+            try { await store.default.dispatch('auth/refreshUserData'); isAuthenticated = store.default.getters['auth/isAuthenticated']; } catch {}
           }
           const membership = store.default.getters['auth/currentMembership'];
           if (!isAuthenticated) {
@@ -171,9 +171,9 @@ const routes = [
         meta: { public: false },
         beforeEnter: async (to, from, next) => {
           const store = await import('@/store');
-          let isAuthenticated = store.default.getters.isAuthenticated;
-          if (!isAuthenticated && store.default.getters.token) {
-            try { await store.default.dispatch('fetchCurrentUser'); isAuthenticated = store.default.getters.isAuthenticated; } catch {}
+          let isAuthenticated = store.default.getters['auth/isAuthenticated'];
+          if (!isAuthenticated && store.default.getters['auth/token']) {
+            try { await store.default.dispatch('auth/refreshUserData'); isAuthenticated = store.default.getters['auth/isAuthenticated']; } catch {}
           }
           const membership = store.default.getters['auth/currentMembership'];
           if (!isAuthenticated) {
@@ -200,9 +200,9 @@ const routes = [
         meta: { public: false },
         beforeEnter: async (to, from, next) => {
           const store = await import('@/store');
-          let isAuthenticated = store.default.getters.isAuthenticated;
-          if (!isAuthenticated && store.default.getters.token) {
-            try { await store.default.dispatch('fetchCurrentUser'); isAuthenticated = store.default.getters.isAuthenticated; } catch {}
+          let isAuthenticated = store.default.getters['auth/isAuthenticated'];
+          if (!isAuthenticated && store.default.getters['auth/token']) {
+            try { await store.default.dispatch('auth/refreshUserData'); isAuthenticated = store.default.getters['auth/isAuthenticated']; } catch {}
           }
           const membership = store.default.getters['auth/currentMembership'];
           if (!isAuthenticated) {
@@ -229,9 +229,9 @@ const routes = [
         meta: { public: false },
         beforeEnter: async (to, from, next) => {
           const store = await import('@/store');
-          let isAuthenticated = store.default.getters.isAuthenticated;
-          if (!isAuthenticated && store.default.getters.token) {
-            try { await store.default.dispatch('fetchCurrentUser'); isAuthenticated = store.default.getters.isAuthenticated; } catch {}
+          let isAuthenticated = store.default.getters['auth/isAuthenticated'];
+          if (!isAuthenticated && store.default.getters['auth/token']) {
+            try { await store.default.dispatch('auth/refreshUserData'); isAuthenticated = store.default.getters['auth/isAuthenticated']; } catch {}
           }
           const membership = store.default.getters['auth/currentMembership'];
           if (!isAuthenticated) {
@@ -258,9 +258,9 @@ const routes = [
         meta: { public: false },
         beforeEnter: async (to, from, next) => {
           const store = await import('@/store');
-          let isAuthenticated = store.default.getters.isAuthenticated;
-          if (!isAuthenticated && store.default.getters.token) {
-            try { await store.default.dispatch('fetchCurrentUser'); isAuthenticated = store.default.getters.isAuthenticated; } catch {}
+          let isAuthenticated = store.default.getters['auth/isAuthenticated'];
+          if (!isAuthenticated && store.default.getters['auth/token']) {
+            try { await store.default.dispatch('auth/refreshUserData'); isAuthenticated = store.default.getters['auth/isAuthenticated']; } catch {}
           }
           const membership = store.default.getters['auth/currentMembership'];
           if (!isAuthenticated) {
@@ -410,15 +410,59 @@ router.beforeResolve(async (to, from, next) => {
 router.beforeEach(async (to, from, next) => {
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
   const isPublicRoute = to.matched.some(record => record.meta.public);
-  const token = store.getters.token;
-  let isAuthenticated = store.getters.isAuthenticated;
+  const isMemberRoute = to.path.startsWith('/members');
 
-  // Persist member code globally on any members route
   if (to.path.startsWith('/members/') && to.params.code) {
     store.commit('SET_LAST_MEMBER_CODE', String(to.params.code))
   }
 
-  // If we have a token but no user, try to fetch the user
+  if (isMemberRoute) {
+    const memberToken = store.getters['auth/token'];
+
+    if (memberToken && !store.getters['auth/currentUser']) {
+      try {
+        await store.dispatch('auth/refreshUserData');
+      } catch (error) {
+        console.error('Failed to refresh member user', error);
+        await store.dispatch('auth/resetAuthState');
+        next({ name: 'member-home', params: { code: to.params.code } });
+        return;
+      }
+    }
+
+    const currentUser = store.getters['auth/currentUser'];
+    let membership = store.getters['auth/currentMembership'];
+
+    if (currentUser && to.params.code) {
+      if (!membership || !membership.organization) {
+        membership = await store.dispatch('auth/fetchMembershipForCode', {
+          code: to.params.code,
+          organizationId: membership?.organization?._id || membership?.organization
+        });
+      }
+
+      if (membership && to.name === 'member-home') {
+        next({ name: 'member-portal', params: { code: to.params.code } });
+        return;
+      }
+      if (membership) {
+        next();
+        return;
+      }
+    }
+
+    if (!isPublicRoute && to.params.code) {
+      next({ name: 'member-home', params: { code: to.params.code } });
+      return;
+    }
+
+    next();
+    return;
+  }
+
+  let isAuthenticated = store.getters.isAuthenticated;
+  const token = store.getters.token;
+
   if (token && !isAuthenticated) {
     try {
       await store.dispatch('fetchCurrentUser');
@@ -430,69 +474,27 @@ router.beforeEach(async (to, from, next) => {
     }
   }
 
-  // Do not redirect member routes to admin login; keep them in members flow
-  const isMemberRoute = to.path.startsWith('/members');
-
-  // For member portal routes, check membership and redirect accordingly
-  if (isMemberRoute && isAuthenticated) {
-    const membership = store.getters['auth/currentMembership'];
-    const code = to.params.code;
-
-    // If we're at the member home but have auth+membership, go to portal
-    if (to.name === 'member-home' && membership && code) {
-      next({ name: 'member-portal', params: { code } });
-      return;
-    }
-
-    // If we're at a protected route but missing membership, try to fetch it
-    if (!membership && !to.meta.public && code) {
-      try {
-        const { default: api } = await import('@/api');
-        const resp = await api.get(`/memberships/by-code/${code}`);
-        const m = resp.data?.data || null;
-        if (m) {
-          store.commit('auth/SET_MEMBERSHIP', m);
-          next(); // Continue to requested route with membership
-          return;
-        }
-      } catch {
-        // If we can't get membership, send to member home
-        next({ name: 'member-home', params: { code } });
-        return;
-      }
-    }
-  }
-
-  // If authenticated admin user trying to access public routes
-  if (!isMemberRoute && isAuthenticated && to.path === '/login') {
+  if (isAuthenticated && to.path === '/login') {
     next('/admin/dashboard');
     return;
   }
 
-  // Handle authentication for admin routes
-  if (!isMemberRoute && requiresAuth && !isAuthenticated) {
+  if (requiresAuth && !isAuthenticated) {
     next({ name: 'admin-login', query: { redirect: to.fullPath } });
     return;
   }
 
-  // Allow access to public routes
   if (isPublicRoute) {
     next();
     return;
   }
 
-  // Allow access to authenticated routes
   if (isAuthenticated) {
     next();
     return;
   }
 
-  // For non-member unauthenticated, default to admin-login; for member routes, keep them in member landing
-  if (isMemberRoute) {
-    next();
-  } else {
-    next({ name: 'admin-login' });
-  }
+  next({ name: 'admin-login' });
 })
 
 export default router

@@ -41,5 +41,8 @@ router.patch('/:id/points', authenticateToken, memberController.updateMemberPoin
 // Use optional auth to attach user if token is present, otherwise return null data
 router.get('/by-code/:code', optionalAuthenticate, memberController.getMembershipByCode);
 
+// Get current user's membership by organization ID (requires authentication)
+router.get('/by-organization/:organizationId', [logRequest, authenticateToken], memberController.getMembershipByOrganization);
+
 module.exports = router;
 

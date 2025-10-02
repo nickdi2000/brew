@@ -964,7 +964,7 @@ onMounted(async () => {
     });
   }
   try {
-    const isAuthenticated = store.getters.isAuthenticated;
+    const isAuthenticated = store.getters['auth/isAuthenticated'];
     const code = route.params.code;
     logStage('lifecycle', 'Auth status and route code received', { isAuthenticated, code });
 

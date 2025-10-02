@@ -1,0 +1,35 @@
+---
+alwaysApply: true
+---
+
+
+1. ALWAYS:
+   - Use composition API with `<script setup>`
+   - use Iconify for icons ( ie <Icon icon="mdi:beer" class="h-6 w-6 text-gray-500" />)
+   - Define prop types and defaults
+   - Handle loading/error states
+   - Show empty states
+   - Clean up listeners and timers
+   - Try to build out components into separate re-usable components by responsibility if they are fairly large/complex, use informative naming conventions for the files. 
+   - Use api service from api/index.js for all api calls
+
+2. NOTIFICATIONS:
+   - use this.$toast(message, 'error') in components
+   - and useToast()(message, 'error') in composition API setup
+   - Provide clear messages
+   - Use correct type (success/error)
+   - Show loading feedback
+   - Handle errors gracefully
+
+3. FORMS:
+   - Use v-model
+   - Validate inputs
+   - Show feedback
+   - Prevent double submit
+   - Handle API errors
+   - Use the btn btn-primary and btn-secondary classes
+
+4. AUTH:
+- the 'admin' auth (ie "/admin" route) is separate from the member auth (ie "/members")
+- the "members" "login" page must be at at specific organization, indicated by the code in the route: (ie /members/gordon). 
+- a logged in member should not be able to access the login page (/members) as they should be re-directed to the portal (/members/gordon/portal).  

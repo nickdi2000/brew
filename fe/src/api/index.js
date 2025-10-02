@@ -39,7 +39,10 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
-    const token = store.getters.token;
+    const isMember = isMemberRequest(config.url);
+    const token = isMember
+      ? store.getters['auth/token']
+      : store.getters.token;
     const currentOrganizationId = store.getters['organization/currentOrganizationId'];
     
     const isDemoSession = store.state.isDemoSession;
@@ -345,12 +348,12 @@ const getCurrentUser = async () => {
   return response.data;
 };
 
-const googleLogin = async (credential, organizationId) => {
+const googleLogin = async (credential, organizationCode) => {
   try {
     console.log('🔍 Sending Google login request:', { 
       credentialLength: credential?.length,
       credentialStart: credential?.substring(0, 50) + '...',
-      organizationId
+      organizationCode
     });
 
     // Cancel any pending token refresh attempts
@@ -372,7 +375,7 @@ const googleLogin = async (credential, organizationId) => {
     // Now send the ID token to our backend
     const response = await api.post('/auth/google/login', {
       token: tokenResponse.data.id_token,
-      organizationCode: organizationId // organizationId parameter actually contains the code
+      code: organizationCode
     }, {
       headers: {
         'Content-Type': 'application/json'
@@ -391,9 +394,9 @@ const googleLogin = async (credential, organizationId) => {
 };
 
 // Demo login function (development only)
-const demoLogin = async (organizationId) => {
+const demoLogin = async (organizationCode) => {
   try {
-    console.log('🧪 Demo login request:', { organizationId });
+    console.log('🧪 Demo login request:', { organizationCode });
 
     // Cancel any pending token refresh attempts
     cancelPendingRequests('Demo login attempt');
@@ -430,8 +433,8 @@ const demoLogin = async (organizationId) => {
 
       // Send directly to our backend, bypassing Google OAuth
       const response = await api.post('/auth/google/login', {
-        token: demoToken, // Backend expects 'token' parameter
-        organizationCode: organizationId
+        token: demoToken,
+        code: organizationCode
       }, {
         headers: {
           'Content-Type': 'application/json'

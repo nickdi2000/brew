@@ -26,7 +26,8 @@ store.dispatch('initAuth')
   .then(async () => {
     try {
       // Only initialize organization when authenticated
-      if (store.getters.isAuthenticated && store.getters.token) {
+      const isAdminAuthenticated = store.getters.isAuthenticated && store.getters.token;
+      if (isAdminAuthenticated) {
         await store.dispatch('organization/initializeStore')
       }
     } catch (e) {
