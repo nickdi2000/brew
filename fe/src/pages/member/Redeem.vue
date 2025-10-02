@@ -21,7 +21,7 @@
       <!-- Header -->
       <div class="text-center">
         <h1 class="text-3xl font-bold text-gray-900">Confirm Redemption</h1>
-        <p class="mt-2 text-gray-600">Please review the details before redeeming your reward</p>
+        <p class="mt-2 text-gray-600">Quickly review the essentials. Tap below if you need the full details.</p>
       </div>
 
       <!-- Reward Card -->
@@ -42,7 +42,55 @@
         <!-- Reward Content -->
         <div class="p-6">
           <h2 class="text-2xl font-bold text-gray-900">{{ reward.name }}</h2>
-          <p class="mt-2 text-gray-600">{{ reward.description }}</p>
+
+          <div class="mt-3">
+            <p class="text-sm text-gray-600 line-clamp-3" v-if="!showDetails">{{ reward.description }}</p>
+            <div v-else class="space-y-3 text-sm text-gray-600">
+              <p>{{ reward.description }}</p>
+
+              <div class="bg-amber-50 border border-amber-100 rounded-lg p-3">
+                <h3 class="text-sm font-semibold text-amber-800 flex items-center gap-2">
+                  <Icon icon="mdi:information" class="h-4 w-4" />
+                  How redemption works
+                </h3>
+                <p class="mt-1 text-xs text-amber-700">
+                  Slide to confirm when you are ready to redeem. Staff will validate this reward in person.
+                </p>
+              </div>
+
+              <div class="space-y-2">
+                <div>
+                  <h3 class="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                    <Icon icon="mdi:clipboard-text" class="h-4 w-4 text-amber-600" />
+                    Redemption Instructions
+                  </h3>
+                  <p class="mt-1 text-xs text-gray-600">
+                    {{ reward.redemptionInstructions || 'Show this reward to staff to redeem.' }}
+                  </p>
+                </div>
+
+                <div v-if="reward.termsAndConditions">
+                  <h3 class="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                    <Icon icon="mdi:shield-check" class="h-4 w-4 text-amber-600" />
+                    Terms & Conditions
+                  </h3>
+                  <p class="mt-1 text-xs text-gray-600">
+                    {{ reward.termsAndConditions }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              class="mt-3 text-sm font-medium text-amber-600 hover:text-amber-700 focus:outline-none"
+              @click="toggleDetails"
+            >
+              <span class="inline-flex items-center gap-2">
+                <Icon :icon="showDetails ? 'mdi:chevron-up' : 'mdi:chevron-down'" class="h-4 w-4" />
+                {{ showDetails ? 'Hide' : 'See more' }} details
+              </span>
+            </button>
+          </div>
 
           <!-- Points Summary -->
           <div class="mt-6 space-y-3 text-sm">
@@ -60,36 +108,24 @@
             </div>
           </div>
 
-          <!-- Redemption Instructions -->
-          <div class="mt-6">
-            <h3 class="font-medium text-gray-900">Redemption Instructions</h3>
-            <p class="mt-2 text-sm text-gray-600">
-              {{ reward.redemptionInstructions || 'Show this reward to staff to redeem.' }}
-            </p>
-          </div>
-
-          <!-- Terms & Conditions -->
-          <div v-if="reward.termsAndConditions" class="mt-6">
-            <h3 class="font-medium text-gray-900">Terms & Conditions</h3>
-            <p class="mt-2 text-sm text-gray-500">{{ reward.termsAndConditions }}</p>
-          </div>
         </div>
       </div>
 
-      <!-- Action Buttons -->
-      <div class="flex flex-col gap-4">
-        <button
-          @click="redeemReward"
-          :disabled="isRedeeming || !canRedeem"
-          class="w-full btn btn-primary flex items-center justify-center gap-2 py-4 text-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Icon 
-            :icon="isRedeeming ? 'mdi:loading' : 'mdi:gift'" 
-            :class="{'animate-spin': isRedeeming}"
-            class="h-6 w-6" 
-          />
-          {{ isRedeeming ? 'Redeeming...' : 'Confirm Redemption' }}
-        </button>
+      <!-- Action Section -->
+      <div class="space-y-4">
+        <SlideToConfirm
+          :disabled="!canRedeem"
+          :loading="isRedeeming"
+          :title="reward?.name"
+          :subtitle="`Redeem for ${reward?.pointsCost ?? 0} points`"
+          label="Slide to redeem"
+          confirm-label="Keep sliding to confirm"
+          success-label="Redeemed"
+          helper-text="Slide fully to the right to confirm redemption"
+          success-icon="mdi:gift-open"
+          icon="mdi:gesture-swipe-right"
+          @confirm="redeemReward"
+        />
 
         <button
           @click="router.back()"
@@ -112,6 +148,7 @@ import { Icon } from '@iconify/vue';
 import { useToast } from '@/plugins/toast';
 import { rewardsApi } from '@/api/rewards';
 import type { Reward } from '@/types/reward';
+import SlideToConfirm from '@/components/member/SlideToConfirm.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -124,6 +161,7 @@ const error = ref(false);
 const errorMessage = ref('');
 const reward = ref<Reward | null>(null);
 const isRedeeming = ref(false);
+const showDetails = ref(false);
 
 // Computed
 const membership = computed(() => store.getters['auth/currentMembership']);
@@ -211,6 +249,10 @@ const redeemReward = async () => {
   } finally {
     isRedeeming.value = false;
   }
+};
+
+const toggleDetails = () => {
+  showDetails.value = !showDetails.value;
 };
 
 // Lifecycle

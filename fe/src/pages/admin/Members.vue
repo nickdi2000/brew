@@ -84,7 +84,7 @@
                       Try adjusting your filters or search terms.
                     </template>
                     <template v-else>
-                      Share your <router-link to="/admin/settings" class="text-amber-600 hover:text-amber-700 underline">member portal link</router-link> to start growing your community!
+                      Share your <router-link to="/admin/qr-codes?tab=portal" class="text-amber-600 hover:text-amber-700 underline">member portal link</router-link> to start growing your community!
                     </template>
                   </p>
                   <button

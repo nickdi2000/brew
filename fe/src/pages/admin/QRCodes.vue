@@ -18,7 +18,7 @@
           <button
             v-for="tab in tabs"
             :key="tab.id"
-            @click="activeTab = tab.id"
+          @click="handleTabClick(tab.id)"
             :class="[
               activeTab === tab.id
                 ? 'bg-white text-gray-900 border-gray-300 border-t border-l border-r -mb-px z-20'
@@ -299,14 +299,17 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { qrCodesApi } from '../../api/qrCodes';
 import type { QRCode } from '../../types/qrCode';
 import VueQrcode from '@chenfengyuan/vue-qrcode';
 import AwardQRDrawer from '../../components/rewards/AwardQRDrawer.vue';
 import { Icon } from '@iconify/vue';
 import { useToast } from '../../plugins/toast';
-import { Store, useStore } from 'vuex';
+import { useStore } from 'vuex';
 
+const route = useRoute();
+const router = useRouter();
 const toast = useToast();
 const store = useStore();
 
@@ -358,6 +361,53 @@ watch(
   () => {
     lastUpdatedTime.value = new Date();
   }
+);
+
+const sanitizeTabId = (tabId: string | string[] | null | undefined) => {
+  if (!tabId) return null;
+  const value = Array.isArray(tabId) ? tabId[0] : tabId;
+  return tabs.some(tab => tab.id === value) ? value : null;
+};
+
+const setActiveTab = (tabId: string) => {
+  if (tabId === activeTab.value) return;
+  activeTab.value = tabId;
+};
+
+const handleTabClick = (tabId: string) => {
+  setActiveTab(tabId);
+};
+
+watch(
+  () => route.query.tab,
+  newTab => {
+    const tabFromRoute = sanitizeTabId(newTab);
+    if (tabFromRoute) {
+      setActiveTab(tabFromRoute);
+    } else if (newTab !== undefined && newTab !== null) {
+      router.replace({
+        query: {
+          ...route.query,
+          tab: 'points'
+        }
+      });
+    }
+  },
+  { immediate: true }
+);
+
+watch(
+  activeTab,
+  newTab => {
+    if (route.query.tab === newTab) return;
+    router.replace({
+      query: {
+        ...route.query,
+        tab: newTab
+      }
+    });
+  },
+  { immediate: true }
 );
 
 const fetchAwardQRCodes = async () => {

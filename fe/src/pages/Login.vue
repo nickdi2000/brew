@@ -328,6 +328,10 @@
             </div>
           </form>
         </div>
+
+        <p class="mt-4 text-center text-xs text-gray-400">
+          Version: {{ appVersion }}
+        </p>
       </div>
     </div>
 
@@ -404,6 +408,7 @@ import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import { Icon } from '@iconify/vue'
 import { useToast } from '@/plugins/toast'
+import packageJson from '../../package.json' with { type: 'json' }
 
 // Get signup status from environment variable
 const ENABLE_SIGNUP = import.meta.env.VITE_ENABLE_SIGNUP === 'true'
@@ -430,6 +435,8 @@ const unlockError = ref('')
 const isUnlocking = ref(false)
 
 const toast = useToast()
+
+const appVersion = computed(() => packageJson.version ?? '0.0.0')
 
 // Demo account credentials from seeder
 const DEMO_EMAIL = 'sample@brewtokens.com'
