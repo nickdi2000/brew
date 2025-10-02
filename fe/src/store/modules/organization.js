@@ -9,7 +9,9 @@ const state = {
     name: '',
     description: '',
     email: '',
-    website: ''
+    website: '',
+    stats: [],
+    awardQRCodes: []
   },
   currentOrganizationId: null,
   initialized: false,
@@ -19,6 +21,7 @@ const state = {
 
 const getters = {
   config: state => state.config,
+  stats: state => state.config.stats ?? [],
   loading: state => state.loading,
   error: state => state.error,
   isInitialized: state => state.initialized,
@@ -29,9 +32,18 @@ const getters = {
 const mutations = {
   SET_CONFIG(state, config) {
     // Ensure we maintain default values for any missing properties
+    const stats = Array.isArray(config?.stats)
+      ? config.stats
+      : state.config.stats ?? [];
+    const awardQRCodes = Array.isArray(config?.awardQRCodes)
+      ? config.awardQRCodes
+      : state.config.awardQRCodes ?? [];
+
     state.config = {
       ...state.config,
-      ...config
+      ...config,
+      stats,
+      awardQRCodes
     };
     // If we have an ID in the config and no current organization is set, set it
     if (config._id && !state.currentOrganizationId) {
@@ -51,6 +63,16 @@ const mutations = {
     state.initialized = initialized;
   },
   UPDATE_CONFIG_FIELD(state, { field, value }) {
+    if (field === 'stats') {
+      state.config[field] = Array.isArray(value) ? value : [];
+      return;
+    }
+
+    if (field === 'awardQRCodes') {
+      state.config[field] = Array.isArray(value) ? value : [];
+      return;
+    }
+
     state.config[field] = value;
   }
 };
@@ -62,12 +84,18 @@ const actions = {
     if (!rootState.isAuthenticated || !rootState.token) {
       return;
     }
-    
+
+    // Skip backend fetches when running a demo session
+    if (rootState.isDemoSession) {
+      commit('SET_INITIALIZED', true);
+      return;
+    }
+
     try {
       // Get organization ID from user data
       const user = rootState.user;
       let orgId = null;
-      
+
       // Try to get organization ID from different possible locations
       if (user?.organization?._id) {
         orgId = user.organization._id;
@@ -85,7 +113,7 @@ const actions = {
       } else {
         console.warn('No organization ID found in user data:', user);
       }
-      
+
       await dispatch('fetchConfig');
       commit('SET_INITIALIZED', true);
     } catch (error) {
@@ -101,7 +129,7 @@ const actions = {
   async fetchConfig({ commit }) {
     commit('SET_LOADING', true);
     commit('SET_ERROR', null);
-    
+
     try {
       const response = await getOrganization();
       console.log('Organization response:', response);
@@ -122,7 +150,7 @@ const actions = {
   async updateConfig({ commit, dispatch }, configData) {
     commit('SET_LOADING', true);
     commit('SET_ERROR', null);
-    
+
     try {
       const response = await updateOrganization(configData);
       console.log('Update organization response:', response);

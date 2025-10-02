@@ -244,7 +244,7 @@ const goToProfile = () => {
 const handleLogout = async () => {
   showMenu.value = false;
   try {
-    await store.dispatch('logout', { redirect: false });
+    await store.dispatch('logout', { redirect: false, routeType: 'member' });
   } finally {
     router.replace({ name: 'member-home', params: { code: route.params.code } });
   }

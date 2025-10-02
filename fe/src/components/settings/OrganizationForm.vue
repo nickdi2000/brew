@@ -27,13 +27,13 @@
         </div>
 
         <div>
-          <label for="email" class="block text-sm font-medium text-gray-700">Support Email</label>
+          <label for="email" class="block text-sm font-medium text-gray-700">Support Email (optional)</label>
           <input
             type="email"
             id="email"
             v-model="formData.email"
             class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
-            required
+            
           />
         </div>
 

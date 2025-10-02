@@ -1,7 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import store from '../store'
 import Landing from '../pages/Landing.vue'
+import LandingBrewery from '../pages/LandingBrewery.vue'
 import Login from '../pages/Login.vue'
+import Contact from '../pages/Contact.vue'
 import AdminLayout from '../layouts/AdminLayout.vue'
 import MemberPortalLayout from '../layouts/MemberPortalLayout.vue'
 import Dashboard from '../pages/admin/Dashboard.vue'
@@ -10,7 +12,6 @@ import Settings from '../pages/admin/Settings.vue'
 import QRPrint from '../pages/admin/QRPrint.vue'
 import Rewards from '../pages/admin/Rewards.vue'
 import QRCodes from '../pages/admin/QRCodes.vue'
-import Analytics from '../pages/admin/Analytics.vue'
 import MyProfile from '../pages/admin/MyProfile.vue'
 import Welcome from '../pages/member/Welcome.vue'
 import MemberPortal from '../pages/member/Portal.vue'
@@ -27,6 +28,18 @@ const routes = [
     path: '/',
     name: 'landing',
     component: Landing,
+    meta: { public: true }
+  },
+  {
+    path: '/breweries',
+    name: 'landing-brewery',
+    component: LandingBrewery,
+    meta: { public: true }
+  },
+  {
+    path: '/contact',
+    name: 'contact',
+    component: Contact,
     meta: { public: true }
   },
   {
@@ -365,12 +378,6 @@ const routes = [
       //   component: ComingSoon,
       //   meta: { section: 'Challenges & Events' }
       // },
-      {
-        path: 'analytics',
-        name: 'analytics',
-        component: Analytics,
-        meta: { section: 'Analytics' }
-      },
       {
         path: 'profile',
         name: 'profile',

@@ -5,6 +5,28 @@ import router from '../router';
 // Create a cancellation token source for managing requests
 let cancelTokenSource = axios.CancelToken.source();
 
+const isCurrentRouteMember = () => {
+  const currentRoute = router.currentRoute?.value;
+  return currentRoute?.path?.startsWith('/members') || currentRoute?.name?.toString().startsWith('member');
+};
+
+const isMemberRequest = (url = '') => {
+  const normalized = url.toLowerCase();
+  if (['/members', '/member/'].some((hint) => normalized.includes(hint))) {
+    return true;
+  }
+  const lastMemberCode = store.getters.lastMemberCode;
+  if (lastMemberCode && normalized.includes(String(lastMemberCode).toLowerCase())) {
+    return true;
+  }
+  return isCurrentRouteMember();
+};
+
+const determineLogoutOptions = (url = '') => ({
+  routeType: isMemberRequest(url) ? 'member' : 'admin',
+  redirect: true
+});
+
 // Create axios instance with base configuration
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3391/api',
@@ -20,12 +42,15 @@ api.interceptors.request.use(
     const token = store.getters.token;
     const currentOrganizationId = store.getters['organization/currentOrganizationId'];
     
+    const isDemoSession = store.state.isDemoSession;
+
     // Define public endpoints that don't need auth token
     const publicEndpoints = [
       '/organization/by-code/',
       '/waitlist',
       '/health',
-      '/auth/google/login'
+      '/auth/google/login',
+      '/auth/refresh'
     ];
     
     const isPublicEndpoint = publicEndpoints.some(endpoint => config.url.includes(endpoint));
@@ -61,6 +86,8 @@ api.interceptors.request.use(
     
     // Add cancel token to request
     config.cancelToken = cancelTokenSource.token;
+
+    // Allow API calls during demo sessions so the demo user behaves like real
     return config;
   },
   (error) => {
@@ -151,8 +178,14 @@ api.interceptors.response.use(
         console.log('🚪 Logging out due to retry failure');
         // Cancel all pending requests before logout
         cancelPendingRequests('Authentication failed - logging out');
-        store.dispatch('logout');
-        router.push('/login');
+        const options = determineLogoutOptions(originalRequest.url);
+        store.dispatch('logout', options);
+        if (options.routeType === 'admin') {
+          router.push('/login');
+        } else {
+          const memberCode = store.getters.lastMemberCode;
+          router.push(memberCode ? `/members/${memberCode}` : '/members');
+        }
         return Promise.reject(error);
       }
 
@@ -179,8 +212,14 @@ api.interceptors.response.use(
         console.error('❌ Token refresh failed:', refreshError.response?.status);
         // If refresh fails, cancel pending requests and logout
         cancelPendingRequests('Token refresh failed - logging out');
-        store.dispatch('logout');
-        router.push('/login');
+        const options = determineLogoutOptions(originalRequest.url);
+        store.dispatch('logout', options);
+        if (options.routeType === 'admin') {
+          router.push('/login');
+        } else {
+          const memberCode = store.getters.lastMemberCode;
+          router.push(memberCode ? `/members/${memberCode}` : '/members');
+        }
         return Promise.reject(error);
       }
     }
@@ -234,6 +273,7 @@ api.interceptors.response.use(
 
 // API endpoints
 const signupForBeta = (email) => api.post('/waitlist', { email });
+const submitContactRequest = (payload) => api.post('/contact', payload);
 const checkHealth = () => api.get('/health');
 
 // Member management API functions
@@ -330,8 +370,8 @@ const googleLogin = async (credential, organizationId) => {
     }
 
     // Now send the ID token to our backend
-    const response = await api.post('/auth/google/login', { 
-      token: tokenResponse.data.id_token, 
+    const response = await api.post('/auth/google/login', {
+      token: tokenResponse.data.id_token,
       organizationCode: organizationId // organizationId parameter actually contains the code
     }, {
       headers: {
@@ -370,7 +410,7 @@ const demoLogin = async (organizationId) => {
       "azp": "demo-client-id",
       "aud": "demo-client-id", 
       "sub": "demo123456789", // Google user ID
-      "email": "demo@brewbucks.dev",
+      "email": "sample@brewtokens.com", // Match the seeded demo account
       "email_verified": true,
       "name": "Demo User",
       "picture": "https://via.placeholder.com/96x96/4F46E5/FFFFFF?text=DU",
@@ -388,15 +428,15 @@ const demoLogin = async (organizationId) => {
     
     const demoToken = `${encodedHeader}.${encodedPayload}.${fakeSignature}`;
 
-    // Send directly to our backend, bypassing Google OAuth
-    const response = await api.post('/auth/google/login', { 
-      token: demoToken, 
-      organizationCode: organizationId
-    }, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
+      // Send directly to our backend, bypassing Google OAuth
+      const response = await api.post('/auth/google/login', {
+        token: demoToken, // Backend expects 'token' parameter
+        organizationCode: organizationId
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
 
     return response;
   } catch (error) {
@@ -413,6 +453,7 @@ const demoLogin = async (organizationId) => {
 export {
   api as default,
   signupForBeta,
+  submitContactRequest,
   checkHealth,
   // Authentication
   register,

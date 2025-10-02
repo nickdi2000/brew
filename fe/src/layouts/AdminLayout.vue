@@ -73,7 +73,10 @@
         <h2 class="text-lg font-medium text-gray-900">Menu</h2>
       </template>
       <template #content>
-        <Sidebar class="static w-full h-full bg-transparent" />
+        <Sidebar
+          class="static w-full h-full bg-transparent"
+          @navigate="handleMobileNavigation"
+        />
       </template>
     </Drawer>
 
@@ -134,15 +137,18 @@ onClickOutside(accountDropdown, () => {
   showAccountMenu.value = false
 })
 
-const handleLogout = () => {
-  store.dispatch('logout')
-  router.push('/login')
+const handleLogout = async () => {
+  await store.dispatch('logout', { routeType: 'admin' })
 }
 
 const currentSectionTabs = computed(() => {
   const currentSection = route.name?.charAt(0).toUpperCase() + route.name?.slice(1)
   return adminNav[currentSection] || []
 })
+
+const handleMobileNavigation = () => {
+  showMobileMenu.value = false
+}
 </script>
 
 <style scoped>

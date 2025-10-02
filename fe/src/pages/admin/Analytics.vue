@@ -2,7 +2,7 @@
   <div class="h-full bg-gray-50 relative overflow-hidden">
     <div class="container mx-auto px-4 py-8 h-full overflow-hidden">
       <div class="flex items-center justify-between mb-8">
-        <h1 class="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
+        <h1 class="text-3xl font-bold text-gray-900">Analytics</h1>
         <div class="flex items-center gap-4">
           <div class="text-sm text-gray-500">Last 30 Days</div>
           <button class="btn btn-secondary text-sm opacity-50 cursor-not-allowed">

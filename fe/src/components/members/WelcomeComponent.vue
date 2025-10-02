@@ -285,16 +285,13 @@ const handleDemoLogin = async () => {
     isLoading.value = true;
     console.log('🧪 Demo login started');
     
-    // Use the dedicated demo login action
-    await store.dispatch('auth/handleDemoLogin', {
-      organizationId: codeToUse
-    });
-    
-    console.log('🧪 Demo login successful');
+    await store.dispatch('auth/handleDemoLogin', { organizationId: codeToUse });
+
+    store.commit('SET_DEMO_SESSION', true);
+
     toast('Demo login successful!', 'success');
-    
-    // Navigate to the authenticated member portal
     router.push({ name: 'member-portal', params: { code: codeToUse } });
+
   } catch (error) {
     console.error('❌ Demo login error:', error);
     toast(error.response?.data?.message || error.message || 'Demo login failed', 'error');

@@ -17,6 +17,7 @@ const logRoutes = require('./routes/logRoutes');
 const memberRoutes = require('./routes/memberRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
+const contactRoutes = require('./routes/contactRoutes');
 
 // Import models to ensure they are registered with Mongoose
 require('./models/Organization');
@@ -24,6 +25,7 @@ require('./models/User');
 require('./models/Reward');
 require('./models/QRCode');
 require('./models/Transaction');
+require('./models/Message');
 
 const app = express();
 
@@ -66,6 +68,7 @@ app.use('/api/log', logRoutes);
 app.use('/api/memberships', memberRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/transactions', transactionRoutes);
+app.use('/api/contact', contactRoutes);
 
 // MongoDB Connection
 const connectDB = async () => {

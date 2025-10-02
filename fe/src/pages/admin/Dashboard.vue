@@ -22,16 +22,14 @@
 import { computed } from 'vue'
 import TabView from '../../components/TabView.vue'
 import Overview from './dashboard/Overview.vue'
-import KeyMetrics from './dashboard/KeyMetrics.vue'
-import RecentActivity from './dashboard/RecentActivity.vue'
+import Analytics from './dashboard/Analytics.vue'
 import adminNav from '../../layouts/admin_nav.json'
 
 const dashboardTabs = computed(() => adminNav.Dashboard || [])
 
 const tabComponents = {
-  'Overview': Overview,
-  'Key Metrics': KeyMetrics,
-  'Recent Activity': RecentActivity
+  Overview,
+  Analytics
 }
 
 const getComponentForTab = (tabName) => {

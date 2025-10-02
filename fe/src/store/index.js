@@ -44,17 +44,24 @@ export default createStore({
   state: {
     user: storage.get('user', true) || null,
     token: storage.get('token', false) || null,
+    refreshToken: storage.get('refreshToken', false) || null,
+    refreshTokenExpiresAt: storage.get('refreshTokenExpiresAt', true) || null,
     isAuthenticated: false,
     lastActivity: storage.get('lastActivity', true) || null,
-    lastMemberCode: storage.get('lastMemberCode', false) || null
+    lastMemberCode: storage.get('lastMemberCode', false) || null,
+    fetchingUser: false,
+    isDemoSession: storage.get('isDemoSession', true) || false
   },
   
   getters: {
     isAuthenticated: state => state.isAuthenticated,
     currentUser: state => state.user,
     token: state => state.token,
+    refreshToken: state => state.refreshToken,
+    refreshTokenExpiresAt: state => state.refreshTokenExpiresAt,
     lastActivity: state => state.lastActivity,
-    lastMemberCode: state => state.lastMemberCode
+    lastMemberCode: state => state.lastMemberCode,
+    isDemoSession: state => state.isDemoSession
   },
   
   mutations: {
@@ -66,6 +73,14 @@ export default createStore({
     SET_TOKEN(state, token) {
       state.token = token;
       storage.set('token', token, false);
+    },
+    SET_REFRESH_TOKEN(state, token) {
+      state.refreshToken = token;
+      storage.set('refreshToken', token, false);
+    },
+    SET_REFRESH_TOKEN_EXPIRES_AT(state, timestamp) {
+      state.refreshTokenExpiresAt = timestamp;
+      storage.set('refreshTokenExpiresAt', timestamp, true);
     },
     SET_LAST_ACTIVITY(state) {
       const timestamp = new Date().getTime();
@@ -79,28 +94,29 @@ export default createStore({
     SET_FETCHING_USER(state, value) {
       state.fetchingUser = value;
     },
+    SET_DEMO_SESSION(state, value) {
+      state.isDemoSession = value;
+      storage.set('isDemoSession', value, true);
+    },
     CLEAR_AUTH(state) {
       state.user = null;
       state.token = null;
+      state.refreshToken = null;
+      state.refreshTokenExpiresAt = null;
       state.isAuthenticated = false;
       state.lastActivity = null;
       state.fetchingUser = false;
+      state.isDemoSession = false;
       storage.set('user', null, true);
       storage.set('token', null, false);
+      storage.set('refreshToken', null, false);
+      storage.set('refreshTokenExpiresAt', null, true);
       storage.set('lastActivity', null, true);
+      storage.set('isDemoSession', false, true);
       // intentionally keep lastMemberCode persisted across logouts
     }
   },
-  
-  state: {
-    user: storage.get('user', true) || null,
-    token: storage.get('token', false) || null,
-    isAuthenticated: false,
-    lastActivity: storage.get('lastActivity', true) || null,
-    lastMemberCode: storage.get('lastMemberCode', false) || null,
-    fetchingUser: false // Add flag to prevent duplicate calls
-  },
-  
+
   actions: {
     async updateProfile({ commit }, { firstName, lastName }) {
       try {
@@ -124,11 +140,17 @@ export default createStore({
           throw new Error(response.data.message);
         }
 
-        const { token, user, organization } = response.data.data;
+        const { token, user, organization, refreshToken, refreshTokenExpiresAt } = response.data.data;
         
         // Store auth data
         commit('SET_TOKEN', token);
         commit('SET_USER', user);
+        if (refreshToken) {
+          commit('SET_REFRESH_TOKEN', refreshToken);
+        }
+        if (refreshTokenExpiresAt) {
+          commit('SET_REFRESH_TOKEN_EXPIRES_AT', refreshTokenExpiresAt);
+        }
         commit('SET_LAST_ACTIVITY');
 
         // Store organization data if available
@@ -160,11 +182,17 @@ export default createStore({
           throw new Error(response.data.message);
         }
 
-        const { token, user } = response.data.data;
+        const { token, user, refreshToken, refreshTokenExpiresAt } = response.data.data;
         
         // Store auth data
         commit('SET_TOKEN', token);
         commit('SET_USER', user);
+        if (refreshToken) {
+          commit('SET_REFRESH_TOKEN', refreshToken);
+        }
+        if (refreshTokenExpiresAt) {
+          commit('SET_REFRESH_TOKEN_EXPIRES_AT', refreshTokenExpiresAt);
+        }
         commit('SET_LAST_ACTIVITY');
 
         // Handle redirect after login
@@ -192,6 +220,11 @@ export default createStore({
       if (!state.token) {
         console.log('⚠️ No token available for user fetch');
         return null;
+      }
+
+      if (state.isDemoSession) {
+        console.log('ℹ️ Demo session active, skipping user fetch');
+        return state.user;
       }
       
       // Prevent duplicate calls
@@ -238,10 +271,10 @@ export default createStore({
       }
     },
     
-    async logout({ commit, state }, { redirect = true } = {}) {
+    async logout({ commit, state }, { redirect = true, routeType = 'member' } = {}) {
       try {
         // Try to call logout endpoint if we have a token
-        if (this.state.token) {
+        if (this.state.token && !state.isDemoSession) {
           await api.post('/auth/logout');
         }
       } catch (error) {
@@ -250,10 +283,14 @@ export default createStore({
         const memberCode = state.lastMemberCode;
         commit('CLEAR_AUTH');
         if (redirect) {
-          if (memberCode) {
-            router.push(`/members/${memberCode}`);
+          if (routeType === 'admin') {
+            router.push('/login');
           } else {
-            router.push('/members');
+            if (memberCode) {
+              router.push(`/members/${memberCode}`);
+            } else {
+              router.push('/members');
+            }
           }
         }
       }
@@ -282,11 +319,20 @@ export default createStore({
           
           console.log('🔄 Attempting token refresh after user fetch failure');
           try {
-            const response = await api.post('/auth/refresh');
-            const { token } = response.data.data;
+            if (!state.refreshToken) {
+              throw new Error('No refresh token available');
+            }
+            const response = await api.post('/auth/refresh', { refreshToken: state.refreshToken });
+            const { token, refreshToken, refreshTokenExpiresAt } = response.data.data;
             
             console.log('✅ Token refresh successful, updating token and retrying user fetch');
             commit('SET_TOKEN', token);
+            if (refreshToken) {
+              commit('SET_REFRESH_TOKEN', refreshToken);
+            }
+            if (refreshTokenExpiresAt) {
+              commit('SET_REFRESH_TOKEN_EXPIRES_AT', refreshTokenExpiresAt);
+            }
             await dispatch('fetchCurrentUser');
             dispatch('startSessionMonitor');
           } catch (refreshError) {

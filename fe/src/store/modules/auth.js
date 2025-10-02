@@ -80,6 +80,12 @@ export default {
         // Mirror to root store so global guards/use can see it
         commit('SET_TOKEN', data.token, { root: true });
         commit('SET_USER', data.user, { root: true });
+        if (data.refreshToken) {
+          commit('SET_REFRESH_TOKEN', data.refreshToken, { root: true });
+        }
+        if (data.refreshTokenExpiresAt) {
+          commit('SET_REFRESH_TOKEN_EXPIRES_AT', data.refreshTokenExpiresAt, { root: true });
+        }
         
         return {
           user: data.user,
@@ -102,19 +108,13 @@ export default {
       try {
         commit('SET_LOADING', true);
         commit('SET_ERROR', null);
-        
+
         const response = await demoLogin(organizationId);
-        console.log('🧪 Demo auth response:', {
-          hasData: !!response?.data,
-          data: response?.data,
-          status: response?.status
-        });
 
         if (!response?.data) {
           throw new Error('Invalid response from server');
         }
 
-        // The response should be in the format { success, message, data }
         const { success, message, data } = response.data;
 
         if (!success) {
@@ -122,22 +122,23 @@ export default {
         }
 
         if (!data?.token || !data?.user) {
-          console.error('❌ Invalid demo response data:', data);
           throw new Error('Missing token or user data in demo response');
         }
 
-        // Update module state
         commit('SET_TOKEN', data.token);
         commit('SET_USER', data.user);
         commit('SET_MEMBERSHIP', data.membership);
 
-        // Mirror to root store so global guards/use can see it
         commit('SET_TOKEN', data.token, { root: true });
         commit('SET_USER', data.user, { root: true });
-        
+        commit('SET_REFRESH_TOKEN', data.refreshToken, { root: true });
+        commit('SET_REFRESH_TOKEN_EXPIRES_AT', data.refreshTokenExpiresAt, { root: true });
+        commit('SET_DEMO_SESSION', true, { root: true });
+
         return {
           user: data.user,
-          membership: data.membership
+          membership: data.membership,
+          token: data.token
         };
       } catch (error) {
         console.error('Demo login error:', {

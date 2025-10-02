@@ -10,22 +10,22 @@
 
     <template v-else>
       <!-- Header -->
-      <div class="flex justify-between items-center">
-        <div>
+      <div class="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center">
+        <div class="text-center sm:text-left">
           <h2 class="text-2xl font-bold text-gradient-blue font-display">Rewards</h2>
-          <div class="mt-1 flex items-center gap-3">
+          <div class="mt-1 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
             <p class="text-sm text-gray-500">Manage your rewards program offerings.</p>
             <button
               @click="showTemplates = true"
-              class="text-sm text-amber-600 hover:text-amber-700 font-medium"
+              class="inline-flex items-center justify-center text-sm font-medium text-amber-600 hover:text-amber-700"
             >
-              View Templates
+              <Icon icon="mdi:view-grid" class="h-4 w-4 mr-1" /> View Templates
             </button>
           </div>
         </div>
         <button
           @click="openCreate"
-          class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500"
+          class="w-full sm:w-auto inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500"
         >
           <Icon icon="mdi:plus" class="h-5 w-5 mr-2" />
           Create New Reward
@@ -42,16 +42,16 @@
           <h3 class="text-2xl font-semibold text-slate-900">Start building your first reward</h3>
           <p class="mt-2 text-slate-500">Create a custom reward or pick a ready‑made template to get started fast.</p>
 
-          <div class="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <div class="mt-6 grid gap-3 sm:flex sm:flex-row sm:items-center sm:justify-center">
             <button
               @click="openCreate"
-              class="btn btn-primary inline-flex items-center px-4 py-2 rounded-md text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500"
+              class="btn btn-primary inline-flex items-center justify-center px-4 py-2 rounded-md text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500"
             >
               <Icon icon="mdi:plus" class="h-5 w-5 mr-2" /> Create custom reward
             </button>
             <button
               @click="showTemplates = true"
-              class="btn btn-secondary inline-flex items-center px-4 py-2 rounded-md border border-gray-300 bg-white text-slate-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500"
+              class="btn btn-secondary inline-flex items-center justify-center px-4 py-2 rounded-md border border-gray-300 bg-white text-slate-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500"
             >
               Browse templates
             </button>
@@ -117,7 +117,6 @@
           v-for="reward in rewards"
           :key="reward._id"
           :reward="reward"
-          @toggle="toggleReward"
           @edit="editReward"
         />
       </div>
@@ -243,13 +242,6 @@ const templates = [
 const editReward = (reward: Reward) => {
   selectedReward.value = reward;
   showDrawer.value = true;
-};
-
-const toggleReward = async (reward: Reward) => {
-  await store.dispatch('rewards/updateReward', {
-    id: reward._id,
-    data: { isActive: !reward.isActive }
-  });
 };
 
 const closeDrawer = () => {

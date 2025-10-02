@@ -1,61 +1,253 @@
 <template>
   <div class="p-8 space-y-8">
-    <!-- Summary Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <!-- Total Members Card -->
-      <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100 hover:border-primary-300 hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 animate-fade-slide-up" style="animation-delay: 0ms">
-        <div class="flex items-center justify-between">
-          <h3 class="text-gray-500 text-sm font-medium">Total Members</h3>
-          <div class="p-2 bg-blue-50 rounded-full">
-            <Icon icon="mdi:account-group" class="h-6 w-6 text-blue-500" />
-          </div>
-        </div>
-        <p class="mt-3 text-3xl font-semibold text-gray-900">0</p>
-        <p class="mt-2 text-sm text-gray-500">Active members in your program</p>
+    <section>
+      <header class="mb-6">
+        <h2 class="sr-only">Organization Summary</h2>
+      </header>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        <StatsCard
+          v-for="stat in statsToRender"
+          :key="stat.id"
+          :icon="stat.icon"
+          :label="stat.label"
+          :value="stat.value"
+          :icon-background="stat.iconBackground"
+          :icon-color="stat.iconColor"
+          :loading="loading"
+          :error="error"
+          class="hover:border-primary-300 hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 animate-fade-slide-up"
+          :style="{ animationDelay: stat.animationDelay }"
+        />
       </div>
 
-      <!-- Total Rewards Card -->
-      <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100 hover:border-primary-300 hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 animate-fade-slide-up" style="animation-delay: 100ms">
-        <div class="flex items-center justify-between">
-          <h3 class="text-gray-500 text-sm font-medium">Active Rewards</h3>
-          <div class="p-2 bg-purple-50 rounded-full">
-            <Icon icon="mdi:gift" class="h-6 w-6 text-purple-500" />
-          </div>
+      <div v-if="showEmptyState" class="mt-6">
+        <div class="border border-dashed border-gray-200 rounded-lg p-6 text-center">
+          <Icon icon="mdi:database-off" class="h-12 w-12 text-gray-300 mx-auto mb-3" />
+          <h3 class="text-lg font-medium text-gray-900">No stats available yet</h3>
+          <p class="mt-2 text-sm text-gray-500">Organization activity will populate here once members begin engaging with your program.</p>
         </div>
-        <p class="mt-3 text-3xl font-semibold text-gray-900">0</p>
-        <p class="mt-2 text-sm text-gray-500">Available reward options</p>
       </div>
+    </section>
 
-      <!-- Total Points Card -->
-      <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100 hover:border-primary-300 hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 animate-fade-slide-up" style="animation-delay: 200ms">
-        <div class="flex items-center justify-between">
-          <h3 class="text-gray-500 text-sm font-medium">Points Issued</h3>
-          <div class="p-2 bg-amber-50 rounded-full">
-            <Icon icon="mdi:beer" class="h-6 w-6 text-amber-500" />
+    <div class="mt-8">
+      <button
+        class="w-full md:w-auto btn btn-primary bg-black hover:bg-black/90 border-black flex items-center justify-center gap-2"
+        @click="openAwardSheet"
+      >
+        <Icon icon="mdi:qrcode" class="h-5 w-5" />
+        Award Points
+      </button>
+    </div>
+  </div>
+
+  <Transition name="fade">
+    <div
+      v-if="isAwardSheetOpen"
+      class="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+      @click.self="closeAwardSheet"
+    >
+      <div
+        class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl max-h-[85vh] overflow-hidden"
+      >
+        <div class="px-6 py-5 flex items-center justify-between border-b border-gray-100">
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900">Award Points</h3>
+            <p class="text-sm text-gray-500">Present this code to award points instantly.</p>
+          </div>
+          <button
+            type="button"
+            class="text-gray-400 hover:text-gray-600"
+            @click="closeAwardSheet"
+            aria-label="Close"
+          >
+            <Icon icon="mdi:close" class="h-5 w-5" />
+          </button>
+        </div>
+
+        <div v-if="hasAwardCodes" class="px-6 pt-6 pb-20 overflow-y-auto">
+          <div class="flex items-center gap-4 overflow-x-auto pb-4">
+            <button
+              v-for="(code, index) in awardQRCodes"
+              :key="code._id"
+              type="button"
+              class="px-4 py-2 text-sm rounded-full border transition-all"
+              :class="index === selectedAwardIndex ? 'bg-black text-white border-black' : 'border-gray-200 text-gray-600 hover:border-gray-300'"
+              @click="selectAwardCode(index)"
+            >
+              {{ code.name || `QR Code ${index + 1}` }}
+            </button>
+          </div>
+
+          <div class="bg-gray-50 rounded-2xl p-6 flex flex-col items-center gap-4">
+            <div class="bg-white p-4 rounded-2xl shadow">
+              <QRComponent
+                v-if="selectedAwardCode"
+                :value="selectedAwardCode.code"
+                :size="260"
+                :qr-margin="1"
+              />
+            </div>
+            <div class="text-center space-y-1">
+              <h4 class="text-lg font-semibold text-gray-900">
+                {{ selectedAwardCode?.name || 'Award QR Code' }}
+              </h4>
+              <p class="text-sm text-gray-500">Worth {{ selectedAwardCode?.points ?? 0 }} points</p>
+            </div>
           </div>
         </div>
-        <p class="mt-3 text-3xl font-semibold text-gray-900">0</p>
-        <p class="mt-2 text-sm text-gray-500">Total points in circulation</p>
-      </div>
 
-      <!-- Redemptions Card -->
-      <div class="bg-white rounded-lg shadow-sm p-6 border border-gray-100 hover:border-primary-300 hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 animate-fade-slide-up" style="animation-delay: 300ms">
-        <div class="flex items-center justify-between">
-          <h3 class="text-gray-500 text-sm font-medium">Redemptions</h3>
-          <div class="p-2 bg-green-50 rounded-full">
-            <Icon icon="mdi:ticket-confirmation" class="h-6 w-6 text-green-500" />
-          </div>
+        <div v-else class="px-6 py-20 text-center text-gray-500">
+          <Icon icon="mdi:qrcode-off" class="h-12 w-12 mx-auto mb-4" />
+          <p>No award QR codes available yet. Create one to start awarding points.</p>
         </div>
-        <p class="mt-3 text-3xl font-semibold text-gray-900">0</p>
-        <p class="mt-2 text-sm text-gray-500">Total rewards redeemed</p>
       </div>
     </div>
-
-  </div>
+  </Transition>
 </template>
 
 <script setup>
+import { computed, onMounted, ref, watch } from 'vue'
+import { useStore } from 'vuex'
 import { Icon } from '@iconify/vue'
+import StatsCard from '../../../components/dashboard/StatsCard.vue'
+import { useToast } from '../../../plugins/toast'
+import QRComponent from '../../../components/QRComponent.vue'
+
+const store = useStore()
+const toast = useToast()
+
+const stats = computed(() => store.getters['organization/stats'] ?? [])
+const organization = computed(() => store.getters['organization/config'] ?? {})
+const awardQRCodes = computed(() => organization.value?.awardQRCodes ?? [])
+const configLoading = computed(() => store.getters['organization/loading'])
+const configError = computed(() => store.getters['organization/error'])
+
+const loading = computed(() => configLoading.value)
+const error = computed(() => configError.value)
+
+const statsToRender = computed(() => {
+  const baseStats = stats.value.length ? stats.value : getDefaultStats()
+  return baseStats.map((stat, index) => ({
+    ...stat,
+    ...getStatMeta(stat.id),
+    animationDelay: `${index * 100}ms`,
+    value: stat.value ?? 0
+  }))
+})
+
+const showEmptyState = computed(() => !loading.value && !error.value && !stats.value.length)
+
+const hasAwardCodes = computed(() => awardQRCodes.value.length > 0)
+const isAwardSheetOpen = ref(false)
+const selectedAwardIndex = ref(0)
+const selectedAwardCode = computed(() => awardQRCodes.value[selectedAwardIndex.value] ?? null)
+
+onMounted(async () => {
+  if (!stats.value.length && !loading.value) {
+    try {
+      await store.dispatch('organization/fetchConfig')
+    } catch (fetchError) {
+      console.error('Failed to refresh organization config:', fetchError)
+    }
+  }
+})
+
+watch(
+  () => error.value,
+  (newError) => {
+    if (newError) {
+      toast(newError, 'error')
+    }
+  },
+  { immediate: true }
+)
+
+watch(awardQRCodes, (codes) => {
+  if (!codes.length) {
+    isAwardSheetOpen.value = false
+    return
+  }
+
+  if (selectedAwardIndex.value >= codes.length) {
+    selectedAwardIndex.value = 0
+  }
+})
+
+const openAwardSheet = () => {
+  if (!hasAwardCodes.value) {
+    toast('No award QR codes available yet. Create one to start awarding points.', 'error')
+    return
+  }
+
+  selectedAwardIndex.value = 0
+  isAwardSheetOpen.value = true
+}
+
+const closeAwardSheet = () => {
+  isAwardSheetOpen.value = false
+}
+
+const selectAwardCode = (index) => {
+  selectedAwardIndex.value = index
+}
+
+function getDefaultStats() {
+  return [
+    {
+      id: 'totalMembers',
+      label: 'Total Members',
+      value: 0
+    },
+    {
+      id: 'activeRewards',
+      label: 'Active Rewards',
+      value: 0
+    },
+    {
+      id: 'pointsIssued',
+      label: 'Points Issued',
+      value: 0
+    },
+    {
+      id: 'redemptions',
+      label: 'Redemptions',
+      value: 0
+    }
+  ]
+}
+
+function getStatMeta(id) {
+  const meta = {
+    totalMembers: {
+      icon: 'mdi:account-group',
+      iconColor: 'text-blue-500',
+      iconBackground: 'bg-blue-50'
+    },
+    activeRewards: {
+      icon: 'mdi:gift',
+      iconColor: 'text-purple-500',
+      iconBackground: 'bg-purple-50'
+    },
+    pointsIssued: {
+      icon: 'mdi:beer',
+      iconColor: 'text-amber-500',
+      iconBackground: 'bg-amber-50'
+    },
+    redemptions: {
+      icon: 'mdi:ticket-confirmation',
+      iconColor: 'text-green-500',
+      iconBackground: 'bg-green-50'
+    }
+  }
+
+  return meta[id] || {
+    icon: 'mdi:chart-box',
+    iconColor: 'text-gray-500',
+    iconBackground: 'bg-gray-100'
+  }
+}
+
 </script>
 
 <style>
@@ -73,5 +265,15 @@ import { Icon } from '@iconify/vue'
     opacity: 1;
     transform: translateY(0);
   }
+}
+  
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

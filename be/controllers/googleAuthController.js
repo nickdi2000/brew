@@ -28,7 +28,7 @@ exports.googleLogin = async (req, res) => {
         }
         
         // Decode the payload (second part)
-        const decodedPayload = JSON.parse(atob(parts[1]));
+        const decodedPayload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
         payload = decodedPayload;
         console.log('[GoogleAuth] Demo token payload:', payload);
       } catch (decodeError) {
@@ -101,13 +101,17 @@ exports.googleLogin = async (req, res) => {
     console.log('[GoogleAuth] Incoming organizationCode:', organizationCode);
     let member = null;
     if (organizationCode) {
-      // Find organization by code
+      // Find organization by code (case-insensitive exact match)
       const Organization = require('../models/Organization');
-      const organization = await Organization.findOne({ code: organizationCode });
+      const escaped = String(organizationCode).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const codeRegex = new RegExp(`^${escaped}$`, 'i');
+      const organization = await Organization.findOne({ code: codeRegex });
       console.log('[GoogleAuth] Organization lookup by code result:', organization ? organization._id : 'not-found');
       
       if (!organization) {
-        throw new Error('Organization not found');
+        return res.status(404).json(
+          formatError('Organization not found')
+        );
       }
 
       // Link org on user for convenience
@@ -168,6 +172,22 @@ exports.googleLogin = async (req, res) => {
       { expiresIn: '24h' }
     );
 
+    // Generate and persist refresh token (7 days)
+    const refreshToken = jwt.sign(
+      { userId: user._id.toString() },
+      process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    const refreshTokenExpiresAt = new Date();
+    refreshTokenExpiresAt.setDate(refreshTokenExpiresAt.getDate() + 7);
+    try {
+      user.refreshToken = refreshToken;
+      user.refreshTokenExpiresAt = refreshTokenExpiresAt;
+      await user.save();
+    } catch (e) {
+      console.error('[GoogleAuth] Failed saving refresh token to user:', e);
+    }
+
     console.log('[GoogleAuth] Login success. Returning membership:', member ? member._id.toString() : null);
     res.json(
       formatResponse({
@@ -194,6 +214,8 @@ exports.googleLogin = async (req, res) => {
               lastLoginAt: user.sso.lastLoginAt
             } : null
           },
+          refreshToken,
+          refreshTokenExpiresAt,
           membership: member ? {
             id: member._id,
             organization: member.organization,

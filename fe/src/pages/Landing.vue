@@ -1,5 +1,14 @@
 <template>
   <div class="min-h-screen bg-gray-950 font-sans text-gray-100">
+    <transition name="beta-overlay-fade">
+      <div
+        v-if="overlayVisible"
+        class="fixed inset-0 z-40 bg-gray-950/70 backdrop-blur-sm"
+        aria-hidden="true"
+        role="presentation"
+        @click.self="closeBetaModal"
+      ></div>
+    </transition>
     <!-- Navbar -->
     <nav class="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-gray-950/90 backdrop-blur">
       <div class="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -8,10 +17,8 @@
           <span class="text-2xl font-extrabold tracking-wide text-white">BrewTokens</span>
         </div>
         <div class="hidden items-center space-x-6 md:flex">
-          <button class="text-base font-medium text-gray-300 transition hover:text-white">Product</button>
-          <button class="text-base font-medium text-gray-300 transition hover:text-white">Pricing</button>
-          <button class="text-base font-medium text-gray-300 transition hover:text-white">Contact</button>
-          <button class="btn btn-secondary px-5 py-2 text-base">Login</button>
+          <router-link to="/contact" class="text-base font-medium text-gray-300 transition hover:text-white">Contact</router-link>
+          <router-link to="/login" class="btn btn-secondary px-5 py-2 text-base">Login</router-link>
         </div>
         <button class="btn btn-secondary px-4 py-2 text-sm md:hidden">Menu</button>
       </div>
@@ -39,8 +46,14 @@
                 BrewTokens gives breweries, coffee shops, and neighborhood hangouts a premium loyalty experience—no hardware installs, no integrations, just effortless delight.
               </p>
               <div class="flex flex-col items-center justify-center gap-4 sm:flex-row sm:justify-start">
-                <a href="#get-started" class="btn btn-primary px-8 py-3 text-lg font-semibold">Get started</a>
-                <button class="btn btn-secondary px-8 py-3 text-lg font-semibold">See it in action</button>
+                <button
+                  class="btn btn-primary px-8 py-3 text-lg font-semibold"
+                  type="button"
+                  @click="focusBetaCard"
+                >
+                  Get started
+                </button>
+                <router-link to="/contact" class="btn btn-secondary px-8 py-3 text-lg font-semibold">Contact us</router-link>
               </div>
               <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <article v-for="highlight in heroHighlights" :key="highlight.title" class="rounded-2xl border border-white/10 bg-white/10 p-5 text-left">
@@ -52,72 +65,29 @@
             </div>
 
             <div class="lg:col-span-5">
-              <form @submit.prevent="handleSignup" class="space-y-6 rounded-3xl border border-white/10 bg-gray-950/70 p-8 shadow-2xl backdrop-blur">
-                <div class="flex items-center space-x-2 text-sm font-medium text-indigo-200">
-                  <Icon icon="mdi:account-plus" class="h-5 w-5" />
-                  <span>Request early access</span>
-                </div>
-                <div>
-                  <h2 class="text-2xl font-bold text-white">Join the BrewTokens beta</h2>
-                  <p class="mt-2 text-sm text-gray-400">Tell us how to reach you and we will schedule a guided walkthrough within 24 hours.</p>
-                </div>
-
-                <div class="space-y-5">
-                  <div>
-                    <label for="email" class="block text-sm font-medium text-gray-200">Business email</label>
-                    <input
-                      id="email"
-                      v-model="signupForm.email"
-                      type="email"
-                      name="email"
-                      autocomplete="email"
-                      placeholder="you@brewery.com"
-                      class="mt-2 w-full rounded-xl border border-white/10 bg-gray-900/70 px-4 py-3 text-sm text-white placeholder-gray-500 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/60"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label for="password" class="block text-sm font-medium text-gray-200">Create a password</label>
-                    <input
-                      id="password"
-                      v-model="signupForm.password"
-                      type="password"
-                      name="password"
-                      autocomplete="new-password"
-                      placeholder="Minimum 8 characters"
-                      class="mt-2 w-full rounded-xl border border-white/10 bg-gray-900/70 px-4 py-3 text-sm text-white placeholder-gray-500 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/60"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div class="space-y-3" aria-live="polite">
-                  <p v-if="submitError" class="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm text-red-200">{{ submitError }}</p>
-                  <p v-if="submitSuccess" class="rounded-xl border border-emerald-400/40 bg-emerald-400/10 px-4 py-2 text-sm text-emerald-200">We are brewing something special for you! Check your inbox shortly.</p>
-                </div>
-
-                <button
-                  type="submit"
-                  class="btn btn-primary flex w-full items-center justify-center gap-2 py-3 text-base font-semibold transition"
-                  :disabled="isSubmitting"
-                  :class="{ 'cursor-not-allowed opacity-70': isSubmitting }"
-                >
-                  <Icon v-if="isSubmitting" icon="mdi:loading" class="h-5 w-5 animate-spin" />
-                  <span>{{ isSubmitting ? 'Submitting...' : 'Request an invite' }}</span>
-                </button>
-
-                <p class="text-xs text-gray-500">
-                  By submitting, you agree to our
-                  <a href="#" class="text-indigo-300 underline-offset-2 hover:underline">Terms</a>
-                  and
-                  <a href="#" class="text-indigo-300 underline-offset-2 hover:underline">Privacy Policy</a>.
-                </p>
-              </form>
+              <BetaSignupCard
+                ref="betaCardRef"
+                :highlight="betaHighlight"
+                :aria-hidden="staticCardHidden"
+                :class="staticCardClass"
+              />
             </div>
           </div>
         </div>
       </div>
     </section>
+
+    <transition name="beta-card-modal" appear>
+      <div v-if="floatingCardVisible" class="beta-card-modal">
+        <BetaSignupCard
+          ref="modalCardRef"
+          :card-style="floatingCardStyle"
+          :highlight="true"
+          :is-modal="true"
+          @close="closeBetaModal"
+        />
+      </div>
+    </transition>
 
     <!-- Feature Sections -->
     <section
@@ -174,8 +144,8 @@
           Elevate your loyalty game with our QR-powered system. Engage guests, unlock repeat visits, and own the entire experience.
         </p>
         <div class="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <a href="#" class="btn btn-primary px-10 py-4 text-lg font-semibold">Create your venue</a>
-          <a href="#" class="btn btn-secondary px-10 py-4 text-lg font-semibold">Chat with our team</a>
+          <a href="/login" class="btn btn-primary px-10 py-4 text-lg font-semibold">Create your venue</a>
+          <a href="/contact" class="btn btn-secondary px-10 py-4 text-lg font-semibold">Chat with our team</a>
         </div>
       </div>
     </section>
@@ -191,9 +161,9 @@
           </div>
         </div>
         <div class="flex items-center space-x-4 text-sm">
-          <a href="#" class="transition hover:text-white">Privacy</a>
-          <a href="#" class="transition hover:text-white">Terms</a>
-          <a href="#" class="transition hover:text-white">Support</a>
+          <a href="/privacy-policy" class="transition hover:text-white">Privacy</a>
+          <a href="/terms-of-service" class="transition hover:text-white">Terms</a>
+          <a href="/contact" class="transition hover:text-white">Support</a>
         </div>
         <p class="text-xs text-gray-500">&copy; {{ currentYear }} BrewTokens. All rights reserved.</p>
       </div>
@@ -202,12 +172,13 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Icon } from '@iconify/vue';
 import heroQrCode from '@/assets/images/hero-qr-code.png';
 import qrAwardBrewery from '@/assets/images/qr-award-brewery.png';
 import qrCode from '@/assets/images/qr-code.png';
 import singleQr from '@/assets/images/single-qr.png';
+import BetaSignupCard from '@/components/marketing/BetaSignupCard.vue';
 
 const currentYear = new Date().getFullYear();
 
@@ -292,47 +263,198 @@ const featureSections = [
   },
 ];
 
-const signupForm = reactive({
-  email: '',
-  password: '',
+const overlayVisible = ref(false);
+const floatingCardVisible = ref(false);
+const staticCardHidden = ref(false);
+const betaHighlight = ref(false);
+const isCardAnimating = ref(false);
+const floatingCardStyle = ref({});
+const betaCardRef = ref(null);
+const modalCardRef = ref(null);
+
+const staticCardClass = computed(() => ({
+  'pointer-events-none select-none opacity-0': staticCardHidden.value,
+}));
+
+const animationDurationMs = 460;
+const transitionEasing = 'cubic-bezier(0.33, 1, 0.68, 1)';
+const transitionProperty = `top ${animationDurationMs}ms ${transitionEasing}, left ${animationDurationMs}ms ${transitionEasing}, transform ${animationDurationMs}ms ${transitionEasing}, width ${animationDurationMs}ms ${transitionEasing}, height ${animationDurationMs}ms ${transitionEasing}, max-height ${animationDurationMs}ms ${transitionEasing}, opacity 220ms ease-in-out`;
+
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const nextFrame = () =>
+  new Promise((resolve) => {
+    if (typeof window === 'undefined') {
+      resolve();
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      resolve();
+    });
+  });
+
+const buildFloatingStyleFromRect = (rect) => ({
+  position: 'fixed',
+  top: `${rect.top}px`,
+  left: `${rect.left}px`,
+  width: `${rect.width}px`,
+  height: `${rect.height}px`,
+  zIndex: 60,
+  transform: 'translate3d(0, 0, 0)',
+  transition: transitionProperty,
+  opacity: 1,
 });
 
-const isSubmitting = ref(false);
-const submitError = ref('');
-const submitSuccess = ref(false);
+const getHeroCardElement = () => betaCardRef.value?.getCardEl() ?? null;
 
-const handleSignup = async () => {
-  submitError.value = '';
-  submitSuccess.value = false;
-
-  const emailPattern = /[^\s@]+@[^\s@]+\.[^\s@]+/;
-
-  if (!signupForm.email || !signupForm.password) {
-    submitError.value = 'Please provide both your business email and a password.';
+const focusBetaCard = async () => {
+  if (isCardAnimating.value) {
     return;
   }
 
-  if (!emailPattern.test(signupForm.email)) {
-    submitError.value = 'Enter a valid business email address so we can connect with you.';
+  if (floatingCardVisible.value) {
+    modalCardRef.value?.focusEmailInput();
     return;
   }
 
-  if (signupForm.password.length < 8) {
-    submitError.value = 'Passwords must be at least 8 characters long.';
+  const cardEl = getHeroCardElement();
+  if (!cardEl) {
     return;
   }
 
-  isSubmitting.value = true;
+  isCardAnimating.value = true;
+  betaHighlight.value = true;
 
-  try {
-    await new Promise((resolve) => setTimeout(resolve, 900));
-    submitSuccess.value = true;
-    signupForm.email = '';
-    signupForm.password = '';
-  } catch (error) {
-    submitError.value = 'Something went wrong while submitting the form. Please try again.';
-  } finally {
-    isSubmitting.value = false;
+  if (typeof cardEl.scrollIntoView === 'function') {
+    cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  await wait(280);
+
+  const rect = cardEl.getBoundingClientRect();
+
+  overlayVisible.value = true;
+  floatingCardVisible.value = true;
+  floatingCardStyle.value = buildFloatingStyleFromRect(rect);
+
+  await nextTick();
+  staticCardHidden.value = true;
+
+  await nextFrame();
+
+  floatingCardStyle.value = {
+    ...floatingCardStyle.value,
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: 'min(90vw, 34rem)',
+    height: 'auto',
+    maxHeight: 'min(85vh, 40rem)',
+  };
+
+  await wait(animationDurationMs);
+
+  modalCardRef.value?.focusEmailInput();
+  isCardAnimating.value = false;
+};
+
+const finalizeClose = () => {
+  floatingCardVisible.value = false;
+  overlayVisible.value = false;
+  staticCardHidden.value = false;
+  betaHighlight.value = false;
+  isCardAnimating.value = false;
+  floatingCardStyle.value = {};
+};
+
+const closeBetaModal = async () => {
+  if (!floatingCardVisible.value || isCardAnimating.value) {
+    if (!isCardAnimating.value) {
+      overlayVisible.value = false;
+    }
+    return;
+  }
+
+  const cardEl = getHeroCardElement();
+
+  if (!cardEl) {
+    floatingCardStyle.value = {
+      ...floatingCardStyle.value,
+      opacity: 0,
+      transform: 'translate(-50%, -55%) scale(0.96)',
+    };
+
+    await wait(animationDurationMs);
+    finalizeClose();
+    return;
+  }
+
+  isCardAnimating.value = true;
+  staticCardHidden.value = false;
+  betaHighlight.value = true;
+
+  await nextTick();
+
+  const rect = cardEl.getBoundingClientRect();
+  floatingCardStyle.value = {
+    ...floatingCardStyle.value,
+    height: `${rect.height}px`,
+    maxHeight: `${rect.height}px`,
+  };
+
+  await nextFrame();
+
+  floatingCardStyle.value = {
+    ...floatingCardStyle.value,
+    top: `${rect.top}px`,
+    left: `${rect.left}px`,
+    transform: 'translate3d(0, 0, 0)',
+    width: `${rect.width}px`,
+    height: `${rect.height}px`,
+    maxHeight: `${rect.height}px`,
+  };
+
+  await wait(animationDurationMs);
+
+  finalizeClose();
+};
+
+const handleKeydown = (event) => {
+  if (event.key === 'Escape') {
+    closeBetaModal();
   }
 };
+
+let previousBodyOverflow = '';
+
+watch(overlayVisible, (visible) => {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  if (visible) {
+    previousBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+  } else {
+    document.body.style.overflow = previousBodyOverflow;
+  }
+});
+
+onMounted(() => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  window.addEventListener('keydown', handleKeydown);
+});
+
+onBeforeUnmount(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('keydown', handleKeydown);
+  }
+
+  if (typeof document !== 'undefined') {
+    document.body.style.overflow = previousBodyOverflow;
+  }
+});
 </script>

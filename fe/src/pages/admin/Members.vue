@@ -13,11 +13,10 @@
     </div>
 
     <div class="space-y-6">
-      <!-- Filters (only shown when there are members) -->
-      <template v-if="!loading && members.length > 0">
-        <div class="mb-4">
-          <!-- Search -->
-          <div class="relative max-w-xs">
+      <!-- Filters -->
+      <div v-if="!loading" class="mb-4">
+        <div class="flex items-center gap-3">
+          <div class="relative max-w-xs w-full sm:w-auto">
             <input
               type="text"
               v-model="filters.search"
@@ -26,8 +25,16 @@
             />
             <Icon icon="mdi:magnify" class="absolute right-2 top-1.5 h-5 w-5 text-gray-400" />
           </div>
+          <button
+            v-if="hasActiveFilters"
+            type="button"
+            class="btn btn-secondary text-sm"
+            @click="clearFilters"
+          >
+            Clear
+          </button>
         </div>
-      </template>
+      </div>
 
       <!-- Members List -->
       <div class="bg-white shadow rounded-lg">
@@ -64,13 +71,31 @@
                 </div>
               </td>
             </tr>
-            <tr v-else-if="members.length === 0">
+            <tr v-else-if="filteredMembers.length === 0">
               <td colspan="5" class="px-6 py-4 text-center text-gray-500">
                 <div class="flex flex-col items-center py-6">
-                  <Icon icon="mdi:account-group" class="h-12 w-12 text-gray-400" />
-                  <h3 class="mt-2 text-sm font-medium text-gray-900">No members found</h3>
-                  <p class="mt-1 text-sm text-gray-500">Share your <router-link to="/admin/settings" class="text-amber-600 hover:text-amber-700 underline">member portal link</router-link> to start growing your community!</p>
-                  <div class="mt-3 max-w-2xl mx-auto w-full hidden">
+                  <Icon :icon="hasActiveFilters ? 'mdi:magnify-close' : 'mdi:account-group'" class="h-12 w-12 text-gray-400" />
+                  <h3 class="mt-2 text-sm font-medium text-gray-900">
+                    <template v-if="hasActiveFilters">No members match your search</template>
+                    <template v-else>No members found</template>
+                  </h3>
+                  <p class="mt-1 text-sm text-gray-500">
+                    <template v-if="hasActiveFilters">
+                      Try adjusting your filters or search terms.
+                    </template>
+                    <template v-else>
+                      Share your <router-link to="/admin/settings" class="text-amber-600 hover:text-amber-700 underline">member portal link</router-link> to start growing your community!
+                    </template>
+                  </p>
+                  <button
+                    v-if="hasActiveFilters"
+                    type="button"
+                    class="mt-3 btn btn-secondary"
+                    @click="clearFilters"
+                  >
+                    Clear filters
+                  </button>
+                  <div v-else class="mt-3 max-w-2xl mx-auto w-full hidden">
                     <div class="flex items-center justify-center space-x-3 bg-gray-50 py-3 px-4 rounded-lg border border-gray-200">
                       <Icon icon="mdi:link-variant" class="h-5 w-5 text-gray-400 flex-shrink-0" />
                       <span class="text-gray-900 font-medium">{{ portalLink }}</span>
@@ -90,7 +115,7 @@
                 </div>
               </td>
             </tr>
-            <tr v-for="member in members" :key="member._id" class="hover:bg-gray-50 cursor-pointer" @click="goToEdit(member._id)">
+            <tr v-for="member in filteredMembers" :key="member._id" class="hover:bg-gray-50 cursor-pointer" @click="goToEdit(member._id)">
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex items-center">
                   <div class="flex-shrink-0 h-10 w-10">
@@ -224,7 +249,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import { Icon } from '@iconify/vue';
@@ -260,8 +285,33 @@ const loading = computed(() => store.getters['members/isLoading']);
 const pagination = computed(() => store.getters['members/pagination']);
 const error = computed(() => store.getters['members/error']);
 
+const hasActiveFilters = computed(() => filters.value.search.trim() !== '');
 
+const filteredMembers = computed(() => {
+  if (!members.value.length) {
+    return [];
+  }
 
+  if (!hasActiveFilters.value) {
+    return members.value;
+  }
+
+  const searchTerm = filters.value.search.trim().toLowerCase();
+  return members.value.filter(member => {
+    const firstName = member.firstName?.toLowerCase() || '';
+    const lastName = member.lastName?.toLowerCase() || '';
+    const email = member.email?.toLowerCase() || '';
+    return (
+      firstName.includes(searchTerm) ||
+      lastName.includes(searchTerm) ||
+      email.includes(searchTerm)
+    );
+  });
+});
+
+const clearFilters = () => {
+  filters.value.search = '';
+};
 
 const paginationRange = computed(() => {
   const range = [];
@@ -338,9 +388,6 @@ const goToEdit = (memberId) => {
 };
 
 // Watchers
-watch(filters, () => {
-  store.dispatch('members/setFilters', filters.value);
-}, { deep: true });
 
 // Lifecycle
 onMounted(() => {

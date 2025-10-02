@@ -16,13 +16,6 @@ const state = {
     page: 1,
     pages: 1
   },
-  filters: {
-    status: '',
-    membershipLevel: '',
-    search: '',
-    sort: 'lastName',
-    order: 'asc'
-  },
   loading: false,
   error: null
 };
@@ -31,7 +24,6 @@ const getters = {
   membersList: state => state.members,
   currentMember: state => state.currentMember,
   pagination: state => state.pagination,
-  filters: state => state.filters,
   isLoading: state => state.loading,
   error: state => state.error,
   membersByStatus: state => status => state.members.filter(member => member.status === status),
@@ -40,11 +32,10 @@ const getters = {
 };
 
 const actions = {
-  async fetchMembers({ commit, state }, { page = 1, limit = 10 } = {}) {
+  async fetchMembers({ commit }, { page = 1, limit = 10 } = {}) {
     try {
       commit('SET_LOADING', true);
       const response = await getMembers({
-        ...state.filters,
         page,
         limit
       });
@@ -140,11 +131,6 @@ const actions = {
     }
   },
 
-  setFilters({ commit, dispatch }, filters) {
-    commit('SET_FILTERS', filters);
-    dispatch('fetchMembers', { page: 1 }); // Reset to first page with new filters
-  },
-
   clearError({ commit }) {
     commit('SET_ERROR', null);
   }
@@ -159,9 +145,6 @@ const mutations = {
   },
   SET_PAGINATION(state, pagination) {
     state.pagination = pagination;
-  },
-  SET_FILTERS(state, filters) {
-    state.filters = { ...state.filters, ...filters };
   },
   SET_LOADING(state, loading) {
     state.loading = loading;

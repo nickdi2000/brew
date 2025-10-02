@@ -5,12 +5,8 @@
         "description": "Summary of program performance, including total members, points issued, and recent redemptions."
       },
       {
-        "tab_name": "Key Metrics",
-        "description": "Visual charts for member growth, engagement rates, and reward redemption trends."
-      },
-      {
-        "tab_name": "Recent Activity",
-        "description": "Log of recent member actions, such as check-ins, reward claims, and challenge completions."
+        "tab_name": "Analytics",
+        "description": "Analytics dashboard with key metrics, growth trends, and recent member activity."
       }
     ],
     "Members": [

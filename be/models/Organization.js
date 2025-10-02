@@ -31,6 +31,10 @@ const organizationSchema = new mongoose.Schema({
     trim: true,
     lowercase: true
   },
+  defaultAwardQrCode: {
+    type: String,
+    trim: true
+  },
   code: {
     type: String,
     required: true,

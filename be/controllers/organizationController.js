@@ -1,5 +1,8 @@
 const Organization = require('../models/Organization');
-const User = require('../models/User');
+const Member = require('../models/Member');
+const Reward = require('../models/Reward');
+const Transaction = require('../models/Transaction');
+const QRCode = require('../models/QRCode');
 const { formatResponse, formatError } = require('../utils/responseFormatter');
 
 // Get organization by public code (public endpoint)
@@ -43,13 +46,61 @@ exports.getOrganization = async (req, res) => {
     }
 
     // Get full organization details
-    const organization = await Organization.findById(user.organization._id);
+    const organization = await Organization.findById(user.organization._id).lean();
     if (!organization) {
       return res.status(404).json(formatError('Organization not found'));
     }
 
+    const organizationId = organization._id;
+
+    const [totalMembers, activeRewards, pointsIssued, redemptions, awardQRCodes] = await Promise.all([
+      Member.countDocuments({ organization: organizationId }).catch(() => 0),
+      Reward.countDocuments({ organizationId, isActive: true }).catch(() => 0),
+      Transaction.aggregate([
+        { $match: { organization: organizationId, amount: { $gt: 0 } } },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
+      ]).then(result => (result[0]?.total) || 0).catch(() => 0),
+      Transaction.aggregate([
+        { $match: { organization: organizationId, amount: { $lt: 0 } } },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
+      ]).then(result => Math.abs(result[0]?.total || 0)).catch(() => 0),
+      QRCode.find({ organization: organizationId, isActive: true })
+        .select('_id code name points isActive')
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .lean()
+        .catch(() => [])
+    ]);
+
+    const stats = [
+      {
+        id: 'totalMembers',
+        label: 'Total Members',
+        value: Number.isFinite(totalMembers) ? totalMembers : 0
+      },
+      {
+        id: 'activeRewards',
+        label: 'Active Rewards',
+        value: Number.isFinite(activeRewards) ? activeRewards : 0
+      },
+      {
+        id: 'pointsIssued',
+        label: 'Points Issued',
+        value: Number.isFinite(pointsIssued) ? pointsIssued : 0
+      },
+      {
+        id: 'redemptions',
+        label: 'Redemptions',
+        value: Number.isFinite(redemptions) ? redemptions : 0
+      }
+    ];
+
     res.json(formatResponse({
-      data: organization,
+      data: {
+        ...organization,
+        stats,
+        awardQRCodes
+      },
       message: 'Organization details retrieved successfully'
     }));
   } catch (error) {

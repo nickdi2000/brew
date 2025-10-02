@@ -29,11 +29,16 @@
     <!-- Login Form -->
     <div class="flex-grow flex flex-col justify-center py-4 sm:px-6 lg:px-8">
       <div class="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <img src="/images/brewtokens-logo-trans.png" alt="BrewTokens" class="mx-auto h-20 w-auto mb-6 animate-fade-in" />
+        <img
+          src="/images/brewtokens-logo-trans.png"
+          alt="BrewTokens"
+          class="mx-auto h-20 w-auto mb-6 animate-fade-in cursor-pointer select-none"
+          @dblclick.stop="handleLogoDoubleClick"
+        />
         <h2 class="text-center text-3xl font-extrabold text-gray-900 mb-2">
           {{ activeTab === 'login' ? 'Welcome Back!' : 'Join BrewTokens' }}
         </h2>
-        <p class="text-gray-600">
+        <p class="text-gray-600" v-on:dblclick.stop="dev = !dev">
           {{ activeTab === 'login' ? 'Sign in to manage your rewards' : 'Create your brewery account today' }}
         </p>
       </div>
@@ -59,13 +64,13 @@
               type="button"
               :class="[
                 'flex-1 py-2 px-4 rounded-md font-medium text-sm transition-all duration-300',
-                !ENABLE_SIGNUP ? 'opacity-50 cursor-not-allowed' : '',
+                isRegistrationDisabled ? 'opacity-70' : '',
                 activeTab === 'register' 
                   ? 'bg-white text-gray-900 shadow-sm' 
                   : 'text-gray-500 hover:text-gray-700'
               ]"
-              @click="ENABLE_SIGNUP ? setActiveTab('register') : router.push('/coming-soon')"
-              :disabled="!ENABLE_SIGNUP"
+              :aria-disabled="isRegistrationDisabled"
+              @click="setActiveTab('register')"
             >
               <Icon icon="mdi:account-plus" class="inline-block w-4 h-4 mr-2" />
               Register
@@ -129,7 +134,7 @@
                 </span>
               </button>
 
-              <div class="relative">
+              <div class="relative" v-if="dev">
                 <div class="absolute inset-0 flex items-center">
                   <div class="w-full border-t border-gray-300"></div>
                 </div>
@@ -140,6 +145,7 @@
 
               <button
                 type="button"
+                v-if="dev"
                 :disabled="isLoading"
                 class="btn btn-secondary w-full group relative overflow-hidden transition-all duration-300"
                 @click="handleDemoLogin"
@@ -215,6 +221,21 @@
             data-cy="register-form" 
             @submit.prevent="handleRegisterSubmit"
           >
+            <div
+              v-if="isRegistrationDisabled"
+              class="p-4 rounded-lg border border-amber-200 bg-amber-50 text-left"
+            >
+              <p class="text-sm text-amber-800 flex items-start gap-2">
+                <Icon icon="mdi:lock-alert" class="w-5 h-5 mt-0.5" />
+                <span>
+                  BrewTokens onboarding is currently invite-only. Request beta access from our
+                  <router-link to="/" class="text-amber-700 font-medium underline hover:text-amber-900">
+                    landing page
+                  </router-link>
+                  and we’ll be in touch soon.
+                </span>
+              </p>
+            </div>
             <div class="group">
               <label for="brewery-name" class="block text-sm font-medium text-gray-700 group-hover:text-amber-700 transition-colors">
                 <Icon icon="mdi:store" class="inline-block w-4 h-4 mr-1" />
@@ -227,7 +248,11 @@
                   type="text"
                   required
                   data-cy="brewery-name-input"
-                  class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm transition-all duration-200 hover:border-amber-300"
+                  :disabled="isRegistrationDisabled"
+                  :class="[
+                    'appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm transition-all duration-200 hover:border-amber-300',
+                    isRegistrationDisabled ? 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed' : 'border-gray-300'
+                  ]"
                   placeholder="Enter your brewery name"
                 />
               </div>
@@ -245,7 +270,11 @@
                   type="email"
                   required
                   data-cy="register-email-input"
-                  class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm transition-all duration-200 hover:border-amber-300"
+                  :disabled="isRegistrationDisabled"
+                  :class="[
+                    'appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm transition-all duration-200 hover:border-amber-300',
+                    isRegistrationDisabled ? 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed' : 'border-gray-300'
+                  ]"
                   placeholder="Enter your email"
                 />
               </div>
@@ -264,7 +293,11 @@
                   required
                   minlength="6"
                   data-cy="register-password-input"
-                  class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm transition-all duration-200 hover:border-amber-300"
+                  :disabled="isRegistrationDisabled"
+                  :class="[
+                    'appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm transition-all duration-200 hover:border-amber-300',
+                    isRegistrationDisabled ? 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed' : 'border-gray-300'
+                  ]"
                   placeholder="Enter your password (min. 6 characters)"
                 />
               </div>
@@ -273,9 +306,12 @@
             <div class="space-y-4">
               <button
                 type="submit"
-                :disabled="isLoading"
+                :disabled="isLoading || isRegistrationDisabled"
                 data-cy="register-button"
-                class="btn btn-primary w-full group relative overflow-hidden transition-all duration-300"
+                :class="[
+                  'btn btn-primary w-full group relative overflow-hidden transition-all duration-300',
+                  (isLoading || isRegistrationDisabled) ? 'opacity-70 cursor-not-allowed' : ''
+                ]"
               >
                 <span class="relative z-10 flex items-center justify-center gap-2">
                   <Icon icon="mdi:account-plus" class="w-5 h-5" />
@@ -294,14 +330,80 @@
         </div>
       </div>
     </div>
+
+    <transition name="fade">
+      <div v-if="isUnlockModalOpen" class="fixed inset-0 z-50 flex items-center justify-center px-4 sm:px-0">
+        <div class="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" @click="closeUnlockModal"></div>
+        <div class="relative z-10 w-full max-w-sm">
+          <div class="bg-white rounded-2xl shadow-xl ring-1 ring-black/10 p-6 space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-semibold text-gray-900">Unlock Registration</h3>
+              <button
+                type="button"
+                class="text-gray-400 hover:text-gray-600 transition-colors"
+                @click="closeUnlockModal"
+                aria-label="Close unlock dialog"
+              >
+                <Icon icon="mdi:close" class="w-5 h-5" />
+              </button>
+            </div>
+            <p class="text-sm text-gray-600">
+              Enter the unlock password to enable brewery registration.
+            </p>
+            <form class="space-y-3" @submit.prevent="handleUnlockSubmit">
+              <div>
+                <label for="unlock-password" class="flex items-center text-sm font-medium text-gray-700 gap-2">
+                  <Icon icon="mdi:key-variant" class="w-4 h-4" />
+                  Unlock Password
+                </label>
+                <input
+                  id="unlock-password"
+                  v-model="unlockPassword"
+                  type="password"
+                  required
+                  class="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm transition-all duration-200"
+                  placeholder="Enter password"
+                  :disabled="isUnlocking"
+                />
+              </div>
+              <div v-if="unlockError" class="p-2 rounded-lg border border-red-200 bg-red-50 text-sm text-red-600 flex items-center gap-2">
+                <Icon icon="mdi:alert-circle" class="w-4 h-4" />
+                {{ unlockError }}
+              </div>
+              <div class="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  @click="closeUnlockModal"
+                  :disabled="isUnlocking"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  class="btn btn-primary"
+                  :disabled="isUnlocking"
+                >
+                  <span class="flex items-center gap-2">
+                    <Icon icon="mdi:lock-open-variant" class="w-5 h-5" />
+                    {{ isUnlocking ? 'Unlocking…' : 'Unlock' }}
+                  </span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useStore } from 'vuex'
 import { useRouter } from 'vue-router'
 import { Icon } from '@iconify/vue'
+import { useToast } from '@/plugins/toast'
 
 // Get signup status from environment variable
 const ENABLE_SIGNUP = import.meta.env.VITE_ENABLE_SIGNUP === 'true'
@@ -317,6 +419,17 @@ style.textContent = `
   animation: fade-in 0.6s ease-out forwards;
 }`
 document.head.appendChild(style)
+
+const dev = ref(false)
+const registrationEnabled = ref(ENABLE_SIGNUP)
+const isRegistrationDisabled = computed(() => !registrationEnabled.value)
+
+const isUnlockModalOpen = ref(false)
+const unlockPassword = ref('')
+const unlockError = ref('')
+const isUnlocking = ref(false)
+
+const toast = useToast()
 
 // Demo account credentials from seeder
 const DEMO_EMAIL = 'sample@brewtokens.com'
@@ -363,6 +476,44 @@ const setActiveTab = (tab) => {
   error.value = '' // Clear errors when switching tabs
 }
 
+const handleLogoDoubleClick = () => {
+  unlockPassword.value = ''
+  unlockError.value = ''
+  isUnlockModalOpen.value = true
+}
+
+const closeUnlockModal = () => {
+  isUnlockModalOpen.value = false
+  unlockPassword.value = ''
+  unlockError.value = ''
+}
+
+const handleUnlockSubmit = async () => {
+  try {
+    isUnlocking.value = true
+    unlockError.value = ''
+
+    await new Promise((resolve) => setTimeout(resolve))
+
+    if (unlockPassword.value.trim() !== 'brew') {
+      unlockError.value = 'Incorrect password. Please try again.'
+      toast('Incorrect unlock password', 'error')
+      return
+    }
+
+    registrationEnabled.value = true
+    dev.value = true
+    toast('Registration has been enabled.', 'success')
+    activeTab.value = 'register'
+    closeUnlockModal()
+  } catch (err) {
+    unlockError.value = err.message || 'Unable to unlock registration.'
+    toast(unlockError.value, 'error')
+  } finally {
+    isUnlocking.value = false
+  }
+}
+
 const handleLoginSubmit = async () => {
   try {
     isLoading.value = true
@@ -384,9 +535,7 @@ const handleLoginSubmit = async () => {
 }
 
 const handleRegisterSubmit = async () => {
-  // If registration is disabled, redirect to coming soon
-  if (!ENABLE_SIGNUP) {
-    router.push('/coming-soon')
+  if (!registrationEnabled.value) {
     return
   }
 
