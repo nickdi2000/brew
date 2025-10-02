@@ -174,6 +174,16 @@ onMounted(async () => {
       router.replace(`/members/${code.value}`);
       return;
     }
+
+    // First fetch organization to get its ID
+    await fetchOrganization();
+    if (!organization.value?._id) {
+      throw new Error('Failed to load organization');
+    }
+
+    // Set organization ID in store
+    store.commit('organization/SET_CURRENT_ORGANIZATION_ID', organization.value._id);
+
     if (!membership.value) {
       // Try to load membership by code
       try {
@@ -193,10 +203,7 @@ onMounted(async () => {
     }
 
     // Always refresh user data on portal load to ensure we have the latest transactions
-    await Promise.all([
-      fetchOrganization(),
-      fetchTransactions()
-    ]);
+    await fetchTransactions();
   } finally {
     loading.value = false;
   }

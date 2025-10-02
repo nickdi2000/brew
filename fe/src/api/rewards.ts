@@ -73,17 +73,36 @@ export const rewardsApi = {
    * Redeem a reward
    */
   redeemReward: async (id: string, membershipId?: string): Promise<{ success: boolean; message: string }> => {
+    // Get current membership from store
     const currentMembership = store.getters['auth/currentMembership'];
-    const currentMembershipId = membershipId || currentMembership?.id;
+    const currentMembershipId = membershipId || currentMembership?._id;
 
-    const { data } = await api.post(`/rewards/${id}/redeem`, {}, {
-      params: {
-        organizationId: store.getters['organization/currentOrganizationId']
-      },
-      headers: currentMembershipId ? {
-        'X-Membership-ID': currentMembershipId
-      } : undefined
-    });
-    return data;
+    // Validate membership ID
+    if (!currentMembershipId) {
+      throw new Error('No membership ID available for redemption');
+    }
+
+    // Get organization ID from store
+    const organizationId = store.getters['organization/currentOrganizationId'];
+    if (!organizationId) {
+      throw new Error('No organization ID available for redemption');
+    }
+
+    // Validate reward ID
+    if (!id) {
+      throw new Error('No reward ID provided for redemption');
+    }
+
+    try {
+      const { data } = await api.post(`/rewards/${id}/redeem`, {
+        membershipId: currentMembershipId,
+        organizationId
+      });
+      return data;
+    } catch (error) {
+      // Add context to error
+      const message = error.response?.data?.message || error.message;
+      throw new Error(`Failed to redeem reward: ${message}`);
+    }
   }
 };

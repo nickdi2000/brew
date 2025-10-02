@@ -433,6 +433,36 @@ router.beforeEach(async (to, from, next) => {
   // Do not redirect member routes to admin login; keep them in members flow
   const isMemberRoute = to.path.startsWith('/members');
 
+  // For member portal routes, check membership and redirect accordingly
+  if (isMemberRoute && isAuthenticated) {
+    const membership = store.getters['auth/currentMembership'];
+    const code = to.params.code;
+
+    // If we're at the member home but have auth+membership, go to portal
+    if (to.name === 'member-home' && membership && code) {
+      next({ name: 'member-portal', params: { code } });
+      return;
+    }
+
+    // If we're at a protected route but missing membership, try to fetch it
+    if (!membership && !to.meta.public && code) {
+      try {
+        const { default: api } = await import('@/api');
+        const resp = await api.get(`/memberships/by-code/${code}`);
+        const m = resp.data?.data || null;
+        if (m) {
+          store.commit('auth/SET_MEMBERSHIP', m);
+          next(); // Continue to requested route with membership
+          return;
+        }
+      } catch {
+        // If we can't get membership, send to member home
+        next({ name: 'member-home', params: { code } });
+        return;
+      }
+    }
+  }
+
   // If authenticated admin user trying to access public routes
   if (!isMemberRoute && isAuthenticated && to.path === '/login') {
     next('/admin/dashboard');

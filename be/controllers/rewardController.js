@@ -203,15 +203,17 @@ exports.redeemReward = async (req, res) => {
     }
 
     // Get current member points
+    const membershipId = req.body.membershipId || req.user.membershipId;
     const membership = await Member.findOne({
-      _id: req.user.membershipId,
+      _id: membershipId,
       organization: req.user.organizationId
     });
 
     if (!membership) {
       logger.warn('[Rewards] Membership not found for redemption', {
-        membershipId: req.user.membershipId,
-        organizationId: req.user.organizationId
+        membershipId,
+        organizationId: req.user.organizationId,
+        requestBody: req.body
       });
       return res.status(404).json(formatError('Membership not found'));
     }
@@ -228,7 +230,7 @@ exports.redeemReward = async (req, res) => {
 
     // Create transaction record
     const transaction = new Transaction({
-      member: req.user.membershipId,
+      member: membershipId, // Use the same membership ID we validated above
       organization: req.user.organizationId,
       type: 'redeem',
       method: 'redemption',
@@ -236,7 +238,8 @@ exports.redeemReward = async (req, res) => {
       reward: reward._id,
       metadata: {
         rewardName: reward.name,
-        pointsCost: reward.pointsCost
+        pointsCost: reward.pointsCost,
+        memberId: membershipId // Add for audit trail
       }
     });
 

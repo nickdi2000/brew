@@ -6,7 +6,7 @@ export default {
   state: () => ({
     user: null,
     token: localStorage.getItem('token') || null,
-    membership: null,
+    membership: JSON.parse(localStorage.getItem('membership')) || null,
     loading: false,
     error: null
   }),
@@ -25,10 +25,19 @@ export default {
     },
     SET_MEMBERSHIP(state, membership) {
       // Ensure recentTransactions is always an array
-      state.membership = {
+      const membershipData = membership ? {
         ...membership,
         recentTransactions: membership?.recentTransactions || []
-      };
+      } : null;
+      
+      state.membership = membershipData;
+      
+      // Persist to localStorage
+      if (membershipData) {
+        localStorage.setItem('membership', JSON.stringify(membershipData));
+      } else {
+        localStorage.removeItem('membership');
+      }
     },
     UPDATE_MEMBERSHIP_POINTS(state, points) {
       if (state.membership) {
@@ -157,22 +166,45 @@ export default {
       commit('SET_USER', null);
       commit('SET_TOKEN', null);
       commit('SET_MEMBERSHIP', null);
+      localStorage.removeItem('membership');
     },
 
-    async refreshUserData({ commit }) {
+    async refreshUserData({ commit, state }) {
       try {
         const response = await getCurrentUser();
         console.log('🔄 Refresh user data response:', response.data);
         const { user } = response.data;
         
         commit('SET_USER', user);
+
         // Find the current membership and update it
         if (user.memberships?.length > 0) {
-          const currentMembership = user.memberships[0]; // For now, just use the first membership
-          console.log('📅 Loaded membership with', currentMembership.recentTransactions?.length || 0, 'transactions');
+          // Try to find membership for current organization
+          const currentOrgId = state.user?.organization?._id;
+          let currentMembership = null;
+
+          if (currentOrgId) {
+            currentMembership = user.memberships.find(m => 
+              String(m.organization) === String(currentOrgId)
+            );
+          }
+
+          // Fallback to first membership if no match found
+          if (!currentMembership) {
+            currentMembership = user.memberships[0];
+          }
+
+          console.log('📅 Loaded membership:', {
+            id: currentMembership._id,
+            organization: currentMembership.organization,
+            points: currentMembership.points,
+            transactions: currentMembership.recentTransactions?.length || 0
+          });
+
           commit('SET_MEMBERSHIP', currentMembership);
         } else {
           console.warn('⚠️ No memberships found in response');
+          commit('SET_MEMBERSHIP', null);
         }
         
         return response.data;
