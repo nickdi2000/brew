@@ -48,7 +48,7 @@
           <div class="flex items-start justify-between">
             <div class="flex-1 min-w-0">
               <p class="text-sm font-medium text-gray-900 truncate">
-                {{ transaction.metadata?.description || humanizeType(transaction.type) }}
+                {{ getTransactionTitle(transaction) }}
               </p>
               <p class="text-xs text-gray-500 mt-0.5">
                 {{ formatDate(transaction.createdAt) }}
@@ -167,5 +167,21 @@ function humanizeType(type) {
     default:
       return 'Transaction';
   }
+}
+
+function getTransactionTitle(transaction) {
+  // If there's a reward, show the reward name
+  if (transaction.reward) {
+    const rewardName = typeof transaction.reward === 'object' 
+      ? transaction.reward.name 
+      : transaction.reward;
+    
+    if (rewardName) {
+      return `Redeemed: ${rewardName}`;
+    }
+  }
+  
+  // Fall back to metadata description or humanized type
+  return transaction.metadata?.description || humanizeType(transaction.type);
 }
 </script>

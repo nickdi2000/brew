@@ -53,6 +53,7 @@
         v-for="qr in qrCodes" 
         :key="qr._id" 
         class="bg-white rounded-lg border border-gray-200 p-4 transition-all duration-200 hover:shadow-md"
+        @dblclick="revealedQrId = revealedQrId === qr._id ? null : qr._id"
       >
         <div class="flex items-start justify-between mb-3">
           <div>
@@ -91,6 +92,11 @@
           </div>
         </div>
         <div class="text-xs text-gray-400 font-mono">Code: {{ qr.code }}</div>
+        <Transition name="slide-fade">
+          <div v-if="revealedQrId === qr._id" class="mt-3 p-2 bg-gray-50 rounded text-xs font-mono text-gray-600 border border-gray-200">
+            QR Value: {{ qr.value }}
+          </div>
+        </Transition>
       </div>
     </div>
   </div>
@@ -111,6 +117,8 @@ const props = defineProps({
     default: false
   }
 });
+
+const revealedQrId = ref(null);
 
 const emit = defineEmits(['create', 'edit', 'print', 'download', 'delete']);
 
@@ -142,3 +150,16 @@ const confirmDelete = (qr) => {
   }
 };
 </script>
+
+<style scoped>
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateY(-10px);
+  opacity: 0;
+}
+</style>

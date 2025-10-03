@@ -5,7 +5,7 @@
       <div class="text-center mb-8 animate-fade-in-up">
         <div class="mb-6">
           <img 
-            src="/images/brewtokens-logo.png" 
+            src="/images/brew-tokens-logo.png" 
             alt="BrewTokens" 
             class="h-16 w-auto mx-auto mb-4 animate-bounce-in"
           />

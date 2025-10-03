@@ -82,8 +82,14 @@ export const rewardsApi = {
       throw new Error('No membership ID available for redemption');
     }
 
-    // Get organization ID from store
-    const organizationId = store.getters['organization/currentOrganizationId'];
+    // Get organization ID from membership or store
+    let organizationId = currentMembership?.organization?._id || currentMembership?.organization;
+    
+    // Fallback to organization store if not in membership
+    if (!organizationId) {
+      organizationId = store.getters['organization/currentOrganizationId'];
+    }
+    
     if (!organizationId) {
       throw new Error('No organization ID available for redemption');
     }

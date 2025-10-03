@@ -11,7 +11,7 @@
         <!-- QR Code Display -->
         <div v-if="isEditing" class="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg">
           <div class="w-64 h-64 bg-white rounded-lg shadow-sm flex items-center justify-center mb-4">
-            <vue-qrcode :value="qrCodeValue" :options="{ width: 256 }" tag="img" class="w-full h-full" />
+            <QRComponent :value="qrCodeValue" :size="256" class="w-full h-full" />
           </div>
           <div class="text-center">
             <div class="text-2xl font-bold text-gray-900 mb-1">{{ formData.points }} Points</div>
@@ -153,7 +153,8 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { Icon } from '@iconify/vue';
-import VueQrcode from '@chenfengyuan/vue-qrcode';
+import QRComponent from '../QRComponent.vue';
+import { useStore } from 'vuex';
 
 const props = defineProps({
   isOpen: {
@@ -167,10 +168,13 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['close', 'save']);
+const store = useStore();
 
 const qrCodeValue = computed(() => {
   if (!props.qrCode) return '';
-  return `POINTS:${props.qrCode.points}:${props.qrCode.code}`;
+  let currentHost = 'https://' +window.location.host;
+  const orgCode = store.getters['organization/organizationCode'];
+  return `${currentHost}/members/${orgCode}?code=${props.qrCode.code}`;
 });
 
 const printQRCode = () => {

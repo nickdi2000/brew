@@ -774,6 +774,26 @@ const manualTestScan = () => {
   });
 };
 
+const extractCodeFromUrl = (text) => {
+  try {
+    // Try to parse as URL first
+    const url = new URL(text);
+    // Look for code in searchParams
+    const codeParam = url.searchParams.get('code');
+    if (codeParam) {
+      logStage('detection', 'Code extracted from URL', { 
+        originalUrl: text,
+        extractedCode: codeParam
+      });
+      return codeParam;
+    }
+  } catch (err) {
+    // Not a URL, which is fine - we'll use the original text
+    logStage('detection', 'Input is not a URL, using as direct code', { text });
+  }
+  return text;
+};
+
 const onDecode = async (decodedString) => {
   throttledDetectionLog('QR code decoded', {
     value: decodedString,
@@ -786,8 +806,24 @@ const onDecode = async (decodedString) => {
     scannedText.value = decodedString;
     logStage('detection', 'Stored scanned text', { scannedText: scannedText.value });
     
-    // Find matching QR code
-    const matchingQR = qrCodes.value.find(qr => qr.code === decodedString);
+    // Extract code from URL if present
+    const extractedCode = extractCodeFromUrl(decodedString);
+    logStage('detection', 'Processing extracted code', { 
+      original: decodedString,
+      extracted: extractedCode,
+      different: extractedCode !== decodedString
+    });
+    
+    // Find matching QR code - try both original and extracted code
+    let matchingQR = qrCodes.value.find(qr => qr.code === extractedCode);
+    if (!matchingQR) {
+      matchingQR = qrCodes.value.find(qr => qr.code === decodedString);
+      if (matchingQR) {
+        logStage('detection', 'Matched original code', { code: decodedString });
+      }
+    } else {
+      logStage('detection', 'Matched extracted code', { code: extractedCode });
+    }
     
     // Stop camera immediately after any scan
     isCameraActive.value = false;

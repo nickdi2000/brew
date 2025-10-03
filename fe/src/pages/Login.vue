@@ -474,6 +474,18 @@ if (qrCode) {
   activeTab.value = 'onboarding'
 }
 
+// Check for login credentials in URL parameters
+const urlEmail = router.currentRoute.value.query.email
+const urlPassword = router.currentRoute.value.query.password
+
+// Populate login form if credentials exist in URL
+if (urlEmail) {
+  loginForm.email = urlEmail
+}
+if (urlPassword) {
+  loginForm.password = urlPassword
+}
+
 const isLoading = ref(false)
 const error = ref('')
 

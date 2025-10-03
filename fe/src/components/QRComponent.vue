@@ -1,5 +1,5 @@
 <template>
-  <div class="inline-flex" :style="{ height: size + 'px', backgroundColor: backgroundColor }">
+  <div class="inline-flex" :style="{ height: size + 'px', backgroundColor: backgroundColor }" :title="value">
     <component
       :is="qrcodeTag"
       :value="safeValue"
@@ -48,7 +48,7 @@ const props = defineProps({
   },
   showSignature: {
     type: Boolean,
-    default: false
+    default: true
   },
   signatureOpacity: {
     type: Number,
