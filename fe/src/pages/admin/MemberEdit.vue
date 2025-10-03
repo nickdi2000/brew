@@ -348,9 +348,17 @@ const loadTransactions = async () => {
   if (memberId.value) {
     try {
       await store.dispatch('transactions/fetchTransactions', memberId.value);
+    } catch (err) {
+      console.error('Failed to load transactions:', err);
+      toast('Failed to load transactions', 'error');
+      return;
+    }
+    
+    try {
       await store.dispatch('transactions/fetchBalance', memberId.value);
     } catch (err) {
-      toast('Failed to load transactions', 'error');
+      console.error('Failed to load balance:', err);
+      // Don't show error for balance - transactions loaded successfully
     }
   }
 };

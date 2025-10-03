@@ -256,6 +256,7 @@ import { Icon } from '@iconify/vue';
 import ConfirmationModal from '@/components/ConfirmationModal.vue';
 import { usePortalLink } from '@/composables/usePortalLink';
 
+const router = useRouter();
 const store = useStore();
 const { portalLink } = usePortalLink();
 const showCopied = ref(false);
@@ -383,7 +384,6 @@ const deleteMember = async () => {
 };
 
 const goToEdit = (memberId) => {
-  const router = useRouter();
   router.push(`/admin/members/${memberId}/edit`);
 };
 

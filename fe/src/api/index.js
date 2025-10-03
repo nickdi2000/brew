@@ -12,14 +12,42 @@ const isCurrentRouteMember = () => {
 
 const isMemberRequest = (url = '') => {
   const normalized = url.toLowerCase();
+  
+  // First check: if we're on an admin route, always use admin token (unless it's a member-specific endpoint)
+  const currentRoute = router.currentRoute?.value;
+  const isOnAdminRoute = currentRoute?.path?.startsWith('/admin');
+  const isOnMemberRoute = currentRoute?.path?.startsWith('/members') || currentRoute?.name?.toString().startsWith('member');
+  
+  // Explicit admin-only endpoints - always use admin token
+  if (normalized.includes('/memberships')) {
+    return false;
+  }
+  
+  // If we're on an admin route, use admin token (unless the URL explicitly contains /members or /member/)
+  if (isOnAdminRoute) {
+    // Only use member token if the URL itself explicitly indicates it's a member endpoint
+    if (['/members/', '/member/'].some((hint) => normalized.includes(hint))) {
+      return true;
+    }
+    return false;
+  }
+  
+  // Explicit member endpoints - always use member token
   if (['/members', '/member/'].some((hint) => normalized.includes(hint))) {
     return true;
   }
+  
   const lastMemberCode = store.getters.lastMemberCode;
   if (lastMemberCode && normalized.includes(String(lastMemberCode).toLowerCase())) {
     return true;
   }
-  return isCurrentRouteMember();
+  
+  // If we're on a member route, use member token
+  if (isOnMemberRoute) {
+    return true;
+  }
+  
+  return false;
 };
 
 const determineLogoutOptions = (url = '') => ({
@@ -60,8 +88,12 @@ api.interceptors.request.use(
     
     console.log(`🚀 API Request to ${config.url}:`, {
       method: config.method,
+      isMemberRequest: isMember,
+      currentPath: router.currentRoute?.value?.path,
       hasToken: !!token,
       tokenValue: token ? `${token.substring(0, 10)}...` : 'none',
+      adminToken: store.getters.token ? `${store.getters.token.substring(0, 10)}...` : 'none',
+      memberToken: store.getters['auth/token'] ? `${store.getters['auth/token'].substring(0, 10)}...` : 'none',
       organizationId: currentOrganizationId,
       isPublicEndpoint
     });
@@ -71,14 +103,16 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     
-    // Add organization ID to headers if available and not a public endpoint
+      // Add organization ID to headers if available and not a public endpoint
     if (currentOrganizationId && !isPublicEndpoint) {
       config.headers['X-Organization-ID'] = currentOrganizationId;
-      // Also add it as a query parameter for endpoints that expect it
-      if (!config.params) {
-        config.params = {};
+      // Only add organizationId as query param if it's not already in the URL
+      if (!config.url.includes('organizationId=')) {
+        if (!config.params) {
+          config.params = {};
+        }
+        config.params.organizationId = currentOrganizationId;
       }
-      config.params.organizationId = currentOrganizationId;
     }
 
     // Add membership ID to headers if available

@@ -36,8 +36,9 @@ export default {
         const response = await getTransactions(memberId);
         commit('SET_TRANSACTIONS', response.data.data.transactions);
       } catch (error) {
-        commit('SET_ERROR', error.message);
-        throw error;
+        const errorMessage = error.response?.data?.message || error.message || 'Failed to load transactions';
+        commit('SET_ERROR', errorMessage);
+        throw new Error(errorMessage);
       } finally {
         commit('SET_LOADING', false);
       }
