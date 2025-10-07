@@ -1,21 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, requireAdminOrSelfMembership } = require('../middleware/auth');
 const transactionController = require('../controllers/transactionController');
 
 // All routes require authentication
 router.use(authenticateToken);
 
-// List transactions for a member
-router.get('/:memberId', transactionController.list);
+// List transactions for a member (admin or the member themselves)
+router.get('/:memberId', requireAdminOrSelfMembership('memberId'), transactionController.list);
 
-// Get balance for a member
-router.get('/:memberId/balance', transactionController.balance);
+// Get balance for a member (admin or the member themselves)
+router.get('/:memberId/balance', requireAdminOrSelfMembership('memberId'), transactionController.balance);
 
-// Create a new transaction (for both earn and adjust)
-router.post('/:memberId', transactionController.create);
+// Create a new transaction (admin only)
+router.post('/:memberId', require('../middleware/auth').requireAdmin, transactionController.create);
 
-// Redeem reward
-router.post('/:memberId/redeem', transactionController.redeem);
+// Redeem reward (admin or the member themselves)
+router.post('/:memberId/redeem', requireAdminOrSelfMembership('memberId'), transactionController.redeem);
 
 module.exports = router;

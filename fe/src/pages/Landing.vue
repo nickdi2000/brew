@@ -164,6 +164,7 @@
           <a href="/privacy-policy" class="transition hover:text-white">Privacy</a>
           <a href="/terms-of-service" class="transition hover:text-white">Terms</a>
           <a href="/contact" class="transition hover:text-white">Support</a>
+          <a href="/members/gordon" class="transition hover:text-white">Sample Portal</a>
         </div>
         <p class="text-xs text-gray-500">&copy; {{ currentYear }} BrewTokens. All rights reserved.</p>
       </div>

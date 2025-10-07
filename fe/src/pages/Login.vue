@@ -33,7 +33,6 @@
           src="/images/brewtokens-logo-trans.png"
           alt="BrewTokens"
           class="mx-auto h-20 w-auto mb-6 animate-fade-in cursor-pointer select-none"
-          @dblclick.stop="handleLogoDoubleClick"
         />
         <h2 class="text-center text-3xl font-extrabold text-gray-900 mb-2">
           {{ activeTab === 'login' ? 'Welcome Back!' : 'Join BrewTokens' }}
@@ -221,96 +220,178 @@
             data-cy="register-form" 
             @submit.prevent="handleRegisterSubmit"
           >
-            <div
-              v-if="isRegistrationDisabled"
-              class="p-4 rounded-lg border border-amber-200 bg-amber-50 text-left"
+            <div v-if="!isInviteCodeValid" class="space-y-6">
+              <div class="text-center">
+                <h3 class="text-2xl font-bold text-gray-900 mb-2">Enter Invite Code</h3>
+                <p class="text-gray-600">Enter your invitation code to unlock registration</p>
+              </div>
+              
+              <form @submit.prevent="handleInviteCodeSubmit" class="space-y-4">
+                <div class="relative">
+                  <input
+                    v-model="inviteCode"
+                    type="text"
+                    class="block w-full px-4 py-3 text-center text-xl tracking-wider border-2 border-amber-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-400 transition-all duration-300 placeholder:text-gray-400"
+                    placeholder="INVITE CODE"
+                    :disabled="isValidatingCode || isInviteCodeValid"
+                    :class="{
+                      'border-green-400 bg-green-50': isInviteCodeValid,
+                      'border-red-400 bg-red-50': showErrorBanner
+                    }"
+                  />
+                  
+                  <div class="absolute inset-0 pointer-events-none">
+                    <div class="absolute -inset-0.5 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 rounded-lg opacity-30 blur animate-pulse"></div>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  class="w-full btn btn-primary relative overflow-hidden group"
+                  :disabled="isValidatingCode || isInviteCodeValid"
+                >
+                  <span class="relative z-10 flex items-center justify-center gap-2">
+                    <Icon :icon="isValidatingCode ? 'mdi:loading' : 'mdi:key'" 
+                          :class="['w-5 h-5', isValidatingCode ? 'animate-spin' : '']" />
+                    {{ isValidatingCode ? 'Validating...' : 'Validate Code' }}
+                  </span>
+                </button>
+
+                <!-- Success Banner -->
+                <transition
+                  enter-active-class="transition-all duration-300 ease-out"
+                  enter-from-class="opacity-0 transform -translate-y-2"
+                  enter-to-class="opacity-100 transform translate-y-0"
+                  leave-active-class="transition-all duration-200 ease-in"
+                  leave-from-class="opacity-100 transform translate-y-0"
+                  leave-to-class="opacity-0 transform -translate-y-2"
+                >
+                  <div v-if="showSuccessBanner" class="p-4 rounded-lg bg-green-50 border border-green-200 space-y-3">
+                    <p class="text-green-700 font-medium flex items-center justify-center gap-2">
+                      <Icon icon="mdi:check-circle" class="w-5 h-5" />
+                      Invitation code accepted!
+                    </p>
+                    <CoinFlip class="mx-auto transform scale-75" :value="100" />
+                  </div>
+                </transition>
+
+                <!-- Error Banner -->
+                <transition
+                  enter-active-class="transition-all duration-300 ease-out"
+                  enter-from-class="opacity-0 transform -translate-y-2"
+                  enter-to-class="opacity-100 transform translate-y-0"
+                  leave-active-class="transition-all duration-200 ease-in"
+                  leave-from-class="opacity-100 transform translate-y-0"
+                  leave-to-class="opacity-0 transform -translate-y-2"
+                >
+                  <div v-if="showErrorBanner" class="p-3 rounded-lg bg-red-50 border border-red-200">
+                    <p class="text-sm text-red-600 text-center flex items-center justify-center gap-2">
+                      <Icon icon="mdi:alert-circle" class="w-5 h-5" />
+                      {{ inviteCodeError }}
+                    </p>
+                  </div>
+                </transition>
+
+                <div class="text-center text-sm text-gray-500">
+                  <p>Need an invite code? Request access from our
+                    <router-link to="/" class="text-amber-600 hover:text-amber-700 underline">landing page</router-link>
+                  </p>
+                </div>
+              </form>
+            </div>
+            <!-- Success Message -->
+            <transition
+              enter-active-class="transition-all duration-500 ease-out"
+              enter-from-class="opacity-0 scale-95"
+              enter-to-class="opacity-100 scale-100"
+              leave-active-class="transition-all duration-300 ease-in"
+              leave-from-class="opacity-100 scale-100"
+              leave-to-class="opacity-0 scale-95"
             >
-              <p class="text-sm text-amber-800 flex items-start gap-2">
-                <Icon icon="mdi:lock-alert" class="w-5 h-5 mt-0.5" />
-                <span>
-                  BrewTokens onboarding is currently invite-only. Request beta access from our
-                  <router-link to="/" class="text-amber-700 font-medium underline hover:text-amber-900">
-                    landing page
-                  </router-link>
-                  and we’ll be in touch soon.
-                </span>
-              </p>
-            </div>
-            <div class="group">
-              <label for="brewery-name" class="block text-sm font-medium text-gray-700 group-hover:text-amber-700 transition-colors">
-                <Icon icon="mdi:store" class="inline-block w-4 h-4 mr-1" />
-                Brewery Name
-              </label>
-              <div class="mt-1">
-                <input
-                  id="brewery-name"
-                  v-model="registerForm.breweryName"
-                  type="text"
-                  required
-                  data-cy="brewery-name-input"
-                  :disabled="isRegistrationDisabled"
-                  :class="[
-                    'appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm transition-all duration-200 hover:border-amber-300',
-                    isRegistrationDisabled ? 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed' : 'border-gray-300'
-                  ]"
-                  placeholder="Enter your brewery name"
-                />
+              <div v-if="isInviteCodeValid" class="mb-8 text-center">
+                <div class="inline-flex items-center justify-center px-6 py-3 bg-green-100 rounded-full">
+                  <Icon icon="mdi:check-circle" class="w-6 h-6 text-green-600 mr-2" />
+                  <span class="text-green-800 font-semibold">Registration Unlocked!</span>
+                </div>
+                <p class="mt-3 text-green-600">Please complete your registration below</p>
               </div>
-            </div>
+            </transition>
 
-            <div class="group">
-              <label for="register-email" class="block text-sm font-medium text-gray-700 group-hover:text-amber-700 transition-colors">
-                <Icon icon="mdi:email" class="inline-block w-4 h-4 mr-1" />
-                Email address
-              </label>
-              <div class="mt-1">
-                <input
-                  id="register-email"
-                  v-model="registerForm.email"
-                  type="email"
-                  required
-                  data-cy="register-email-input"
-                  :disabled="isRegistrationDisabled"
-                  :class="[
-                    'appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm transition-all duration-200 hover:border-amber-300',
-                    isRegistrationDisabled ? 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed' : 'border-gray-300'
-                  ]"
-                  placeholder="Enter your email"
-                />
-              </div>
-            </div>
+            <!-- Registration Form -->
+            <transition
+              enter-active-class="transition-all duration-500 ease-out"
+              enter-from-class="opacity-0 -translate-y-4"
+              enter-to-class="opacity-100 translate-y-0"
+              leave-active-class="transition-all duration-300 ease-in"
+              leave-from-class="opacity-100 translate-y-0"
+              leave-to-class="opacity-0 -translate-y-4"
+            >
+              <div v-if="isInviteCodeValid" class="space-y-6">
+                <div class="group">
+                  <label for="brewery-name" class="block text-sm font-medium text-gray-700 group-hover:text-amber-700 transition-colors">
+                    <Icon icon="mdi:store" class="inline-block w-4 h-4 mr-1" />
+                    Brewery Name
+                  </label>
+                  <div class="mt-1">
+                    <input
+                      id="brewery-name"
+                      v-model="registerForm.breweryName"
+                      type="text"
+                      required
+                      data-cy="brewery-name-input"
+                      class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm transition-all duration-200 hover:border-amber-300"
+                      placeholder="Enter your brewery name"
+                    />
+                  </div>
+                </div>
 
-            <div class="group">
-              <label for="register-password" class="block text-sm font-medium text-gray-700 group-hover:text-amber-700 transition-colors">
-                <Icon icon="mdi:lock" class="inline-block w-4 h-4 mr-1" />
-                Password
-              </label>
-              <div class="mt-1">
-                <input
-                  id="register-password"
-                  v-model="registerForm.password"
-                  type="password"
-                  required
-                  minlength="6"
-                  data-cy="register-password-input"
-                  :disabled="isRegistrationDisabled"
-                  :class="[
-                    'appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm transition-all duration-200 hover:border-amber-300',
-                    isRegistrationDisabled ? 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed' : 'border-gray-300'
-                  ]"
-                  placeholder="Enter your password (min. 6 characters)"
-                />
+                <div class="group">
+                  <label for="register-email" class="block text-sm font-medium text-gray-700 group-hover:text-amber-700 transition-colors">
+                    <Icon icon="mdi:email" class="inline-block w-4 h-4 mr-1" />
+                    Email address
+                  </label>
+                  <div class="mt-1">
+                    <input
+                      id="register-email"
+                      v-model="registerForm.email"
+                      type="email"
+                      required
+                      data-cy="register-email-input"
+                      class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm transition-all duration-200 hover:border-amber-300"
+                      placeholder="Enter your email"
+                    />
+                  </div>
+                </div>
+
+                <div class="group">
+                  <label for="register-password" class="block text-sm font-medium text-gray-700 group-hover:text-amber-700 transition-colors">
+                    <Icon icon="mdi:lock" class="inline-block w-4 h-4 mr-1" />
+                    Password
+                  </label>
+                  <div class="mt-1">
+                    <input
+                      id="register-password"
+                      v-model="registerForm.password"
+                      type="password"
+                      required
+                      minlength="6"
+                      data-cy="register-password-input"
+                      class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm transition-all duration-200 hover:border-amber-300"
+                      placeholder="Enter your password (min. 6 characters)"
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
+            </transition>
 
             <div class="space-y-4">
               <button
                 type="submit"
-                :disabled="isLoading || isRegistrationDisabled"
+                :disabled="isLoading || !isInviteCodeValid"
                 data-cy="register-button"
                 :class="[
                   'btn btn-primary w-full group relative overflow-hidden transition-all duration-300',
-                  (isLoading || isRegistrationDisabled) ? 'opacity-70 cursor-not-allowed' : ''
+                  (isLoading || !isInviteCodeValid) ? 'opacity-70 cursor-not-allowed' : ''
                 ]"
               >
                 <span class="relative z-10 flex items-center justify-center gap-2">
@@ -335,70 +416,6 @@
       </div>
     </div>
 
-    <transition name="fade">
-      <div v-if="isUnlockModalOpen" class="fixed inset-0 z-50 flex items-center justify-center px-4 sm:px-0">
-        <div class="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" @click="closeUnlockModal"></div>
-        <div class="relative z-10 w-full max-w-sm">
-          <div class="bg-white rounded-2xl shadow-xl ring-1 ring-black/10 p-6 space-y-4">
-            <div class="flex items-center justify-between">
-              <h3 class="text-lg font-semibold text-gray-900">Unlock Registration</h3>
-              <button
-                type="button"
-                class="text-gray-400 hover:text-gray-600 transition-colors"
-                @click="closeUnlockModal"
-                aria-label="Close unlock dialog"
-              >
-                <Icon icon="mdi:close" class="w-5 h-5" />
-              </button>
-            </div>
-            <p class="text-sm text-gray-600">
-              Enter the unlock password to enable brewery registration.
-            </p>
-            <form class="space-y-3" @submit.prevent="handleUnlockSubmit">
-              <div>
-                <label for="unlock-password" class="flex items-center text-sm font-medium text-gray-700 gap-2">
-                  <Icon icon="mdi:key-variant" class="w-4 h-4" />
-                  Unlock Password
-                </label>
-                <input
-                  id="unlock-password"
-                  v-model="unlockPassword"
-                  type="password"
-                  required
-                  class="mt-1 appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm transition-all duration-200"
-                  placeholder="Enter password"
-                  :disabled="isUnlocking"
-                />
-              </div>
-              <div v-if="unlockError" class="p-2 rounded-lg border border-red-200 bg-red-50 text-sm text-red-600 flex items-center gap-2">
-                <Icon icon="mdi:alert-circle" class="w-4 h-4" />
-                {{ unlockError }}
-              </div>
-              <div class="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  class="btn btn-secondary"
-                  @click="closeUnlockModal"
-                  :disabled="isUnlocking"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  class="btn btn-primary"
-                  :disabled="isUnlocking"
-                >
-                  <span class="flex items-center gap-2">
-                    <Icon icon="mdi:lock-open-variant" class="w-5 h-5" />
-                    {{ isUnlocking ? 'Unlocking…' : 'Unlock' }}
-                  </span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </transition>
   </div>
 </template>
 
@@ -409,6 +426,7 @@ import { useRouter } from 'vue-router'
 import { Icon } from '@iconify/vue'
 import { useToast } from '@/plugins/toast'
 import packageJson from '../../package.json' with { type: 'json' }
+import CoinFlip from '@/components/CoinFlip.vue'
 
 // Get signup status from environment variable
 const ENABLE_SIGNUP = import.meta.env.VITE_ENABLE_SIGNUP === 'true'
@@ -425,14 +443,53 @@ style.textContent = `
 }`
 document.head.appendChild(style)
 
-const dev = ref(false)
-const registrationEnabled = ref(ENABLE_SIGNUP)
-const isRegistrationDisabled = computed(() => !registrationEnabled.value)
+const inviteCode = ref('')
+const isInviteCodeValid = ref(false)
+const inviteCodeError = ref('')
+const isValidatingCode = ref(false)
 
-const isUnlockModalOpen = ref(false)
-const unlockPassword = ref('')
-const unlockError = ref('')
-const isUnlocking = ref(false)
+const validateInviteCode = (code) => {
+  // Extract letters and number parts
+  const match = code.toLowerCase().match(/^([a-z]+)(\d+)$/)
+  if (!match) return false
+  
+  const [_, letters, number] = match
+  // Check if number equals letters.length * 5
+  return parseInt(number) === letters.length * 5
+}
+
+const showSuccessBanner = ref(false)
+const showErrorBanner = ref(false)
+
+const handleInviteCodeSubmit = async () => {
+  inviteCodeError.value = ''
+  showErrorBanner.value = false
+  showSuccessBanner.value = false
+  
+  if (!inviteCode.value.trim()) {
+    inviteCodeError.value = 'Please enter an invitation code'
+    showErrorBanner.value = true
+    return
+  }
+
+  // Simulate API call with slight delay
+  isValidatingCode.value = true
+  await new Promise(resolve => setTimeout(resolve, 600))
+  
+  const isValid = validateInviteCode(inviteCode.value)
+  isValidatingCode.value = false
+
+  if (isValid) {
+    showSuccessBanner.value = true
+    isInviteCodeValid.value = true
+    // Clear any previous error
+    inviteCodeError.value = ''
+  } else {
+    inviteCodeError.value = 'Invalid invitation code. Please try again.'
+    showErrorBanner.value = true
+    isInviteCodeValid.value = false
+  }
+}
 
 const toast = useToast()
 
@@ -495,43 +552,6 @@ const setActiveTab = (tab) => {
   error.value = '' // Clear errors when switching tabs
 }
 
-const handleLogoDoubleClick = () => {
-  unlockPassword.value = ''
-  unlockError.value = ''
-  isUnlockModalOpen.value = true
-}
-
-const closeUnlockModal = () => {
-  isUnlockModalOpen.value = false
-  unlockPassword.value = ''
-  unlockError.value = ''
-}
-
-const handleUnlockSubmit = async () => {
-  try {
-    isUnlocking.value = true
-    unlockError.value = ''
-
-    await new Promise((resolve) => setTimeout(resolve))
-
-    if (unlockPassword.value.trim() !== 'brew') {
-      unlockError.value = 'Incorrect password. Please try again.'
-      toast('Incorrect unlock password', 'error')
-      return
-    }
-
-    registrationEnabled.value = true
-    dev.value = true
-    toast('Registration has been enabled.', 'success')
-    activeTab.value = 'register'
-    closeUnlockModal()
-  } catch (err) {
-    unlockError.value = err.message || 'Unable to unlock registration.'
-    toast(unlockError.value, 'error')
-  } finally {
-    isUnlocking.value = false
-  }
-}
 
 const handleLoginSubmit = async () => {
   try {
@@ -554,7 +574,8 @@ const handleLoginSubmit = async () => {
 }
 
 const handleRegisterSubmit = async () => {
-  if (!registrationEnabled.value) {
+  if (!isInviteCodeValid.value) {
+    inviteCodeError.value = 'Please enter a valid invitation code'
     return
   }
 

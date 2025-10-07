@@ -23,6 +23,13 @@
               Add Transaction
             </h3>
 
+            <!-- small amber alert box -->
+            <div class="mt-4 bg-amber-50/50 border border-amber-500/30 rounded-lg p-4">
+              <p class="text-sm text-amber-500">
+                Note: Generally you will not need to add transactions manually. They will be created when a member scans a QR code (after a purchase, for example) or when they redeem a reward with their points (subtracted from their balance).
+              </p>
+            </div>
+
             <form @submit.prevent="handleSubmit" class="mt-4 space-y-4">
               <!-- Transaction Type -->
               <div>

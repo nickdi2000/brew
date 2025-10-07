@@ -2,6 +2,7 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const User = require('../models/User');
 const Organization = require('../models/Organization');
+const Member = require('../models/Member');
 
 const seedData = async () => {
   try {
@@ -79,6 +80,61 @@ const seedData = async () => {
     }
 
     await admin.save();
+
+    // Create GORDON organization for demo/testing
+    const gordonOrgUpdate = {
+      $set: {
+        name: 'Gordon\'s Brewery',
+        description: 'A craft brewery with amazing rewards!',
+        website: 'https://gordonsbrewery.example.com',
+        email: 'info@gordonsbrewery.example.com',
+        updatedAt: now
+      },
+      $setOnInsert: {
+        code: 'GORDON',
+        createdAt: now
+      }
+    };
+
+    const gordonOrg = await Organization.findOneAndUpdate(
+      { code: 'GORDON' },
+      gordonOrgUpdate,
+      {
+        upsert: true,
+        new: true,
+        setDefaultsOnInsert: true
+      }
+    );
+    console.log('Upserted Gordon organization');
+
+    // Create demo membership for sample@brewtokens.com user in Gordon organization
+    const demoUser = await User.findOne({ email: 'sample@brewtokens.com' });
+    if (demoUser) {
+      // Add Gordon organization to user's organizations if not already there
+      if (!demoUser.organizations.includes(gordonOrg._id)) {
+        demoUser.organizations.push(gordonOrg._id);
+        await demoUser.save();
+      }
+
+      // Create or update membership
+      const existingMembership = await Member.findOne({ 
+        user: demoUser._id, 
+        organization: gordonOrg._id 
+      });
+
+      if (!existingMembership) {
+        await Member.create({
+          user: demoUser._id,
+          organization: gordonOrg._id,
+          role: 'member',
+          status: 'active',
+          points: 100
+        });
+        console.log('Created demo membership for sample@brewtokens.com in Gordon organization');
+      } else {
+        console.log('Demo membership already exists for sample@brewtokens.com in Gordon organization');
+      }
+    }
 
     console.log('Seeding completed successfully');
     process.exit(0);

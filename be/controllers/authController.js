@@ -32,10 +32,11 @@ const createDefaultQRCode = async (organizationId, organizationName) => {
 const createDefaultReward = async (organizationId, organizationName) => {
   try {
     const reward = await Reward.create({
-      name: 'Free Point!',
-      description: 'Redeem 1000 points for a free point reward!',
+      name: 'Free Drink!',
+      description: 'Redeem 1000 points for a free drink reward!',
       pointsCost: 1000,
       type: 'product',
+      imageUrl: 'https://brewtokens.com/images/beer.jpg',
       isActive: true,
       organizationId,
       redemptionInstructions: 'Show this reward to the staff to redeem.',
@@ -227,6 +228,28 @@ exports.register = async (req, res) => {
     }));
   } catch (error) {
     console.error('Registration error:', error);
+    
+    // Handle MongoDB duplicate key errors with user-friendly messages
+    if (error.code === 11000) {
+      if (error.keyPattern?.name) {
+        return res.status(400).json(formatError(
+          `A brewery with the name "${error.keyValue?.name}" already exists. Please choose a different name.`
+        ));
+      }
+      if (error.keyPattern?.code) {
+        return res.status(400).json(formatError(
+          `Organization code "${error.keyValue?.code}" is already taken. Please try registration again.`
+        ));
+      }
+      if (error.keyPattern?.email) {
+        return res.status(400).json(formatError(
+          `A user with the email "${error.keyValue?.email}" already exists.`
+        ));
+      }
+      // Generic duplicate key error
+      return res.status(400).json(formatError('This information is already taken. Please try with different details.'));
+    }
+    
     res.status(500).json(formatError('An error occurred during registration', error.message));
   }
 };
@@ -248,13 +271,18 @@ exports.login = async (req, res) => {
       return res.status(401).json(formatError('Invalid credentials'));
     }
 
-    // Generate access token
+    // Determine primary organization (first one by convention)
+    const primaryOrgId = (user.organizations && user.organizations.length > 0)
+      ? (user.organizations[0]._id || user.organizations[0])
+      : null;
+
+    // Generate access token with explicit organization set to user's primary org
     const token = jwt.sign(
       { 
         userId: user._id,
         email: user.email,
         isAdmin: user.isAdmin,
-        organization: user.organization, // Include single organization
+        organization: primaryOrgId,
         organizations: user.organizations.map(org => org._id)
       },
       process.env.JWT_SECRET,
@@ -282,6 +310,7 @@ exports.login = async (req, res) => {
         token,
         refreshToken,
         refreshTokenExpiresAt,
+        organizationId: primaryOrgId,
         user: {
           id: user._id,
           email: user.email,
@@ -331,12 +360,18 @@ exports.refreshToken = async (req, res) => {
       return res.status(401).json(formatError('Invalid or expired refresh token'));
     }
 
-    // Generate new access token
+    // Determine primary organization (first one by convention)
+    const primaryOrgId = (user.organizations && user.organizations.length > 0)
+      ? (user.organizations[0]._id || user.organizations[0])
+      : null;
+
+    // Generate new access token (include organization to keep client/middleware in sync)
     const token = jwt.sign(
       { 
         userId: user._id,
         email: user.email,
         isAdmin: user.isAdmin,
+        organization: primaryOrgId,
         organizations: user.organizations.map(org => org._id)
       },
       process.env.JWT_SECRET,
@@ -362,13 +397,43 @@ exports.refreshToken = async (req, res) => {
       data: {
         token,
         refreshToken: newRefreshToken,
-        refreshTokenExpiresAt
+        refreshTokenExpiresAt,
+        organizationId: primaryOrgId
       },
       message: 'Token refreshed successfully'
     }));
   } catch (error) {
     console.error('Token refresh error:', error);
     res.status(500).json(formatError('An error occurred while refreshing token', error.message));
+  }
+};
+
+// Logout user
+exports.logout = async (req, res) => {
+  try {
+    const userFromToken = req.user;
+    if (!userFromToken) {
+      return res.status(404).json(formatError('User not found'));
+    }
+
+    // Fetch the user model from database to use Mongoose methods
+    const user = await User.findById(userFromToken._id);
+    if (!user) {
+      return res.status(404).json(formatError('User not found in database'));
+    }
+
+    // Clear the refresh token from the user
+    user.refreshToken = null;
+    user.refreshTokenExpiresAt = null;
+    await user.save();
+
+    res.json(formatResponse({
+      data: null,
+      message: 'Logout successful'
+    }));
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json(formatError('An error occurred during logout', error.message));
   }
 };
 

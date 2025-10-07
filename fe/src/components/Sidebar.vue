@@ -43,7 +43,8 @@ const navItems = ref([
   { name: 'Rewards', route: 'rewards', section: 'Rewards' },
   { name: 'QR Codes', route: 'qr-codes', section: 'QR Codes' },
   //{ name: 'Challenges & Events', route: 'challenges', section: 'Challenges & Events' },
-  { name: 'Settings', route: 'settings', section: 'Settings' }
+  { name: 'Settings', route: 'settings', section: 'Settings' },
+  { name: 'Guide', route: 'guide', section: 'Guide' }
 ])
 
 const getIconForRoute = (route) => {
@@ -53,7 +54,8 @@ const getIconForRoute = (route) => {
     'rewards': 'mdi:gift',
     'qr-codes': 'mdi:qrcode',
    // 'challenges': 'mdi:trophy',
-    'settings': 'mdi:cog'
+    'settings': 'mdi:cog',
+    'guide': 'mdi:help-circle'
   }
   return icons[route] || 'mdi:circle'
 }

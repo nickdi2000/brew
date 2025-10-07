@@ -97,7 +97,7 @@ exports.googleLogin = async (req, res) => {
     }
 
     // Ensure membership exists for this organization
-    const organizationCode = req.body.organizationCode;
+    const organizationCode = req.body.code || req.body.organizationCode;
     console.log('[GoogleAuth] Incoming organizationCode:', organizationCode);
     let member = null;
     if (organizationCode) {

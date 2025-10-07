@@ -119,7 +119,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useStore } from 'vuex'
 import { useToast } from '@/plugins/toast'
 
@@ -138,6 +138,18 @@ const form = ref({
 // Computed
 const user = computed(() => store.getters.currentUser)
 const organization = computed(() => store.getters['organization/config'])
+
+// Keep form prefilled with current user when not editing
+watch(user, (newUser) => {
+  if (!newUser) return
+  if (!isEditing.value) {
+    form.value = {
+      firstName: newUser.firstName || '',
+      lastName: newUser.lastName || '',
+      email: newUser.email || ''
+    }
+  }
+}, { immediate: true })
 
 // Methods
 const startEditing = () => {

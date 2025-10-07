@@ -3,7 +3,9 @@ import api, { googleLogin, demoLogin, getCurrentUser } from '@/api';
 const MEMBER_STORAGE_KEYS = {
   token: 'memberToken',
   user: 'memberUser',
-  membership: 'memberMembership'
+  membership: 'memberMembership',
+  refreshToken: 'memberRefreshToken',
+  refreshTokenExpiresAt: 'memberRefreshTokenExpiresAt'
 };
 
 const getStoredMemberUser = () => {
@@ -84,6 +86,8 @@ export default {
   state: () => ({
     user: getStoredMemberUser(),
     token: localStorage.getItem(MEMBER_STORAGE_KEYS.token) || null,
+    refreshToken: localStorage.getItem(MEMBER_STORAGE_KEYS.refreshToken) || null,
+    refreshTokenExpiresAt: localStorage.getItem(MEMBER_STORAGE_KEYS.refreshTokenExpiresAt) || null,
     membership: getStoredMembership(),
     loading: false,
     error: null
@@ -104,6 +108,22 @@ export default {
         localStorage.setItem(MEMBER_STORAGE_KEYS.token, token);
       } else {
         localStorage.removeItem(MEMBER_STORAGE_KEYS.token);
+      }
+    },
+    SET_REFRESH_TOKEN(state, token) {
+      state.refreshToken = token;
+      if (token) {
+        localStorage.setItem(MEMBER_STORAGE_KEYS.refreshToken, token);
+      } else {
+        localStorage.removeItem(MEMBER_STORAGE_KEYS.refreshToken);
+      }
+    },
+    SET_REFRESH_TOKEN_EXPIRES_AT(state, expiresAt) {
+      state.refreshTokenExpiresAt = expiresAt;
+      if (expiresAt) {
+        localStorage.setItem(MEMBER_STORAGE_KEYS.refreshTokenExpiresAt, expiresAt);
+      } else {
+        localStorage.removeItem(MEMBER_STORAGE_KEYS.refreshTokenExpiresAt);
       }
     },
     SET_MEMBERSHIP(state, membership) {
@@ -136,10 +156,14 @@ export default {
     RESET_STATE(state) {
       state.user = null;
       state.token = null;
+      state.refreshToken = null;
+      state.refreshTokenExpiresAt = null;
       state.membership = null;
       state.loading = false;
       state.error = null;
       localStorage.removeItem(MEMBER_STORAGE_KEYS.token);
+      localStorage.removeItem(MEMBER_STORAGE_KEYS.refreshToken);
+      localStorage.removeItem(MEMBER_STORAGE_KEYS.refreshTokenExpiresAt);
       localStorage.removeItem(MEMBER_STORAGE_KEYS.user);
       localStorage.removeItem(MEMBER_STORAGE_KEYS.membership);
     }
@@ -176,6 +200,14 @@ export default {
 
         commit('SET_TOKEN', data.token);
         commit('SET_USER', data.user);
+        
+        // Store refresh token if provided
+        if (data.refreshToken) {
+          commit('SET_REFRESH_TOKEN', data.refreshToken);
+        }
+        if (data.refreshTokenExpiresAt) {
+          commit('SET_REFRESH_TOKEN_EXPIRES_AT', data.refreshTokenExpiresAt);
+        }
         
         // Resolve membership data when not included in response
         const membership = await resolveMembershipData({
@@ -232,6 +264,14 @@ export default {
 
         commit('SET_TOKEN', data.token);
         commit('SET_USER', data.user);
+        
+        // Store refresh token if provided
+        if (data.refreshToken) {
+          commit('SET_REFRESH_TOKEN', data.refreshToken);
+        }
+        if (data.refreshTokenExpiresAt) {
+          commit('SET_REFRESH_TOKEN_EXPIRES_AT', data.refreshTokenExpiresAt);
+        }
         
         const membership = await resolveMembershipData({
           membership: data.membership,
@@ -335,6 +375,8 @@ export default {
   getters: {
     isAuthenticated: state => !!state.token,
     token: state => state.token,
+    refreshToken: state => state.refreshToken,
+    refreshTokenExpiresAt: state => state.refreshTokenExpiresAt,
     currentUser: state => state.user,
     currentMembership: state => state.membership,
     isLoading: state => state.loading,

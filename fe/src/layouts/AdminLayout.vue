@@ -35,6 +35,16 @@
                 >
                   <div class="py-1">
                     <router-link
+                      to="/admin/contact"
+                      class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-slate-50"
+                      @click="showAccountMenu = false"
+                    >
+                      <Icon icon="mdi:email" class="mr-3 h-5 w-5 text-gray-400 group-hover:text-gray-500" />
+                      Contact
+                    </router-link>
+                  </div>
+                  <div class="py-1">
+                    <router-link
                       to="/admin/profile"
                       class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-slate-50"
                       @click="showAccountMenu = false"
@@ -83,31 +93,21 @@
     <!-- Main Content -->
     <main class="pt-16 md:pl-64">
       <div class="p-4 md:p-8">
-        <router-view v-slot="{ Component }">
-          <transition
-            enter-active-class="transition ease-out duration-200"
-            enter-from-class="opacity-0 translate-y-1"
-            enter-to-class="opacity-100 translate-y-0"
-            leave-active-class="transition ease-in duration-150"
-            leave-from-class="opacity-100 translate-y-0"
-            leave-to-class="opacity-0 translate-y-1"
-            mode="out-in"
-          >
-            <component :is="Component">
-              <template #default="props">
-                <TabView 
-                  v-if="currentSectionTabs.length > 0"
-                  :tabs="currentSectionTabs"
-                  :initial-tab="currentSectionTabs[0]?.tab_name"
-                >
-                  <template #default="{ activeTab }">
-                    <ComingSoon />
-                  </template>
-                </TabView>
-              </template>
-            </component>
-          </transition>
-        </router-view>
+        <ErrorBoundary>
+          <router-view v-slot="{ Component }">
+            <transition
+              enter-active-class="transition ease-out duration-200"
+              enter-from-class="opacity-0 translate-y-1"
+              enter-to-class="opacity-100 translate-y-0"
+              leave-active-class="transition ease-in duration-150"
+              leave-from-class="opacity-100 translate-y-0"
+              leave-to-class="opacity-0 translate-y-1"
+              mode="out-in"
+            >
+              <component :is="Component" />
+            </transition>
+          </router-view>
+        </ErrorBoundary>
       </div>
     </main>
   </div>
@@ -123,6 +123,7 @@ import Sidebar from '../components/Sidebar.vue'
 import Drawer from '../components/Drawer.vue'
 import TabView from '../components/TabView.vue'
 import ComingSoon from '../components/ComingSoon.vue'
+import ErrorBoundary from '../components/ErrorBoundary.vue'
 import adminNav from './admin_nav.json'
 
 const store = useStore()

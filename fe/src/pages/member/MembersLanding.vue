@@ -1,31 +1,28 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 flex items-center justify-center p-4">
+  <div class="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center p-6">
     <div class="w-full max-w-md">
       <!-- Logo and Title Section -->
       <div class="text-center mb-8 animate-fade-in-up">
-        <div class="mb-6">
-          <img 
-            src="/images/brew-tokens-logo.png" 
-            alt="BrewTokens" 
-            class="h-16 w-auto mx-auto mb-4 animate-bounce-in"
+        <div class="mb-4">
+          <img
+            src="/images/brew-tokens-logo.png"
+            alt="BrewTokens"
+            class="h-14 w-auto mx-auto"
           />
         </div>
-        <h1 class="text-4xl font-bold text-gray-900 mb-2 animate-slide-in-left">
-          Welcome to
-        </h1>
-        <h2 class="text-3xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent animate-slide-in-right">
+        <h2 class="text-3xl font-bold bg-gradient-to-r from-amber-400 to-orange-400 bg-clip-text text-transparent">
           BrewTokens
         </h2>
-        <p class="text-gray-600 mt-4 animate-fade-in-delay">
+        <p class="text-gray-300 mt-3">
           Enter your brewery code to access your member portal
         </p>
       </div>
 
       <!-- Code Input Form -->
-      <div class="bg-white rounded-2xl shadow-xl p-8 animate-scale-in">
+      <div class="rounded-2xl border border-white/10 bg-slate-900/60 backdrop-blur p-6 shadow-xl animate-scale-in">
         <form @submit.prevent="handleSubmit" class="space-y-6">
           <div class="space-y-2">
-            <label for="code" class="block text-sm font-medium text-gray-700 animate-fade-in-up-delay">
+            <label for="code" class="block text-sm font-medium text-gray-300 animate-fade-in-up-delay">
               Brewery Code
             </label>
             <div class="relative">
@@ -34,19 +31,19 @@
                 v-model="code"
                 type="text"
                 placeholder="Enter your brewery code"
-                class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-amber-500 focus:ring-2 focus:ring-amber-200 transition-all duration-300 text-center text-lg font-medium tracking-wider uppercase placeholder:normal-case placeholder:tracking-normal"
-                :class="{ 'border-red-500 focus:border-red-500 focus:ring-red-200': error }"
+                class="w-full px-4 py-3 border border-white/10 rounded-xl bg-slate-950/60 text-white placeholder-slate-400 focus:border-amber-400 focus:ring-2 focus:ring-amber-300 transition-all duration-300 text-center text-lg font-medium tracking-wider uppercase placeholder:normal-case placeholder:tracking-normal"
+                :class="{ 'border-red-500 focus:border-red-500 focus:ring-red-300': error }"
                 @input="clearError"
                 ref="codeInput"
               />
               <div class="absolute inset-y-0 right-0 flex items-center pr-3">
                 <Icon 
                   icon="mdi:beer" 
-                  class="h-5 w-5 text-amber-500 animate-pulse" 
+                  class="h-5 w-5 text-amber-400 animate-pulse" 
                 />
               </div>
             </div>
-            <p v-if="error" class="text-red-500 text-sm mt-1 animate-shake">
+            <p v-if="error" class="text-red-400 text-sm mt-1 animate-shake">
               {{ error }}
             </p>
           </div>
@@ -54,7 +51,7 @@
           <button
             type="submit"
             :disabled="isLoading || !code.trim()"
-            class="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 disabled:from-gray-300 disabled:to-gray-400 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed shadow-lg hover:shadow-xl animate-fade-in-up-delay-2"
+            class="btn btn-primary w-full animate-fade-in-up-delay-2"
           >
             <span v-if="!isLoading" class="flex items-center justify-center space-x-2">
               <Icon icon="mdi:arrow-right" class="h-5 w-5" />
@@ -69,28 +66,12 @@
 
         <!-- Help Text -->
         <div class="mt-6 text-center animate-fade-in-delay-3">
-          <p class="text-sm text-gray-500">
+          <p class="text-sm text-gray-400">
             Don't have a code? 
-            <a href="/" class="text-amber-600 hover:text-amber-700 font-medium transition-colors">
+            <a href="/" class="text-amber-400 hover:text-amber-300 font-medium transition-colors">
               Learn more about BrewTokens
             </a>
           </p>
-        </div>
-      </div>
-
-      <!-- Features Section -->
-      <div class="mt-12 grid grid-cols-1 gap-4 animate-fade-in-delay-4">
-        <div class="flex items-center space-x-3 text-gray-600">
-          <Icon icon="mdi:gift" class="h-5 w-5 text-amber-500" />
-          <span class="text-sm">Earn rewards for your visits</span>
-        </div>
-        <div class="flex items-center space-x-3 text-gray-600">
-          <Icon icon="mdi:qrcode" class="h-5 w-5 text-amber-500" />
-          <span class="text-sm">Quick check-in with QR codes</span>
-        </div>
-        <div class="flex items-center space-x-3 text-gray-600">
-          <Icon icon="mdi:chart-line" class="h-5 w-5 text-amber-500" />
-          <span class="text-sm">Track your loyalty progress</span>
         </div>
       </div>
     </div>

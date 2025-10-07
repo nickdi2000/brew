@@ -34,7 +34,7 @@ export default {
         commit('SET_LOADING', true);
         commit('SET_ERROR', null);
         const response = await getTransactions(memberId);
-        commit('SET_TRANSACTIONS', response.data.data.transactions);
+        commit('SET_TRANSACTIONS', response.data.transactions);
       } catch (error) {
         const errorMessage = error.response?.data?.message || error.message || 'Failed to load transactions';
         commit('SET_ERROR', errorMessage);
@@ -49,7 +49,7 @@ export default {
         commit('SET_LOADING', true);
         commit('SET_ERROR', null);
         const response = await addTransaction(memberId, transactionData);
-        commit('ADD_TRANSACTION', response.data.data.transaction);
+        commit('ADD_TRANSACTION', response.data.transaction);
         return response.data;
       } catch (error) {
         commit('SET_ERROR', error.message);

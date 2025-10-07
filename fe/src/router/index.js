@@ -13,6 +13,8 @@ import QRPrint from '../pages/admin/QRPrint.vue'
 import Rewards from '../pages/admin/Rewards.vue'
 import QRCodes from '../pages/admin/QRCodes.vue'
 import MyProfile from '../pages/admin/MyProfile.vue'
+import AdminContact from '../pages/admin/Contact.vue'
+import SuperAdmin from '../pages/admin/SuperAdmin.vue'
 import Welcome from '../pages/member/Welcome.vue'
 import MemberPortal from '../pages/member/Portal.vue'
 import ComingSoon from '../components/ComingSoon.vue'
@@ -383,6 +385,25 @@ const routes = [
         name: 'profile',
         component: MyProfile,
         meta: { section: 'Profile' }
+      },
+      {
+        path: 'contact',
+        name: 'admin-contact',
+        component: AdminContact,
+        meta: { section: 'Profile' }
+      },
+      {
+        path: 'guide',
+        name: 'guide',
+        component: () => import('../pages/admin/Guide.vue'),
+        meta: { section: 'Guide' }
+      }
+      ,
+      {
+        path: 'super',
+        name: 'super-admin',
+        component: SuperAdmin,
+        meta: { section: 'Guide' }
       }
     ]
   }
@@ -451,8 +472,13 @@ router.beforeEach(async (to, from, next) => {
       }
     }
 
-    if (!isPublicRoute && to.params.code) {
-      next({ name: 'member-home', params: { code: to.params.code } });
+    // For member routes without auth, always send to members landing or home for that code
+    if (!isPublicRoute) {
+      if (to.params.code) {
+        next({ name: 'member-home', params: { code: to.params.code } });
+      } else {
+        next({ name: 'members-landing' });
+      }
       return;
     }
 

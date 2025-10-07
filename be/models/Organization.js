@@ -52,6 +52,14 @@ const organizationSchema = new mongoose.Schema({
   }
 });
 
+// Optional 1:1 virtual to fetch details on-demand (not included unless populated)
+organizationSchema.virtual('details', {
+  ref: 'OrganizationDetails',
+  localField: '_id',
+  foreignField: 'organization',
+  justOne: true
+});
+
 // Helper function to generate a unique 6-character alphanumeric code
 const generateOrganizationCode = () => {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';

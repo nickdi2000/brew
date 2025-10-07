@@ -91,8 +91,9 @@ exports.redeem = async (req, res) => {
     // Import Organization model
     const Organization = require('../models/Organization');
 
-    // Find organization by code
-    const organization = await Organization.findOne({ code: organizationCode });
+    // Find organization by code (case-insensitive)
+    const codeRegex = new RegExp(`^${organizationCode.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+    const organization = await Organization.findOne({ code: codeRegex });
     if (!organization) {
       return res.status(404).json(formatError('Organization not found'));
     }

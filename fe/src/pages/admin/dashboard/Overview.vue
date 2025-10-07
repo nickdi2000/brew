@@ -53,7 +53,7 @@
         <div class="px-6 py-5 flex items-center justify-between border-b border-gray-100">
           <div>
             <h3 class="text-lg font-semibold text-gray-900">Award Points</h3>
-            <p class="text-sm text-gray-500">Present this code to award points instantly.</p>
+            <p class="text-sm text-gray-500">Present this code to customers to award points instantly. This code also doubles as a member registration/login link. <router-link to="/admin/qr-codes" class="text-blue-500 hover:text-blue-600">Manage QR Codes</router-link></p>
           </div>
           <button
             type="button"

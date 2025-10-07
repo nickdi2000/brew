@@ -16,7 +16,7 @@ export default defineConfig({
     },
     env: {
       // Environment variables for testing
-      API_URL: 'https://192.168.0.201:3391/api',
+      API_URL: 'http://localhost:3391/api',
       TEST_USER_EMAIL: 'sample@brewtokens.com',
       TEST_USER_PASSWORD: 'Password123!'
     },

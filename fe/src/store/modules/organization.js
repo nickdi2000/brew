@@ -79,22 +79,37 @@ const mutations = {
 
 const actions = {
   async initializeStore({ commit, dispatch, state, rootState }) {
-    if (state.initialized) return;
+    if (state.initialized) {
+      console.log('Organization store already initialized, skipping');
+      return;
+    }
+    
     // Skip initialization when unauthenticated (public pages)
     if (!rootState.isAuthenticated || !rootState.token) {
+      console.log('Skipping organization initialization - not authenticated');
       return;
     }
 
     // Skip backend fetches when running a demo session
     if (rootState.isDemoSession) {
+      console.log('Demo session detected - skipping organization API calls');
       commit('SET_INITIALIZED', true);
       return;
     }
+
+    commit('SET_LOADING', true);
+    commit('SET_ERROR', null);
 
     try {
       // Get organization ID from user data
       const user = rootState.user;
       let orgId = null;
+
+      console.log('Initializing organization store for user:', {
+        userId: user?._id,
+        hasOrganization: !!user?.organization,
+        hasOrganizations: user?.organizations?.length > 0
+      });
 
       // Try to get organization ID from different possible locations
       if (user?.organization?._id) {
@@ -104,21 +119,37 @@ const actions = {
         orgId = user.organization;
       } else if (user?.organizations?.length > 0) {
         // Fallback to organizations array if present
-        orgId = user.organizations[0].id || user.organizations[0]._id;
+        const firstOrg = user.organizations[0];
+        orgId = firstOrg?.id || firstOrg?._id || firstOrg;
       }
 
       if (orgId) {
-        console.log('Setting current organization ID:', orgId);
+        console.log('✅ Setting current organization ID:', orgId);
         commit('SET_CURRENT_ORGANIZATION_ID', orgId);
       } else {
-        console.warn('No organization ID found in user data:', user);
+        console.error('❌ No organization ID found in user data. User structure:', user);
+        throw new Error('User is not associated with any organization');
       }
 
       await dispatch('fetchConfig');
       commit('SET_INITIALIZED', true);
+      console.log('✅ Organization store initialized successfully');
     } catch (error) {
-      console.error('Failed to initialize organization store:', error);
-      commit('SET_ERROR', 'Failed to initialize organization data');
+      console.error('❌ Failed to initialize organization store:', {
+        message: error.message,
+        user: rootState.user,
+        authenticated: rootState.isAuthenticated
+      });
+      
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to initialize organization data';
+      commit('SET_ERROR', errorMessage);
+      
+      // Still mark as initialized to prevent infinite retry loops
+      commit('SET_INITIALIZED', true);
+      
+      // Don't rethrow - let the app continue functioning with degraded state
+    } finally {
+      commit('SET_LOADING', false);
     }
   },
 

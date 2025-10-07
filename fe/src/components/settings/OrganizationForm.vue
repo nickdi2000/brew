@@ -114,7 +114,7 @@
         <label class="block text-sm font-medium text-gray-700">Banner Image</label>
         
         <!-- Image Preview -->
-        <div v-if="formData.bannerImage && !showImageOptions" class="relative w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
+        <div v-if="formData.bannerImage && !showImageUpload" class="relative w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
           <img 
             :src="formData.bannerImage" 
             class="w-full h-full object-cover"
@@ -122,59 +122,39 @@
           />
           <button
             type="button"
-            @click="showImageOptions = true"
+            @click="showImageUpload = true"
             class="absolute bottom-2 right-2 btn btn-primary"
+            :disabled="isUploading"
           >
             Change Image
           </button>
         </div>
 
-        <!-- Image Options -->
-        <div v-if="showImageOptions" class="space-y-4">
+        <!-- Image Upload -->
+        <div v-if="showImageUpload" class="space-y-4">
           <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h3 class="text-lg font-medium text-gray-900 mb-4">Add Banner Image</h3>
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Upload Banner Image</h3>
             
-            <!-- URL Input Section -->
-            <div class="mb-6">
-              <label for="imageUrl" class="block text-sm font-medium text-gray-700">Image URL</label>
-              <div class="mt-1 flex rounded-md shadow-sm">
-                <input
-                  type="url"
-                  id="imageUrl"
-                  v-model="imageUrl"
-                  class="flex-1 rounded-md border-gray-300 focus:border-amber-500 focus:ring-amber-500 sm:text-sm"
-                  placeholder="https://example.com/image.jpg"
-                />
-                <button
-                  type="button"
-                  @click="setImageUrl"
-                  class="ml-3 btn btn-primary"
-                  :disabled="!imageUrl"
-                >
-                  Set URL
-                </button>
-              </div>
-            </div>
-
-            <div class="relative my-6">
-              <div class="absolute inset-0 flex items-center">
-                <div class="w-full border-t border-gray-200"></div>
-              </div>
-              <div class="relative flex justify-center">
-                <span class="bg-white px-3 text-sm text-gray-500">or</span>
-              </div>
-            </div>
-
             <!-- Upload Section -->
             <div>
-              <label class="block text-sm font-medium text-gray-700">Upload Image</label>
-              <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md hover:border-amber-500 cursor-pointer bg-gray-50"
-                   @click="$refs.fileInput.click()"
-                   @dragover.prevent
-                   @drop.prevent="handleFileDrop">
-                <div class="space-y-1 text-center">
-                  <Icon icon="mdi:cloud-upload" class="mx-auto h-12 w-12 text-gray-400" />
-                  <div class="flex text-sm text-gray-600">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Select Image File</label>
+              <div 
+                class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md cursor-pointer bg-gray-50 transition-colors"
+                :class="{
+                  'hover:border-amber-500 hover:bg-amber-50': !isUploading,
+                  'border-amber-300 bg-amber-50': isUploading
+                }"
+                @click="!isUploading && $refs.fileInput.click()"
+                @dragover.prevent
+                @drop.prevent="handleFileDrop"
+              >
+                <div class="space-y-2 text-center">
+                  <Icon 
+                    :icon="isUploading ? 'mdi:loading' : 'mdi:cloud-upload'" 
+                    class="mx-auto h-12 w-12 text-gray-400"
+                    :class="{ 'animate-spin text-amber-500': isUploading }"
+                  />
+                  <div v-if="!isUploading" class="flex text-sm text-gray-600">
                     <label class="relative cursor-pointer rounded-md font-medium text-amber-600 hover:text-amber-500">
                       <span>Upload a file</span>
                       <input
@@ -187,6 +167,9 @@
                     </label>
                     <p class="pl-1">or drag and drop</p>
                   </div>
+                  <div v-else class="text-sm text-amber-600 font-medium">
+                    Uploading image...
+                  </div>
                   <p class="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
                 </div>
               </div>
@@ -198,21 +181,23 @@
               type="button"
               @click="cancelImageUpload"
               class="btn btn-secondary"
+              :disabled="isUploading"
             >
-              Cancel
+              {{ isUploading ? 'Uploading...' : 'Cancel' }}
             </button>
           </div>
         </div>
 
         <!-- Add Image Button -->
-        <div v-if="!formData.bannerImage && !showImageOptions" class="flex justify-center">
+        <div v-if="!formData.bannerImage && !showImageUpload" class="flex justify-center">
           <button
             type="button"
-            @click="showImageOptions = true"
+            @click="showImageUpload = true"
             class="btn btn-primary"
+            :disabled="isUploading"
           >
             <Icon icon="mdi:image-plus" class="h-5 w-5 mr-2" />
-            Add Banner Image
+            Upload Banner Image
           </button>
         </div>
       </div>
@@ -311,60 +296,71 @@ const formData = ref({
   bannerImage: ''
 });
 
-const showImageOptions = ref(false);
-const imageUrl = ref('');
+const showImageUpload = ref(false);
 const fileInput = ref(null);
+const isUploading = ref(false);
 
 const handleFileUpload = async (event) => {
   const file = event.target.files[0];
-  if (file) {
-    if (file.size > 10 * 1024 * 1024) { // 10MB limit
-      toast('File size must be less than 10MB', 'error');
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      try {
-        const response = await uploadOrganizationBanner(e.target.result);
-        formData.value.bannerImage = response.data.data.bannerImage;
-        showImageOptions.value = false;
-        toast('Banner image uploaded successfully', 'success');
-      } catch (error) {
-        console.error('Error uploading banner image:', error);
-        toast('Failed to upload banner image', 'error');
-      }
-    };
-    reader.readAsDataURL(file);
+  if (!file) return;
+  
+  console.log('📁 File selected:', { name: file.name, size: file.size, type: file.type });
+  
+  if (file.size > 10 * 1024 * 1024) { // 10MB limit
+    toast('File size must be less than 10MB', 'error');
+    return;
   }
+  
+  if (!file.type.startsWith('image/')) {
+    toast('Please select a valid image file', 'error');
+    return;
+  }
+  
+  isUploading.value = true;
+  
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      console.log('📷 Converting file to base64 and uploading...');
+      const response = await uploadOrganizationBanner(e.target.result);
+      console.log('✅ Upload response:', response.data);
+      
+      formData.value.bannerImage = response.data.data.bannerImage;
+      showImageUpload.value = false;
+      toast('Banner image uploaded successfully', 'success');
+    } catch (error) {
+      console.error('❌ Error uploading banner image:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to upload banner image';
+      toast(errorMessage, 'error');
+    } finally {
+      isUploading.value = false;
+    }
+  };
+  
+  reader.onerror = () => {
+    console.error('❌ Error reading file');
+    toast('Error reading file', 'error');
+    isUploading.value = false;
+  };
+  
+  reader.readAsDataURL(file);
 };
 
 const handleFileDrop = (event) => {
+  event.preventDefault();
   const file = event.dataTransfer.files[0];
   if (file && file.type.startsWith('image/')) {
     const input = fileInput.value;
     input.files = event.dataTransfer.files;
     handleFileUpload({ target: input });
-  }
-};
-
-const setImageUrl = async () => {
-  if (imageUrl.value) {
-    try {
-      const response = await uploadOrganizationBanner(imageUrl.value);
-      formData.value.bannerImage = response.data.data.bannerImage;
-      showImageOptions.value = false;
-      imageUrl.value = '';
-      toast('Banner image URL set successfully', 'success');
-    } catch (error) {
-      console.error('Error setting banner image URL:', error);
-      toast('Failed to set banner image URL', 'error');
-    }
+  } else {
+    toast('Please drop a valid image file', 'error');
   }
 };
 
 const cancelImageUpload = () => {
-  showImageOptions.value = false;
-  imageUrl.value = '';
+  showImageUpload.value = false;
+  isUploading.value = false;
 };
 
 const baseUrl = computed(() => {

@@ -7,7 +7,7 @@ const originalConsoleInfo = console.info;
 // Get environment variables
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'; // Fallback URL
 const ENV = import.meta.env.VITE_ENV;
-const ENABLE_LOGS = import.meta.env.VITE_ENABLE_LOGS === 'true'; // Default to false if not set
+const ENABLE_LOGS = false; //import.meta.env.VITE_ENABLE_LOGS === 'true'; // Default to false if not set
 
 // Batch logging configuration
 const BATCH_TIMEOUT = 2000; // 2 seconds

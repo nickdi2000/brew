@@ -191,3 +191,80 @@ Cypress.Commands.add('verifyOrganizationLoaded', () => {
   // Should show sign in options (indicating org loaded successfully)
   cy.findGoogleSignInButton()
 })
+
+/**
+ * Create a Google demo JWT compatible with backend demo handling
+ */
+function createDemoGoogleJwt() {
+  const header = {
+    alg: 'RS256',
+    kid: 'demo-key-id',
+    typ: 'JWT'
+  }
+  const payload = {
+    iss: 'https://accounts.google.com',
+    azp: 'demo-client-id',
+    aud: 'demo-client-id',
+    sub: 'demo123456789',
+    email: 'sample@brewtokens.com',
+    email_verified: true,
+    name: 'Demo User',
+    picture: 'https://via.placeholder.com/96x96/4F46E5/FFFFFF?text=DU',
+    given_name: 'Demo',
+    family_name: 'User',
+    locale: 'en',
+    iat: Math.floor(Date.now() / 1000),
+    exp: Math.floor(Date.now() / 1000) + 3600
+  }
+  const enc = (obj) => btoa(JSON.stringify(obj))
+  return `${enc(header)}.${enc(payload)}.demo-signature-not-real`
+}
+
+/**
+ * Store member session in localStorage
+ */
+function setMemberSession(win, { token, user, membership }) {
+  win.localStorage.setItem('memberToken', token)
+  win.localStorage.setItem('memberUser', JSON.stringify(user))
+  if (membership) {
+    win.localStorage.setItem('memberMembership', JSON.stringify(membership))
+  }
+}
+
+/**
+ * Log in as a member using demo Google login (development only)
+ * @param {string} orgCode
+ */
+Cypress.Commands.add('loginMemberDemo', (orgCode) => {
+  const demoToken = createDemoGoogleJwt()
+  const apiUrl = Cypress.env('API_URL')
+
+  cy.request({
+    method: 'POST',
+    url: `${apiUrl}/auth/google/login`,
+    body: { token: demoToken, code: orgCode },
+    failOnStatusCode: false
+  }).then((resp) => {
+    expect(resp.status).to.be.oneOf([200])
+    expect(resp.body?.success).to.eq(true)
+    const data = resp.body.data
+    expect(data?.token).to.exist
+    // Persist to localStorage in app context
+    cy.window().then((win) => setMemberSession(win, {
+      token: data.token,
+      user: data.user,
+      membership: data.membership
+    }))
+  })
+})
+
+/**
+ * Assert API request contains expected member headers
+ */
+Cypress.Commands.add('assertMemberHeaders', (interceptAlias, { organizationId, membershipId }) => {
+  cy.wait(interceptAlias).then(({ request }) => {
+    expect(request.headers.authorization, 'Authorization').to.match(/^Bearer /)
+    expect(request.headers['x-organization-id'], 'X-Organization-ID').to.eq(String(organizationId))
+    expect(request.headers['x-membership-id'], 'X-Membership-ID').to.eq(String(membershipId))
+  })
+})

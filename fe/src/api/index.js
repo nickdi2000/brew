@@ -13,33 +13,14 @@ const isCurrentRouteMember = () => {
 const isMemberRequest = (url = '') => {
   const normalized = url.toLowerCase();
   
-  // First check: if we're on an admin route, always use admin token (unless it's a member-specific endpoint)
+  // First check: if we're on an admin route, always use admin token
   const currentRoute = router.currentRoute?.value;
   const isOnAdminRoute = currentRoute?.path?.startsWith('/admin');
   const isOnMemberRoute = currentRoute?.path?.startsWith('/members') || currentRoute?.name?.toString().startsWith('member');
   
-  // Explicit admin-only endpoints - always use admin token
-  if (normalized.includes('/memberships')) {
-    return false;
-  }
-  
-  // If we're on an admin route, use admin token (unless the URL explicitly contains /members or /member/)
+  // If we're on an admin route, always use admin token regardless of API endpoint URL
   if (isOnAdminRoute) {
-    // Only use member token if the URL itself explicitly indicates it's a member endpoint
-    if (['/members/', '/member/'].some((hint) => normalized.includes(hint))) {
-      return true;
-    }
     return false;
-  }
-  
-  // Explicit member endpoints - always use member token
-  if (['/members', '/member/'].some((hint) => normalized.includes(hint))) {
-    return true;
-  }
-  
-  const lastMemberCode = store.getters.lastMemberCode;
-  if (lastMemberCode && normalized.includes(String(lastMemberCode).toLowerCase())) {
-    return true;
   }
   
   // If we're on a member route, use member token
@@ -47,6 +28,26 @@ const isMemberRequest = (url = '') => {
     return true;
   }
   
+  // For programmatic API calls (no route context), check specific member portal endpoints
+  // Be more specific to avoid false positives with /api/memberships (admin endpoint)
+  const memberPortalEndpoints = [
+    '/members/', // Member portal routes
+    '/member/',  // Legacy member routes
+    '/memberships/by-code/', // Public membership lookup by code
+    '/memberships/by-organization/' // Membership lookup by organization (used in member context)
+  ];
+  
+  if (memberPortalEndpoints.some((endpoint) => normalized.includes(endpoint))) {
+    return true;
+  }
+  
+  // Check if URL contains a specific member code
+  const lastMemberCode = store.getters.lastMemberCode;
+  if (lastMemberCode && normalized.includes(`/members/${String(lastMemberCode).toLowerCase()}`)) {
+    return true;
+  }
+  
+  // Default to admin for all other API endpoints
   return false;
 };
 
@@ -71,7 +72,11 @@ api.interceptors.request.use(
     const token = isMember
       ? store.getters['auth/token']
       : store.getters.token;
-    const currentOrganizationId = store.getters['organization/currentOrganizationId'];
+    // Prefer org from member's current membership when making member requests
+    const currentMembership = store.getters['auth/currentMembership'];
+    const currentOrganizationId = isMember
+      ? (currentMembership?.organization?._id || currentMembership?.organization || store.getters['organization/currentOrganizationId'])
+      : store.getters['organization/currentOrganizationId'];
     
     const isDemoSession = store.state.isDemoSession;
 
@@ -90,12 +95,14 @@ api.interceptors.request.use(
       method: config.method,
       isMemberRequest: isMember,
       currentPath: router.currentRoute?.value?.path,
+      currentRouteName: router.currentRoute?.value?.name,
       hasToken: !!token,
       tokenValue: token ? `${token.substring(0, 10)}...` : 'none',
       adminToken: store.getters.token ? `${store.getters.token.substring(0, 10)}...` : 'none',
       memberToken: store.getters['auth/token'] ? `${store.getters['auth/token'].substring(0, 10)}...` : 'none',
       organizationId: currentOrganizationId,
-      isPublicEndpoint
+      isPublicEndpoint,
+      tokenSource: isMember ? 'member' : 'admin'
     });
     
     // Only add auth token for non-public endpoints
@@ -106,19 +113,14 @@ api.interceptors.request.use(
       // Add organization ID to headers if available and not a public endpoint
     if (currentOrganizationId && !isPublicEndpoint) {
       config.headers['X-Organization-ID'] = currentOrganizationId;
-      // Only add organizationId as query param if it's not already in the URL
-      if (!config.url.includes('organizationId=')) {
-        if (!config.params) {
-          config.params = {};
-        }
-        config.params.organizationId = currentOrganizationId;
-      }
+      // Note: organizationId query parameter is no longer added automatically
+      // The backend derives the organization from the authenticated user's context
     }
 
-    // Add membership ID to headers if available
-    const currentMembership = store.getters['auth/currentMembership'];
-    if (currentMembership?.id && !isPublicEndpoint) {
-      config.headers['X-Membership-ID'] = currentMembership.id;
+    // Add membership ID to headers if available (normalized id key support)
+    const membershipId = currentMembership?.id || currentMembership?._id;
+    if (membershipId && !isPublicEndpoint) {
+      config.headers['X-Membership-ID'] = membershipId;
     }
     
     // Add cancel token to request
@@ -210,6 +212,21 @@ api.interceptors.response.use(
         endpoint: originalRequest?.url
       });
 
+      // If the 401 originated from the refresh endpoint itself, do not attempt another refresh
+      if (originalRequest?.url && originalRequest.url.includes('/auth/refresh')) {
+        console.log('⛔ 401 from /auth/refresh detected — clearing auth and redirecting');
+        cancelPendingRequests('Refresh endpoint failed - logging out');
+        const options = determineLogoutOptions(originalRequest.url);
+        store.dispatch('logout', options);
+        if (options.routeType === 'admin') {
+          router.push('/login');
+        } else {
+          const memberCode = store.getters.lastMemberCode;
+          router.push(memberCode ? `/members/${memberCode}` : '/members');
+        }
+        return Promise.reject(error);
+      }
+
       // If we get an auth error during a retry, logout
       if (originalRequest._retry) {
         console.log('🚪 Logging out due to retry failure');
@@ -230,16 +247,33 @@ api.interceptors.response.use(
       try {
         console.log('🔄 Attempting token refresh...');
         originalRequest._retry = true;
+        
+        // Determine if this is a member or admin request
+        const isMember = isMemberRequest(originalRequest.url);
+        const currentRefreshToken = isMember 
+          ? store.getters['auth/refreshToken']
+          : store.getters.refreshToken;
+        
+        if (!currentRefreshToken) {
+          throw new Error('No refresh token available');
+        }
+        
         const response = await api.post('/auth/refresh', {
-          refreshToken: store.getters.refreshToken
+          refreshToken: currentRefreshToken
         });
         const { token, refreshToken, refreshTokenExpiresAt } = response.data.data;
         
         console.log('✅ Token refresh successful');
-        // Update the tokens
-        store.commit('SET_TOKEN', token);
-        store.commit('SET_REFRESH_TOKEN', refreshToken);
-        store.commit('SET_REFRESH_TOKEN_EXPIRES_AT', refreshTokenExpiresAt);
+        // Update the tokens in the appropriate store
+        if (isMember) {
+          store.commit('auth/SET_TOKEN', token);
+          store.commit('auth/SET_REFRESH_TOKEN', refreshToken);
+          store.commit('auth/SET_REFRESH_TOKEN_EXPIRES_AT', refreshTokenExpiresAt);
+        } else {
+          store.commit('SET_TOKEN', token);
+          store.commit('SET_REFRESH_TOKEN', refreshToken);
+          store.commit('SET_REFRESH_TOKEN_EXPIRES_AT', refreshTokenExpiresAt);
+        }
         
         // Update the failed request's token and retry
         originalRequest.headers.Authorization = `Bearer ${token}`;
@@ -287,7 +321,15 @@ api.interceptors.response.use(
     // Handle specific status codes
     if (error.response?.status === 403) {
       console.error('Access forbidden');
-      router.push('/admin'); // Redirect to dashboard on forbidden access
+      // Redirect based on request context
+      const isMember = isMemberRequest(originalRequest?.url || '');
+      if (isMember) {
+        const memberCode = store.getters.lastMemberCode;
+        if (memberCode) router.push(`/members/${memberCode}`);
+        else router.push('/members');
+      } else {
+        router.push('/admin');
+      }
     }
 
     // Log the error for debugging
@@ -331,7 +373,10 @@ const getOrganization = async () => {
 };
 const getOrganizationByCode = (code) => api.get(`/organization/by-code/${code}`);
 const updateOrganization = (data) => api.put('/organization', data);
-const uploadOrganizationBanner = (imageData) => api.post('/organization/banner-image', { imageData });
+const uploadOrganizationBanner = (imageData) => {
+  console.log('🚀 Uploading banner image to API');
+  return api.post('/organization/banner-image', { imageData });
+};
 
 // QR Codes (Awarding points) management API functions
 const getAwardQRCodes = (params = {}) => api.get('/qr-codes', { params });

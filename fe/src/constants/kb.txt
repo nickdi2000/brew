@@ -1,0 +1,25 @@
+Purpose / Core Idea
+- BrewTokens is a rewards or 'loyalty' platform that allows customers to earn points everytime they make a purchase (or any action you designate), and they can then cash in those rewards (redeem) for prizes you define, such as a free beverage, early access to an event, discounts, and more
+- the distinction of brewtokens is how it can be integrated into your business without any technology at all, it can all run off one (or more) QR code: customers scan to register/login, they can then also scan (within that webapp) the qr code to receive points. 
+
+Member Flow
+- the users don't have to (in fact they can't if they wanted to) download an app to their phone, since it all runs off their original google SSO login, they can "register" in a matter of seconds.  depending on how busy your establishment is, a first-time member could easily make their physical purchase (coffee, beer), register, scan for points all within 10 to 20 seconds. 
+- the system is secure, and has specially designed encryption techniques to prevent re-producing the points awarding process at home
+
+QR Codes
+route: /admin/qr-codes
+- the QR codes are the what connects brewtokens to the outside world, once you've understood them, you're off to the races
+- there are two types of QR codes: Award Points and Portal Access, just as they sound: the portal acesss one is for members to login quickly, or to register if they are a new member.  The idea of this QR code is to help lubricate the overall process for both the members and the staff:  Note that without having a mobile app -- the members would need to pull up the "site" from their browser history (often the case for regular customers), or manually navigate to BrewTokens.com/Your-Code-Here -- with an easily accessible QR code (say hanging on the wall by your menu), users can re-login to the site in a matter of seconds, if they've previously signed in, they won't even need to "log in" again, as their browser will recognize it and throw them right into the portal ready to scan for more points, or redeem .
+- then as you can guess, the awards points qr code is just that: when members scan this within the app, it will top up their points.  note that since this has the authority to award points, you may not want to keep it accessible to anyone at all times, generally the staff member would keep it hidden (like at the bar) and let the customer scan it after a purchase
+- for convenience; the awards qr code actually doubles as a way for member to register/sign-up.  essentially all awards QR codes are also portal access codes, but not vice versa.  So why not just use one QR code?  Well if you want to keep the register/signup access hidden at a bar with you, then you would only need the one -- if you want to have an easily accessible 'public' code, that can't also be abused (multiple top ups without purchase), then you'd want the portal access qr code for that. 
+
+
+ORGANIZATION SETUP/CUSOTMIZING
+route: /admin/settings
+In the organization settings page, you may customize/brand your members portal: you can customize a title, description, and banner that members will see upon scanning your Portal Access qr code. 
+
+REWARDS
+route: /admin/rewards
+- rewards are what the members can redeem with their points
+- you can define the name of the prize (Free IPA) and the "cost" to redeem it
+- there are other configurations you can set as well such as expire date, stock, and status

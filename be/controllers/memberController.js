@@ -18,6 +18,16 @@ exports.getMembers = async (req, res) => {
       return res.status(400).json(formatError('User must be associated with an organization'));
     }
 
+    // Verify the organization exists
+    const Organization = require('../models/Organization');
+    const organization = await Organization.findById(user.organization._id || user.organization);
+    if (!organization) {
+      console.error('❌ Organization not found for user:', user._id, 'org ID:', user.organization._id || user.organization);
+      return res.status(404).json(formatError('Organization not found. Please contact support.'));
+    }
+
+    console.log('✅ Organization verified:', organization.name, 'ID:', organization._id);
+
     // Build query
     const query = { organization: user.organization };
     if (status) query.status = status;

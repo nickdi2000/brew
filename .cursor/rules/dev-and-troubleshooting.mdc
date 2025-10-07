@@ -1,0 +1,25 @@
+---
+alwaysApply: true
+---
+
+# Never start or restart processes #
+- Do NOT run: `npm run dev`, `yarn dev`, `node server.js`, `vite`, `pm2 start`, `pm2 restart`, `pm2 reload`.
+- Only observe status and view logs.
+- If a service is offline, STOP and ask for permission before starting anything.
+
+# The only allowed commands #
+- Status (all):      pm2 ls
+- Status (one):      pm2 describe <app>
+- Recent logs:       pm2 logs <app> --lines 200 --timestamp
+- Bounded follow:    timeout 20s pm2 logs <app> --lines 200 --timestamp
+- One-shot tail:     pm2 logs <app> --lines 500 --nostream --timestamp
+- Process metrics:   pm2 monit (read-only dashboard; don’t press keys to kill/restart)
+
+# App names (adjust to your setup) #
+- Web (Vue/Vite):    brew-vue
+- API (Node/Express): brew-api
+
+# Port/health etiquette #
+- Do not probe ports by launching anything.
+- If logs say “port in use”, do NOT kill processes.
+- To determine health, prefer reading logs or asking the human.
