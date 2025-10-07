@@ -174,7 +174,7 @@ install_backend_dependencies() {
     log_step "Installing backend dependencies on server..."
     
     log_info "Running npm install on server..."
-    ssh -i "$SSH_KEY" "$SERVER" "cd $BACKEND_DEST && npm install --production"
+    ssh -i "$SSH_KEY" "$SERVER" "cd $BACKEND_DEST && npm install --production --force"
     
     log_success "Backend dependencies installed"
 }

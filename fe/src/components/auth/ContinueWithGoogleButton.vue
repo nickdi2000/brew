@@ -81,7 +81,9 @@ const handleClick = async () => {
           emit('success', apiResponse.data.data)
           toast('Signed in with Google', 'success')
           try {
-            gtag_report_conversion;
+            if (typeof window.gtag_report_conversion === 'function') {
+              window.gtag_report_conversion()
+            }
           } catch (err) {
             console.error('Google tag conversion error:', err);
           }

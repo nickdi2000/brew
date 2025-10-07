@@ -403,6 +403,12 @@ const register = async (userData) => {
       hasPassword: !!userData.password
     });
 
+    try {
+      window.gtag_report_conversion;
+    } catch (err) {
+      console.error('Google tag conversion error:', err);
+    }
+
     // Cancel any pending token refresh attempts
     cancelPendingRequests('New registration attempt');
 
@@ -430,7 +436,7 @@ const getCurrentUser = async () => {
 
 const googleLogin = async (credential, organizationCode) => {
   try {
-    console.log('🔍 Sending Google login request:', { 
+    console.log('🔍 Sending Google login request (v2):', { 
       credentialLength: credential?.length,
       credentialStart: credential?.substring(0, 50) + '...',
       organizationCode

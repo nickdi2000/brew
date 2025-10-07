@@ -221,9 +221,9 @@
             @submit.prevent="handleRegisterSubmit"
           >
             <div v-if="!isInviteCodeValid" class="space-y-6">
-              <div class="text-center">
-                <h3 class="text-2xl font-bold text-gray-900 mb-2">Enter Invite Code</h3>
-                <p class="text-gray-600">Enter your invitation code to unlock registration</p>
+              <div class="text-center mb-6">
+                <h3 class="text-xl font-semibold text-gray-800 mb-2">Enter Invite Code</h3>
+                <p class="text-sm text-gray-600">Enter your invitation code to unlock registration</p>
               </div>
               
               <form @submit.prevent="handleInviteCodeSubmit" class="space-y-4">
@@ -231,18 +231,14 @@
                   <input
                     v-model="inviteCode"
                     type="text"
-                    class="block w-full px-4 py-3 text-center text-xl tracking-wider border-2 border-amber-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-400 transition-all duration-300 placeholder:text-gray-400"
-                    placeholder="INVITE CODE"
+                    class="block w-full px-4 py-3 text-center text-lg tracking-wider border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200 placeholder:text-gray-400 hover:border-amber-300"
+                    placeholder="Enter your code"
                     :disabled="isValidatingCode || isInviteCodeValid"
                     :class="{
                       'border-green-400 bg-green-50': isInviteCodeValid,
                       'border-red-400 bg-red-50': showErrorBanner
                     }"
                   />
-                  
-                  <div class="absolute inset-0 pointer-events-none">
-                    <div class="absolute -inset-0.5 bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 rounded-lg opacity-30 blur animate-pulse"></div>
-                  </div>
                 </div>
 
                 <button
@@ -583,10 +579,11 @@ const handleRegisterSubmit = async () => {
   }
 
   try {
-    console.log('GT conversion');
-    window.gtag_report_conversion;
+    if (typeof window !== 'undefined' && typeof window.gtag_report_conversion === 'function') {
+      window.gtag_report_conversion()
+    }
   } catch (err) {
-    console.error('Google tag conversion error:', err);
+    console.error('Google tag conversion error:', err)
   }
 
   try {

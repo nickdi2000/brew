@@ -1,7 +1,7 @@
 {
   "name": "fe",
   "private": true,
-  "version": "1.0.10",
+  "version": "1.0.11",
   "type": "module",
   "scripts": {
     "dev-legacy": "vite",

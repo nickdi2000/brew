@@ -132,6 +132,39 @@
       </div>
     </section>
 
+    <!-- White Label Section -->
+    <section class="bg-gray-900 py-24">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 items-center gap-16 lg:grid-cols-12">
+          <div class="space-y-6 lg:col-span-6">
+            <div class="inline-flex items-center space-x-2 rounded-full border border-white/10 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-indigo-200">
+              <Icon icon="mdi:palette-outline" class="h-4 w-4" />
+              <span>White label ready</span>
+            </div>
+            <h2 class="text-3xl font-bold text-white sm:text-4xl lg:text-5xl">Launch it as your own</h2>
+            <p class="text-lg text-gray-300">
+              Ship a loyalty experience that looks and feels like a native app for your taproom. From logos and colors to domains and copy, BrewTokens disappears behind your brand.
+            </p>
+            <ul class="space-y-4">
+              <li v-for="highlight in whiteLabelHighlights" :key="highlight.text" class="flex items-start space-x-3 text-base text-gray-200">
+                <Icon :icon="highlight.icon" class="mt-1 h-5 w-5 flex-shrink-0 text-indigo-300" />
+                <span>{{ highlight.text }}</span>
+              </li>
+            </ul>
+            <div class="flex flex-col gap-4 sm:flex-row">
+              <router-link to="/login" class="btn btn-primary px-8 py-3 text-lg font-semibold">Get Started</router-link>
+              <router-link to="/contact" class="btn btn-secondary px-8 py-3 text-lg font-semibold">Book a Demo</router-link>
+            </div>
+          </div>
+          <div class="lg:col-span-6">
+            <div class="rounded-3xl border border-white/10 bg-black/30 p-4 shadow-2xl">
+              <img :src="whiteLabelBrewery" alt="White-labeled BrewTokens rewards app for breweries" class="h-full w-full rounded-2xl object-cover" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Call to Action -->
     <section id="get-started" class="bg-gradient-to-br from-indigo-900 via-indigo-800 to-indigo-700 py-24 text-center text-white">
       <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
@@ -180,6 +213,7 @@ import qrAwardBrewery from '@/assets/images/qr-award-brewery.png';
 import qrCode from '@/assets/images/qr-code.png';
 import singleQr from '@/assets/images/single-qr.png';
 import BetaSignupCard from '@/components/marketing/BetaSignupCard.vue';
+import whiteLabelBrewery from '/images/white-label-brewery.png';
 
 const currentYear = new Date().getFullYear();
 
@@ -261,6 +295,21 @@ const featureSections = [
     badge: 'Operational control',
     badgeIcon: 'mdi:shield-lock-outline',
     background: 'bg-gray-950',
+  },
+];
+
+const whiteLabelHighlights = [
+  {
+    text: 'Drop in your logo, colors, and typography without touching code.',
+    icon: 'mdi:brush-outline',
+  },
+  {
+    text: 'Serve the app from your domain with a secure, mobile-ready experience.',
+    icon: 'mdi:web',
+  },
+  {
+    text: 'Tailor copy, offers, and automations to match each location or concept.',
+    icon: 'mdi:storefront-outline',
   },
 ];
 
