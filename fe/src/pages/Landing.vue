@@ -1,3 +1,65 @@
+const parseBooleanParam = (value) => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const normalized = value.toLowerCase().trim();
+
+  if (normalized === 'true') {
+    return true;
+  }
+
+  if (normalized === 'false') {
+    return false;
+  }
+
+  return null;
+};
+
+const shouldEnableBetaFromStorage = () => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  try {
+    const stored = window.localStorage.getItem(BETA_STORAGE_KEY);
+    if (stored === 'true') {
+      return true;
+    }
+
+    const adminUser = window.localStorage.getItem(ADMIN_USER_KEY);
+    return Boolean(adminUser);
+  } catch (error) {
+    console.error('Failed to read beta flag from localStorage', error);
+    return false;
+  }
+};
+
+const applyBetaState = (value, options = {}) => {
+  const { persist = true, syncRoute = true } = options;
+  betaEnabled.value = value;
+
+  if (!value) {
+    finalizeClose();
+  }
+
+  if (persist) {
+    setBetaLocalStorage(value);
+  }
+
+  if (syncRoute) {
+    ensureRouteBetaParam(value);
+  }
+};
+
+let stopRouteWatcher = null;
+
+const cleanupRouteWatcher = () => {
+  if (typeof stopRouteWatcher === 'function') {
+    stopRouteWatcher();
+    stopRouteWatcher = null;
+  }
+};
 <template>
   <div class="min-h-screen bg-gray-950 font-sans text-gray-100">
     <transition name="beta-overlay-fade">
@@ -65,11 +127,14 @@
             </div>
 
             <div class="lg:col-span-5">
-              <BetaSignupCard
+              <component
+                :is="betaEnabled ? BetaSignupCard : LandingRegistrationCard"
                 ref="betaCardRef"
-                :highlight="betaHighlight"
+                :highlight="betaEnabled ? betaHighlight : registrationHighlight"
                 :aria-hidden="staticCardHidden"
                 :class="staticCardClass"
+                @login-request="handleRegistrationLoginClick"
+                @focus-card="handleFocusCard"
               />
             </div>
           </div>
@@ -80,6 +145,7 @@
     <transition name="beta-card-modal" appear>
       <div v-if="floatingCardVisible" class="beta-card-modal">
         <BetaSignupCard
+          v-if="betaEnabled"
           ref="modalCardRef"
           :card-style="floatingCardStyle"
           :highlight="true"
@@ -207,15 +273,19 @@
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import heroQrCode from '@/assets/images/hero-qr-code.png';
 import qrAwardBrewery from '@/assets/images/qr-award-brewery.png';
 import qrCode from '@/assets/images/qr-code.png';
 import singleQr from '@/assets/images/single-qr.png';
 import BetaSignupCard from '@/components/marketing/BetaSignupCard.vue';
+import LandingRegistrationCard from '@/components/marketing/LandingRegistrationCard.vue';
 import whiteLabelBrewery from '/images/white-label-brewery.png';
 
 const currentYear = new Date().getFullYear();
+const route = useRoute();
+const router = useRouter();
 
 const heroHighlights = [
   {
@@ -321,6 +391,11 @@ const isCardAnimating = ref(false);
 const floatingCardStyle = ref({});
 const betaCardRef = ref(null);
 const modalCardRef = ref(null);
+const betaEnabled = ref(false);
+const registrationHighlight = ref(false);
+
+const BETA_STORAGE_KEY = 'beta';
+const ADMIN_USER_KEY = 'adminUser';
 
 const staticCardClass = computed(() => ({
   'pointer-events-none select-none opacity-0': staticCardHidden.value,
@@ -343,6 +418,15 @@ const nextFrame = () =>
     });
   });
 
+const normalizeQueryValue = (value) => {
+  if (Array.isArray(value)) {
+    return value[value.length - 1];
+  }
+  return value ?? undefined;
+};
+
+const getBetaFlagFromRoute = () => parseBooleanParam(normalizeQueryValue(route.query.beta));
+
 const buildFloatingStyleFromRect = (rect) => ({
   position: 'fixed',
   top: `${rect.top}px`,
@@ -356,8 +440,123 @@ const buildFloatingStyleFromRect = (rect) => ({
 });
 
 const getHeroCardElement = () => betaCardRef.value?.getCardEl() ?? null;
+const setBetaLocalStorage = (value) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    if (value) {
+      window.localStorage.setItem(BETA_STORAGE_KEY, 'true');
+    } else {
+      window.localStorage.removeItem(BETA_STORAGE_KEY);
+    }
+  } catch (error) {
+    console.error('Failed to set beta flag in localStorage', error);
+  }
+};
+
+const parseBooleanParam = (value) => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const normalized = value.toLowerCase().trim();
+
+  if (normalized === 'true') {
+    return true;
+  }
+
+  if (normalized === 'false') {
+    return false;
+  }
+
+  return null;
+};
+
+const shouldEnableBetaFromStorage = () => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  try {
+    const stored = window.localStorage.getItem(BETA_STORAGE_KEY);
+    if (stored === 'true') {
+      return true;
+    }
+
+    const adminUser = window.localStorage.getItem(ADMIN_USER_KEY);
+    return Boolean(adminUser);
+  } catch (error) {
+    console.error('Failed to read beta flag from localStorage', error);
+    return false;
+  }
+};
+
+const applyBetaState = (value, { persist = true } = {}) => {
+  betaEnabled.value = value;
+
+  if (!value) {
+    finalizeClose();
+  }
+
+  if (persist) {
+    setBetaLocalStorage(value);
+  }
+};
+
+let stopRouteWatcher = null;
+
+const cleanupRouteWatcher = () => {
+  if (typeof stopRouteWatcher === 'function') {
+    stopRouteWatcher();
+    stopRouteWatcher = null;
+  }
+};
+
+const initializeBetaMode = () => {
+  const parsed = getBetaFlagFromRoute();
+
+  if (parsed !== null) {
+    applyBetaState(parsed, { persist: true, syncRoute: false });
+    return;
+  }
+
+  const shouldEnable = shouldEnableBetaFromStorage();
+  applyBetaState(shouldEnable, { persist: false });
+};
+
+const watchRouteChanges = () => {
+  cleanupRouteWatcher();
+
+  stopRouteWatcher = watch(
+    () => route.query.beta,
+    (newValue) => {
+      const parsed = getBetaFlagFromRoute();
+
+      if (parsed !== null) {
+        applyBetaState(parsed, { persist: false, syncRoute: false });
+        return;
+      }
+
+      const shouldEnable = shouldEnableBetaFromStorage();
+      applyBetaState(shouldEnable, { persist: false });
+    },
+  );
+};
 
 const focusBetaCard = async () => {
+  if (!betaEnabled.value) {
+    const cardEl = getHeroCardElement();
+    if (cardEl && typeof cardEl.scrollIntoView === 'function') {
+      cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    registrationHighlight.value = true;
+    await wait(280);
+    registrationHighlight.value = false;
+    return;
+  }
+
   if (isCardAnimating.value) {
     return;
   }
@@ -418,6 +617,10 @@ const finalizeClose = () => {
 };
 
 const closeBetaModal = async () => {
+  if (!betaEnabled.value) {
+    return;
+  }
+
   if (!floatingCardVisible.value || isCardAnimating.value) {
     if (!isCardAnimating.value) {
       overlayVisible.value = false;
@@ -475,6 +678,22 @@ const handleKeydown = (event) => {
   }
 };
 
+const handleRegistrationLoginClick = () => {
+  closeBetaModal();
+};
+
+const handleFocusCard = () => {
+  if (betaEnabled.value) {
+    focusBetaCard();
+    return;
+  }
+
+  registrationHighlight.value = true;
+  wait(animationDurationMs).then(() => {
+    registrationHighlight.value = false;
+  });
+};
+
 let previousBodyOverflow = '';
 
 watch(overlayVisible, (visible) => {
@@ -496,6 +715,8 @@ onMounted(() => {
   }
 
   window.addEventListener('keydown', handleKeydown);
+  initializeBetaMode();
+  watchRouteChanges();
 });
 
 onBeforeUnmount(() => {
@@ -506,5 +727,7 @@ onBeforeUnmount(() => {
   if (typeof document !== 'undefined') {
     document.body.style.overflow = previousBodyOverflow;
   }
+
+  cleanupRouteWatcher();
 });
 </script>
