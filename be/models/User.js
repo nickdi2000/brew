@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const uniqueValidator = require('mongoose-unique-validator');
 
 const userSchema = new mongoose.Schema({
   firstName: {
@@ -22,8 +23,7 @@ const userSchema = new mongoose.Schema({
   },
   googleId: {
     type: String,
-    sparse: true,
-    unique: true
+    sparse: true
   },
   picture: {
     type: String
@@ -118,5 +118,7 @@ userSchema.pre('save', async function(next) {
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
+
+userSchema.plugin(uniqueValidator, { message: '{PATH} must be unique.' });
 
 module.exports = mongoose.model('User', userSchema);

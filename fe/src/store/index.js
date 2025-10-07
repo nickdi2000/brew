@@ -6,6 +6,7 @@ import organization from './modules/organization';
 import rewards from './modules/rewards';
 import auth from './modules/auth';
 import transactions from './modules/transactions';
+import { sanitizeAdminGooglePayload } from '@/utils/authSanitizers';
 
 // Helper function to handle persistent storage
 const storage = {

@@ -1,54 +1,8 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const Organization = require('../models/Organization');
-const QRCode = require('../models/QRCode');
 const Transaction = require('../models/Transaction');
-const Reward = require('../models/Reward');
 const { formatResponse, formatError } = require('../utils/responseFormatter');
-
-// Helper function to generate a unique QR code string
-const generateQRCodeString = () => Math.random().toString(36).substring(2, 10).toUpperCase();
-
-// Helper function to create a default rewards QR code for new organizations
-const createDefaultQRCode = async (organizationId, organizationName) => {
-  try {
-    const qrCode = await QRCode.create({
-      organization: organizationId,
-      code: generateQRCodeString(),
-      name: 'Earn 100 Points!',
-      points: 100,
-      isActive: true,
-      expiresAt: null // No expiration for the default reward
-    });
-    console.log(`✅ Created default QR code for ${organizationName}:`, qrCode.code);
-    return qrCode;
-  } catch (error) {
-    console.error(`❌ Failed to create default QR code for ${organizationName}:`, error);
-    throw error;
-  }
-};
-
-// Helper function to create a default "Free Point!" reward for new organizations
-const createDefaultReward = async (organizationId, organizationName) => {
-  try {
-    const reward = await Reward.create({
-      name: 'Free Drink!',
-      description: 'Redeem 1000 points for a free drink reward!',
-      pointsCost: 1000,
-      type: 'product',
-      imageUrl: 'https://brewtokens.com/images/beer.jpg',
-      isActive: true,
-      organizationId,
-      redemptionInstructions: 'Show this reward to the staff to redeem.',
-      termsAndConditions: 'No cash value. Cannot be combined with other offers.'
-    });
-    console.log(`✅ Created default reward for ${organizationName}`);
-    return reward;
-  } catch (error) {
-    console.error(`❌ Failed to create default reward for ${organizationName}:`, error);
-    throw error;
-  }
-};
+const { registerAdminAccount, ServiceError } = require('../services/adminAuthService');
 
 // Register user and brewery
 exports.register = async (req, res) => {
@@ -60,172 +14,50 @@ exports.register = async (req, res) => {
       return res.status(400).json(formatError('Brewery name and password are required'));
     }
 
-    if (password.length < 6) {
+    if (password && password.length < 6) {
       return res.status(400).json(formatError('Password must be at least 6 characters long'));
     }
 
-    // Only check for existing user if email is provided (not in onboarding case)
-    if (email) {
-      const existingUser = await User.findOne({ email });
-      if (existingUser) {
-        return res.status(400).json(formatError('A user with this email already exists'));
-      }
-    }
-
-    // Check if brewery name is already taken
-    const existingOrganization = await Organization.findOne({ name: breweryName });
-    if (existingOrganization) {
-      return res.status(400).json(formatError('A brewery with this name already exists'));
-    }
-
-    // Generate a unique organization code
-    const generateOrganizationCode = () => {
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-      let result = '';
-      for (let i = 0; i < 6; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-      }
-      return result;
-    };
-
-    // Generate unique organization code
-    let organizationCode;
-    let attempts = 0;
-    const maxAttempts = 10;
-    
-    do {
-      organizationCode = generateOrganizationCode();
-      attempts++;
-      
-      const existingOrg = await Organization.findOne({ code: organizationCode });
-      if (!existingOrg) {
-        break;
-      }
-      
-      if (attempts >= maxAttempts) {
-        return res.status(500).json(formatError('Failed to generate unique organization code'));
-      }
-    } while (attempts < maxAttempts);
-
-    console.log(`Generated organization code: ${organizationCode}`);
-
-    // Create organization (brewery)
-    const organization = new Organization({
-      name: breweryName,
-      email: email, // Use the same email for the brewery initially
-      description: `${breweryName} - A cool brewery, if I've ever seen one`,
-      code: organizationCode
-    });
-    await organization.save();
-    console.log(`✅ Created organization: ${organization.name} with code: ${organization.code}`);
-
-    // Create QR code and default reward for the new brewery
-    let defaultQRCode = null;
-    let defaultReward = null;
     try {
-      if (qrCode) {
-        // Create QR code with provided code
-        defaultQRCode = await QRCode.create({
-          organization: organization._id,
-          code: qrCode,
-          name: 'Earn 100 Points!',
-          points: 100,
-          isActive: true,
-          expiresAt: null
-        });
-        console.log(`✅ Created QR code with provided code for ${organization.name}:`, defaultQRCode.code);
-      } else {
-        // Create default QR code
-        defaultQRCode = await createDefaultQRCode(organization._id, organization.name);
+      const { payload, message } = await registerAdminAccount({
+        breweryName,
+        email,
+        password,
+        qrCode
+      });
+
+      res.status(201).json(formatResponse({
+        data: payload,
+        message
+      }));
+      return;
+    } catch (serviceError) {
+      if (serviceError instanceof ServiceError) {
+        return res.status(serviceError.status).json(formatError(serviceError.message, serviceError.meta));
       }
-    } catch (qrError) {
-      // Log the error but don't fail registration if QR code creation fails
-      console.error('Warning: Failed to create QR code during registration:', qrError);
+
+      if (serviceError?.code === 11000) {
+        if (serviceError.keyPattern?.name) {
+          return res.status(400).json(formatError(
+            `A brewery with the name "${serviceError.keyValue?.name}" already exists. Please choose a different name.`
+          ));
+        }
+        if (serviceError.keyPattern?.code) {
+          return res.status(400).json(formatError(
+            `Organization code "${serviceError.keyValue?.code}" is already taken. Please try registration again.`
+          ));
+        }
+        if (serviceError.keyPattern?.email) {
+          return res.status(400).json(formatError(
+            `A user with the email "${serviceError.keyValue?.email}" already exists.`
+          ));
+        }
+        return res.status(400).json(formatError('This information is already taken. Please try with different details.'));
+      }
+
+      console.error('Registration error:', serviceError);
+      return res.status(500).json(formatError('An error occurred during registration', serviceError.message));
     }
-    try {
-      defaultReward = await createDefaultReward(organization._id, organization.name);
-    } catch (rewardError) {
-      // Log the error but don't fail registration if reward creation fails
-      console.error('Warning: Failed to create default reward during registration:', rewardError);
-    }
-
-    // Create user
-    const user = new User({
-      email,
-      password,
-      firstName: breweryName.split(' ')[0], // Use first word of brewery name as first name
-      lastName: 'Admin', // Default last name
-      isAdmin: true, // Make the brewery owner an admin
-      organizations: [organization._id]
-    });
-    await user.save();
-
-    // Generate access token
-    const token = jwt.sign(
-      {
-        userId: user._id,
-        email: user.email,
-        isAdmin: user.isAdmin,
-        organization: organization._id,
-        organizations: [organization._id]
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: '1h' }
-    );
-
-    // Generate refresh token
-    const refreshToken = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-
-    // Store refresh token and its expiry
-    const refreshTokenExpiresAt = new Date();
-    refreshTokenExpiresAt.setDate(refreshTokenExpiresAt.getDate() + 7);
-    
-    user.refreshToken = refreshToken;
-    user.refreshTokenExpiresAt = refreshTokenExpiresAt;
-    await user.save();
-
-    // Return user info and token
-    res.status(201).json(formatResponse({
-      data: {
-        token,
-        refreshToken,
-        refreshTokenExpiresAt,
-        user: {
-          id: user._id,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          isAdmin: user.isAdmin,
-          organizations: [{
-            id: organization._id,
-            name: organization.name
-          }]
-        },
-        organization: {
-          id: organization._id,
-          name: organization.name,
-          code: organization.code,
-          description: organization.description
-        },
-        defaultQRCode: defaultQRCode ? {
-          id: defaultQRCode._id,
-          code: defaultQRCode.code,
-          name: defaultQRCode.name,
-          points: defaultQRCode.points
-        } : null,
-        defaultReward: defaultReward ? {
-          id: defaultReward._id,
-          name: defaultReward.name,
-          description: defaultReward.description,
-          pointsCost: defaultReward.pointsCost
-        } : null
-      },
-      message: `Registration successful! Welcome to BrewTokens! ${defaultQRCode ? 'Your first QR code has been created' : ''}${defaultQRCode && defaultReward ? ' and' : ''}${defaultReward ? ' a "Free Point!" reward is ready for your members' : ''}.`
-    }));
   } catch (error) {
     console.error('Registration error:', error);
     

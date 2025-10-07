@@ -53,7 +53,7 @@ export default defineConfig(({ mode }) => {
       },
       headers: {
         'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
-        'Cross-Origin-Embedder-Policy': 'require-corp'
+        'Cross-Origin-Embedder-Policy': process.env.NODE_ENV === 'production' ? 'require-corp' : 'unsafe-none'
       }
     },
     resolve: {

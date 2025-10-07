@@ -1,11 +1,10 @@
-const { OAuth2Client } = require('google-auth-library');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Member = require('../models/Member');
 const { formatResponse, formatError } = require('../utils/responseFormatter');
 const { fetchAndCompressImage } = require('../utils/imageUtils');
-
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const { verifyGoogleIdToken } = require('../utils/prepareGoogleClient');
+const { registerAdminAccount, ServiceError, issueAdminSession, applyGoogleProfile } = require('../services/adminAuthService');
 
 exports.googleLogin = async (req, res) => {
   try {
@@ -36,13 +35,7 @@ exports.googleLogin = async (req, res) => {
         throw new Error('Invalid demo token');
       }
     } else {
-      // Verify real Google token
-      const ticket = await client.verifyIdToken({
-        idToken: token,
-        audience: process.env.GOOGLE_CLIENT_ID
-      });
-      
-      payload = ticket.getPayload();
+      payload = await verifyGoogleIdToken(token);
     }
     
     const { sub: googleId, email, name, picture, given_name, family_name, email_verified, locale, hd } = payload;
@@ -51,16 +44,42 @@ exports.googleLogin = async (req, res) => {
     let user = await User.findOne({ googleId });
     
     if (!user) {
-      // Check if user exists with same email
+      // Check if admin flow (no organization code means admin portal)
+      const isAdminFlow = !req.body.code && !req.body.organizationCode;
+
+      if (isAdminFlow) {
+        try {
+          const breweryName = payload.name || (payload.hd ? payload.hd.split('.')[0] : email.split('@')[0]);
+          const { payload: registrationPayload, message } = await registerAdminAccount({
+            breweryName,
+            email,
+            password: null,
+            qrCode: null,
+            googleProfile: payload
+          });
+
+          return res.status(201).json(formatResponse({
+            data: registrationPayload,
+            message
+          }));
+        } catch (err) {
+          if (err instanceof ServiceError) {
+            return res.status(err.status).json(formatError(err.message, err.meta));
+          }
+          console.error('[GoogleAuth] Admin registration via Google failed:', err);
+          return res.status(500).json(formatError('Failed to complete Google registration'));
+        }
+      }
+
+      // Member flow: fall back to existing behavior
       user = await User.findOne({ email });
-      
+
       if (user) {
         // Link Google account to existing user
         user.googleId = googleId;
         user.picture = picture;
         await user.save();
       } else {
-        // Create new user
         const names = name.split(' ');
         user = await User.create({
           email,
@@ -75,22 +94,7 @@ exports.googleLogin = async (req, res) => {
 
     // Update SSO profile details
     try {
-      user.sso = user.sso || {};
-      user.sso.provider = 'google';
-      user.sso.google = {
-        id: googleId,
-        email,
-        name,
-        givenName: given_name || user.firstName || null,
-        familyName: family_name || user.lastName || null,
-        picture: picture || user.picture || null,
-        emailVerified: typeof email_verified === 'boolean' ? email_verified : null,
-        locale: locale || null,
-        hd: hd || null,
-        raw: payload || null
-      };
-      user.sso.linkedAt = user.sso.linkedAt || new Date();
-      user.sso.lastLoginAt = new Date();
+      applyGoogleProfile(user, payload);
       await user.save();
     } catch (e) {
       console.error('[GoogleAuth] Failed to persist SSO profile:', e);
@@ -161,61 +165,33 @@ exports.googleLogin = async (req, res) => {
       }
     }
 
-    // Generate JWT token
-    const authToken = jwt.sign(
-      { 
-        userId: user._id.toString(), // Ensure userId is a string
-        email: user.email,
-        organizations: user.organizations.map(id => id.toString()) // Convert ObjectIds to strings
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    // Generate and persist refresh token (7 days)
-    const refreshToken = jwt.sign(
-      { userId: user._id.toString() },
-      process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-    const refreshTokenExpiresAt = new Date();
-    refreshTokenExpiresAt.setDate(refreshTokenExpiresAt.getDate() + 7);
-    try {
-      user.refreshToken = refreshToken;
-      user.refreshTokenExpiresAt = refreshTokenExpiresAt;
-      await user.save();
-    } catch (e) {
-      console.error('[GoogleAuth] Failed saving refresh token to user:', e);
+    // Admin login flow (no organization code present)
+    if (!organizationCode) {
+      try {
+        const sessionPayload = await issueAdminSession(user);
+        return res.json(formatResponse({
+          success: true,
+          message: 'Login successful',
+          data: sessionPayload
+        }));
+      } catch (err) {
+        console.error('[GoogleAuth] Admin session issuance failed:', err);
+        return res.status(500).json(formatError('Failed to create session'));
+      }
     }
 
-    console.log('[GoogleAuth] Login success. Returning membership:', member ? member._id.toString() : null);
+    // Member login response remains the same
+    const sessionPayload = await issueAdminSession(user);
+
     res.json(
       formatResponse({
         success: true,
         message: 'Login successful',
         data: {
-          token: authToken,
-          user: {
-            id: user._id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            picture: user.picture,
-            organizations: user.organizations,
-            sso: user.sso ? {
-              provider: user.sso.provider,
-              google: user.sso.google ? {
-                id: user.sso.google.id,
-                email: user.sso.google.email,
-                name: user.sso.google.name,
-                picture: user.sso.google.picture
-              } : null,
-              linkedAt: user.sso.linkedAt,
-              lastLoginAt: user.sso.lastLoginAt
-            } : null
-          },
-          refreshToken,
-          refreshTokenExpiresAt,
+          token: sessionPayload.token,
+          refreshToken: sessionPayload.refreshToken,
+          refreshTokenExpiresAt: sessionPayload.refreshTokenExpiresAt,
+          user: sessionPayload.user,
           membership: member ? {
             id: member._id,
             organization: member.organization,

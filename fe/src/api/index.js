@@ -86,6 +86,7 @@ api.interceptors.request.use(
       '/waitlist',
       '/health',
       '/auth/google/login',
+      '/auth/google/admin/login',
       '/auth/refresh'
     ];
     
@@ -451,8 +452,11 @@ const googleLogin = async (credential, organizationCode) => {
       throw new Error('Failed to get ID token from Google');
     }
 
+    // Determine endpoint based on presence of organization code (member vs admin)
+    const endpoint = organizationCode ? '/auth/google/login' : '/auth/google/admin/login';
+
     // Now send the ID token to our backend
-    const response = await api.post('/auth/google/login', {
+    const response = await api.post(endpoint, {
       token: tokenResponse.data.id_token,
       code: organizationCode
     }, {
@@ -510,8 +514,9 @@ const demoLogin = async (organizationCode) => {
     
     const demoToken = `${encodedHeader}.${encodedPayload}.${fakeSignature}`;
 
-      // Send directly to our backend, bypassing Google OAuth
-      const response = await api.post('/auth/google/login', {
+      const endpoint = organizationCode ? '/auth/google/login' : '/auth/google/admin/login';
+
+      const response = await api.post(endpoint, {
         token: demoToken,
         code: organizationCode
       }, {

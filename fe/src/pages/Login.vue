@@ -30,19 +30,15 @@
     <div class="flex-grow flex flex-col justify-center py-4 sm:px-6 lg:px-8">
       <div class="sm:mx-auto sm:w-full sm:max-w-md text-center">
         <img
-          src="/images/brewtokens-logo-trans.png"
+        v-on:dblclick.stop="dev = !dev"
+          src="/images/brewtokens-logo-beer.webp"
           alt="BrewTokens"
-          class="mx-auto h-20 w-auto mb-6 animate-fade-in cursor-pointer select-none"
+          class="mx-auto h-20 w-auto mb-0 animate-fade-in cursor-pointer select-none"
         />
-        <h2 class="text-center text-3xl font-extrabold text-gray-900 mb-2">
-          {{ activeTab === 'login' ? 'Welcome Back!' : 'Join BrewTokens' }}
-        </h2>
-        <p class="text-gray-600" v-on:dblclick.stop="dev = !dev">
-          {{ activeTab === 'login' ? 'Sign in to manage your rewards' : 'Create your brewery account today' }}
-        </p>
+   
       </div>
 
-      <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+      <div class="mt-4 sm:mx-auto sm:w-full sm:max-w-md">
         <div class="bg-white py-8 px-4 shadow-lg ring-1 ring-black/5 sm:rounded-xl sm:px-10 transform transition-all duration-300 hover:shadow-xl">
           <!-- Tab Navigation -->
           <div class="flex mb-6 bg-gray-100 rounded-lg p-1">
@@ -132,6 +128,10 @@
                   {{ isLoading ? 'Signing in...' : 'Sign in' }}
                 </span>
               </button>
+              <ContinueWithGoogleButton
+                :disabled="isLoading"
+                @success="handleGoogleAdminSuccess"
+              />
 
               <div class="relative" v-if="dev">
                 <div class="absolute inset-0 flex items-center">
@@ -427,6 +427,8 @@ import { Icon } from '@iconify/vue'
 import { useToast } from '@/plugins/toast'
 import packageJson from '../../package.json' with { type: 'json' }
 import CoinFlip from '@/components/CoinFlip.vue'
+import ContinueWithGoogleButton from '@/components/auth/ContinueWithGoogleButton.vue'
+import { sanitizeAdminGooglePayload } from '@/utils/authSanitizers'
 
 // Get signup status from environment variable
 const ENABLE_SIGNUP = import.meta.env.VITE_ENABLE_SIGNUP === 'true'
@@ -447,6 +449,7 @@ const inviteCode = ref('')
 const isInviteCodeValid = ref(false)
 const inviteCodeError = ref('')
 const isValidatingCode = ref(false)
+const dev = ref(false)
 
 const validateInviteCode = (code) => {
   // Extract letters and number parts
@@ -580,6 +583,13 @@ const handleRegisterSubmit = async () => {
   }
 
   try {
+    console.log('GT conversion');
+    window.gtag_report_conversion;
+  } catch (err) {
+    console.error('Google tag conversion error:', err);
+  }
+
+  try {
     isLoading.value = true
     error.value = ''
     
@@ -605,6 +615,34 @@ const handleDemoLogin = async () => {
   
   // Submit the login form
   await handleLoginSubmit()
+}
+
+const handleGoogleAdminSuccess = async (authPayload) => {
+  try {
+    const { token, refreshToken, refreshTokenExpiresAt, user } = sanitizeAdminGooglePayload(authPayload)
+    if (!token || !user) {
+      throw new Error('Invalid authentication payload')
+    }
+
+    store.commit('SET_TOKEN', token)
+    store.commit('SET_USER', user)
+
+    if (refreshToken) {
+      store.commit('SET_REFRESH_TOKEN', refreshToken)
+    }
+    if (refreshTokenExpiresAt) {
+      store.commit('SET_REFRESH_TOKEN_EXPIRES_AT', refreshTokenExpiresAt)
+    }
+
+    store.commit('SET_LAST_ACTIVITY')
+
+    const redirect = router.currentRoute.value.query.redirect || '/admin'
+    await router.push(redirect)
+    store.dispatch('startSessionMonitor')
+  } catch (error) {
+    console.error('Admin Google login handling failed:', error)
+    toast(error.response?.data?.message || error.message || 'Failed to sign in with Google', 'error')
+  }
 }
 
 const validateOnboardingForm = () => {
