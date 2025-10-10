@@ -24,16 +24,15 @@ module.exports = {
     {
       name: 'brew-vue',
       cwd: './fe',
-      script: 'npm',
-      args: 'run dev',
+      script: 'npx',
+      args: 'vite --host 0.0.0.0 --port 5644',
       env: {
         NODE_ENV: 'development'
       },
       env_production: {
         NODE_ENV: 'production'
       },
-      watch: true,
-      ignore_watch: ['node_modules', 'dist'],
+      watch: false,  // Disable PM2 watching - let Vite handle file watching
       instances: 1,
       exec_mode: 'fork',
       autorestart: true,

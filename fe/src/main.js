@@ -5,7 +5,6 @@ import router from './router'
 import store from './store'
 import { toast } from './plugins/toast'
 import vue3GoogleLogin from 'vue3-google-login'
-import './utils/logger'  // Import logger to override console methods
 
 // Create app instance
 const app = createApp(App)

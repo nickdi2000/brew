@@ -1,6 +1,5 @@
 const transactionService = require('../services/transactionService');
 const { formatResponse, formatError } = require('../utils/responseFormatter');
-const logger = require('../utils/logger');
 
 /**
  * Transactions Controller
@@ -24,7 +23,7 @@ module.exports = {
       const result = await transactionService.listTransactions(memberId, organizationId, { page: parseInt(page), limit: parseInt(limit), type });
       return res.json(formatResponse({ data: result, message: 'Transactions retrieved' }));
     } catch (error) {
-      logger.error('List transactions error', { error: error.message, stack: error.stack });
+      console.error('List transactions error', { error: error.message, stack: error.stack });
       return res.status(500).json(formatError('Failed to retrieve transactions', error.message));
     }
   },
@@ -42,7 +41,7 @@ module.exports = {
       const balance = await transactionService.getBalance(memberId, organizationId);
       return res.json(formatResponse({ data: { balance }, message: 'Balance retrieved' }));
     } catch (error) {
-      logger.error('Get balance error', { error: error.message, stack: error.stack });
+      console.error('Get balance error', { error: error.message, stack: error.stack });
       return res.status(500).json(formatError('Failed to retrieve balance', error.message));
     }
   },
@@ -69,7 +68,7 @@ module.exports = {
 
       return res.status(201).json(formatResponse({ data: { transaction: tx, balance }, message: 'Points accrued' }));
     } catch (error) {
-      logger.error('Accrue points error', { error: error.message, stack: error.stack });
+      console.error('Accrue points error', { error: error.message, stack: error.stack });
       return res.status(500).json(formatError('Failed to accrue points', error.message));
     }
   },
@@ -101,7 +100,7 @@ module.exports = {
       });
       return res.status(201).json(formatResponse({ data: result, message: 'Reward redeemed' }));
     } catch (error) {
-      logger.error('Redeem reward error', { error: error.message, stack: error.stack });
+      console.error('Redeem reward error', { error: error.message, stack: error.stack });
       return res.status(400).json(formatError(error.message));
     }
   },
@@ -147,7 +146,7 @@ module.exports = {
         message: 'Transaction created successfully'
       }));
     } catch (error) {
-      logger.error('Create transaction error', { error: error.message, stack: error.stack });
+      console.error('Create transaction error', { error: error.message, stack: error.stack });
       return res.status(500).json(formatError('Failed to create transaction', error.message));
     }
   }

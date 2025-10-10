@@ -209,20 +209,20 @@
         </div>
       </div>
     </div>
+    
+    <!-- Add Transaction Modal - Moved inside the main wrapper -->
+    <AddTransactionModal
+      v-if="memberId"
+      :show="showAddTransactionModal"
+      :member-id="memberId"
+      @close="showAddTransactionModal = false"
+      @transaction-added="handleTransactionAdded"
+    />
   </div>
-
-  <!-- Add Transaction Modal -->
-  <AddTransactionModal
-    v-if="memberId"
-    :show="showAddTransactionModal"
-    :member-id="memberId"
-    @close="showAddTransactionModal = false"
-    @transaction-added="handleTransactionAdded"
-  />
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch, onUnmounted } from 'vue';
 import { useStore } from 'vuex';
 import { useRouter, useRoute } from 'vue-router';
 import { Icon } from '@iconify/vue';
@@ -235,7 +235,7 @@ const route = useRoute();
 const store = useStore();
 const toast = useToast();
 
-const memberId = ref(route.params.id);
+const memberId = computed(() => route.params.id);
 const loading = ref(false);
 const error = ref(null);
 const currentTab = ref('profile');
@@ -263,8 +263,11 @@ const formData = ref({
 });
 
 const initForm = async () => {
-  if (memberId.value) {
-    try {
+  try {
+    // Clear any previous error state
+    error.value = null;
+    
+    if (memberId.value) {
       loading.value = true;
       await store.dispatch('members/fetchMemberDetails', memberId.value);
       const member = store.getters['members/currentMember'];
@@ -281,23 +284,25 @@ const initForm = async () => {
         membershipLevel: member.membershipLevel || 'bronze',
         status: member.status || 'active'
       };
-    } catch (err) {
-      error.value = 'Failed to load member details';
-      toast('Failed to load member details', 'error');
-    } finally {
-      loading.value = false;
+    } else {
+      // Reset form for new member
+      formData.value = {
+        firstName: '',
+        lastName: '',
+        email: '',
+        phoneNumber: '',
+        membershipLevel: 'bronze',
+        status: 'active',
+        points: 0,
+        password: ''
+      };
     }
-  } else {
-    formData.value = {
-      firstName: '',
-      lastName: '',
-      email: '',
-      phoneNumber: '',
-      membershipLevel: 'bronze',
-      status: 'active',
-      points: 0,
-      password: ''
-    };
+  } catch (err) {
+    console.error('Error initializing form:', err);
+    error.value = 'Failed to load member details';
+    toast('Failed to load member details', 'error');
+  } finally {
+    loading.value = false;
   }
 };
 
@@ -347,10 +352,16 @@ const handleTransactionAdded = async (transactionData) => {
 const loadTransactions = async () => {
   if (memberId.value) {
     try {
+      // Clear any previous transaction state first
+      store.commit('transactions/SET_ERROR', null);
+      
       await store.dispatch('transactions/fetchTransactions', memberId.value);
     } catch (err) {
       console.error('Failed to load transactions:', err);
-      toast('Failed to load transactions', 'error');
+      // Only show toast if component is still mounted
+      if (!error.value) {
+        toast('Failed to load transactions', 'error');
+      }
       return;
     }
     
@@ -363,8 +374,32 @@ const loadTransactions = async () => {
   }
 };
 
+// Watch for route changes to handle navigation between different member edit pages
+watch(() => route.params.id, (newId, oldId) => {
+  if (newId !== oldId) {
+    // Clear previous state
+    error.value = null;
+    currentTab.value = 'profile';
+    showAddTransactionModal.value = false;
+    
+    // Load new data
+    initForm();
+    loadTransactions();
+  }
+}, { immediate: false });
+
 onMounted(() => {
   initForm();
   loadTransactions();
+});
+
+// Clean up state when component is destroyed
+onUnmounted(() => {
+  // Clear any error states
+  error.value = null;
+  showAddTransactionModal.value = false;
+  
+  // Clear transactions store to prevent state leakage
+  store.dispatch('transactions/resetState');
 });
 </script>

@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const logController = require('../controllers/logController');
 
-router.get('/', logController.getLatestLogs);
-router.post('/', logController.createLog);
-router.post('/batch', logController.createBatchLogs);
+router.use((req, res) => {
+  res.status(410).json({
+    success: false,
+    message: 'Frontend logging endpoints have been disabled.'
+  });
+});
 
 module.exports = router;

@@ -1,23 +1,20 @@
 <template>
   <button
     type="button"
-    class="group relative flex w-full items-center justify-center overflow-hidden rounded-xl border border-blue-400/80 bg-white/95 px-5 py-3 text-sm font-semibold text-gray-800 shadow-sm transition-all duration-300 hover:-translate-y-[1px] hover:border-blue-500 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+    class="gsi-material-button"
     :disabled="props.disabled || isLoading"
     :aria-busy="isLoading"
     @click="handleClick"
   >
-    <span class="pointer-events-none absolute inset-0 bg-gradient-to-r from-blue-50/70 via-transparent to-blue-100/60 opacity-0 transition-opacity duration-300 group-hover:opacity-100"></span>
-    <span class="relative flex items-center gap-3">
-      <span class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500 text-white shadow-inner ring-4 ring-blue-100 transition-transform duration-300 group-hover:scale-105">
-        <Icon icon="mdi:google" class="h-5 w-5" />
+    <div class="gsi-material-button-state"></div>
+    <div class="gsi-material-button-content-wrapper">
+      <div class="gsi-material-button-icon">
+        <Icon icon="logos:google-icon" class="h-5 w-5" />
+      </div>
+      <span class="gsi-material-button-contents" aria-live="polite">
+        {{ isLoading ? 'Connecting to Google...' : 'Continue with Google' }}
       </span>
-      <span class="flex flex-col text-left leading-tight">
-        <span class="text-base font-semibold">
-          {{ isLoading ? 'Connecting to Google...' : 'Continue with Google' }}
-        </span>
-        <span class="text-xs font-medium text-gray-500">Secure Google sign-in</span>
-      </span>
-    </span>
+    </div>
   </button>
 </template>
 
@@ -105,4 +102,103 @@ const handleClick = async () => {
   }
 }
 </script>
+
+<style scoped>
+.gsi-material-button {
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  -webkit-appearance: none;
+  background-color: #fff;
+  background-image: none;
+  border: 1px solid #747775;
+  border-radius: 4px;
+  box-sizing: border-box;
+  color: #1f1f1f;
+  cursor: pointer;
+  font-family: 'Roboto', Arial, sans-serif;
+  font-size: 14px;
+  height: 44px;
+  letter-spacing: 0.25px;
+  outline: none;
+  overflow: hidden;
+  padding: 0 12px;
+  position: relative;
+  text-align: center;
+  transition: background-color 0.218s, border-color 0.218s, box-shadow 0.218s, transform 0.218s;
+  vertical-align: middle;
+  white-space: nowrap;
+  width: 100%;
+  max-width: 400px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gsi-material-button .gsi-material-button-icon {
+  height: 20px;
+  margin-right: 12px;
+  min-width: 20px;
+  width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gsi-material-button .gsi-material-button-content-wrapper {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  height: 100%;
+  justify-content: center;
+  position: relative;
+  width: 100%;
+}
+
+.gsi-material-button .gsi-material-button-contents {
+  flex-grow: 1;
+  font-family: 'Roboto', Arial, sans-serif;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gsi-material-button .gsi-material-button-state {
+  transition: opacity 0.218s;
+  bottom: 0;
+  left: 0;
+  opacity: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.gsi-material-button:disabled {
+  cursor: not-allowed;
+  background-color: #ffffff61;
+  border-color: #1f1f1f1f;
+}
+
+.gsi-material-button:disabled .gsi-material-button-contents,
+.gsi-material-button:disabled .gsi-material-button-icon {
+  opacity: 0.38;
+}
+
+.gsi-material-button:not(:disabled):active .gsi-material-button-state,
+.gsi-material-button:not(:disabled):focus .gsi-material-button-state {
+  background-color: #303030;
+  opacity: 0.12;
+}
+
+.gsi-material-button:not(:disabled):hover {
+  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+  transform: translateY(-1px);
+}
+
+.gsi-material-button:not(:disabled):hover .gsi-material-button-state {
+  background-color: #303030;
+  opacity: 0.08;
+}
+</style>
 

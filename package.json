@@ -1,6 +1,25 @@
 {
+  "name": "brewtokens",
+  "version": "1.0.0",
+  "description": "A reward program for breweries to use with their customers.  The customers can earn points by buying beer among other special events and methods that the brewery management can decide on.",
+  "homepage": "https://github.com/nickdi2000/brew#readme",
+  "bugs": {
+    "url": "https://github.com/nickdi2000/brew/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://nickdi2000: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@github.com/nickdi2000/brew.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
   "dependencies": {
     "@chenfengyuan/vue-qrcode": "^2.0.0",
     "vue-qrcode": "^2.2.2"
-  }
+  },
+  "devDependencies": {}
 }

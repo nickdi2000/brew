@@ -52,6 +52,10 @@ const fetchMembershipByOrg = async ({ organizationId, organizationCode }) => {
       return response.data?.data || null;
     } catch (error) {
       console.warn('Failed to load membership by code', error);
+      if (error.response?.status === 404) {
+        return null;
+      }
+      throw error;
     }
   }
 
@@ -82,13 +86,19 @@ const resolveMembershipData = async ({ membership, organizationId, organizationC
 
 export default {
   namespaced: true,
-  
+
   state: () => ({
     user: getStoredMemberUser(),
     token: localStorage.getItem(MEMBER_STORAGE_KEYS.token) || null,
     refreshToken: localStorage.getItem(MEMBER_STORAGE_KEYS.refreshToken) || null,
     refreshTokenExpiresAt: localStorage.getItem(MEMBER_STORAGE_KEYS.refreshTokenExpiresAt) || null,
     membership: getStoredMembership(),
+    // Store all memberships so a member can switch organizations
+    memberships: [],
+    // Track which organization is currently active
+    selectedOrganizationId: localStorage.getItem('memberSelectedOrgId') || null,
+    // Track loading state specific to organization switching to prevent duplicate requests
+    organizationLoading: false,
     loading: false,
     error: null
   }),
@@ -132,15 +142,30 @@ export default {
         ...membership,
         recentTransactions: membership?.recentTransactions || []
       } : null;
-      
+
       state.membership = membershipData;
-      
+
       // Persist to localStorage
       if (membershipData) {
         localStorage.setItem(MEMBER_STORAGE_KEYS.membership, JSON.stringify(membershipData));
       } else {
         localStorage.removeItem(MEMBER_STORAGE_KEYS.membership);
       }
+    },
+    SET_MEMBERSHIPS(state, memberships) {
+      state.memberships = Array.isArray(memberships) ? memberships : [];
+    },
+    SET_SELECTED_ORGANIZATION(state, organizationId) {
+      state.selectedOrganizationId = organizationId || null;
+      if (organizationId) {
+        // Persist the selection so the member returns to the same org on refresh
+        localStorage.setItem('memberSelectedOrgId', organizationId);
+      } else {
+        localStorage.removeItem('memberSelectedOrgId');
+      }
+    },
+    SET_ORGANIZATION_LOADING(state, loading) {
+      state.organizationLoading = loading;
     },
     UPDATE_MEMBERSHIP_POINTS(state, points) {
       if (state.membership) {
@@ -159,6 +184,9 @@ export default {
       state.refreshToken = null;
       state.refreshTokenExpiresAt = null;
       state.membership = null;
+      state.memberships = [];
+      state.selectedOrganizationId = null;
+      state.organizationLoading = false;
       state.loading = false;
       state.error = null;
       localStorage.removeItem(MEMBER_STORAGE_KEYS.token);
@@ -166,15 +194,17 @@ export default {
       localStorage.removeItem(MEMBER_STORAGE_KEYS.refreshTokenExpiresAt);
       localStorage.removeItem(MEMBER_STORAGE_KEYS.user);
       localStorage.removeItem(MEMBER_STORAGE_KEYS.membership);
+      localStorage.removeItem('memberSelectedOrgId');
+      // Note: last member code is owned by the root store and intentionally preserved
     }
   },
 
   actions: {
-    async handleGoogleLogin({ commit }, { credential, code }) {
+    async handleGoogleLogin({ commit, state }, { credential, code }) {
       try {
         commit('SET_LOADING', true);
         commit('SET_ERROR', null);
-        
+
         const response = await googleLogin(credential, code);
         console.log('🔐 Auth response:', {
           hasData: !!response?.data,
@@ -200,7 +230,7 @@ export default {
 
         commit('SET_TOKEN', data.token);
         commit('SET_USER', data.user);
-        
+
         // Store refresh token if provided
         if (data.refreshToken) {
           commit('SET_REFRESH_TOKEN', data.refreshToken);
@@ -208,11 +238,20 @@ export default {
         if (data.refreshTokenExpiresAt) {
           commit('SET_REFRESH_TOKEN_EXPIRES_AT', data.refreshTokenExpiresAt);
         }
-        
-        // Resolve membership data when not included in response
+
+        const memberships = Array.isArray(data.user?.memberships) ? data.user.memberships : [];
+        // Cache all memberships so the UI can show switch options even if we only hydrate one membership
+        commit('SET_MEMBERSHIPS', memberships);
+
+        const selectedOrgId = state.selectedOrganizationId;
+
         const membership = await resolveMembershipData({
           membership: data.membership,
-          organizationId: data.membership?.organization?._id || data.membership?.organization,
+          organizationId: selectedOrgId
+            || data.membership?.organization?._id
+            || data.membership?.organization
+            || memberships[0]?.organization?._id
+            || memberships[0]?.organization,
           organizationCode: code,
           user: data.user
         });
@@ -223,7 +262,10 @@ export default {
 
         // Update module state
         commit('SET_MEMBERSHIP', membership);
-        
+        if (membership?.organization?._id || typeof membership?.organization === 'string') {
+          commit('SET_SELECTED_ORGANIZATION', membership.organization._id || membership.organization);
+        }
+
         return {
           user: data.user,
           membership
@@ -241,7 +283,7 @@ export default {
       }
     },
 
-    async handleDemoLogin({ commit }, { code }) {
+    async handleDemoLogin({ commit, state }, { code }) {
       try {
         commit('SET_LOADING', true);
         commit('SET_ERROR', null);
@@ -264,7 +306,7 @@ export default {
 
         commit('SET_TOKEN', data.token);
         commit('SET_USER', data.user);
-        
+
         // Store refresh token if provided
         if (data.refreshToken) {
           commit('SET_REFRESH_TOKEN', data.refreshToken);
@@ -272,10 +314,20 @@ export default {
         if (data.refreshTokenExpiresAt) {
           commit('SET_REFRESH_TOKEN_EXPIRES_AT', data.refreshTokenExpiresAt);
         }
-        
+
+        const memberships = Array.isArray(data.user?.memberships) ? data.user.memberships : [];
+        // Cache all memberships so the UI can show switch options even if we only hydrate one membership
+        commit('SET_MEMBERSHIPS', memberships);
+
+        const selectedOrgId = state.selectedOrganizationId;
+
         const membership = await resolveMembershipData({
           membership: data.membership,
-          organizationId: data.membership?.organization?._id || data.membership?.organization,
+          organizationId: selectedOrgId
+            || data.membership?.organization?._id
+            || data.membership?.organization
+            || memberships[0]?.organization?._id
+            || memberships[0]?.organization,
           organizationCode: code,
           user: data.user
         });
@@ -285,6 +337,9 @@ export default {
         }
 
         commit('SET_MEMBERSHIP', membership);
+        if (membership?.organization?._id || typeof membership?.organization === 'string') {
+          commit('SET_SELECTED_ORGANIZATION', membership.organization._id || membership.organization);
+        }
         commit('SET_DEMO_SESSION', true, { root: true });
 
         return {
@@ -337,6 +392,9 @@ export default {
 
       if (resolvedMembership) {
         commit('SET_MEMBERSHIP', resolvedMembership);
+        if (resolvedMembership?.organization?._id || typeof resolvedMembership?.organization === 'string') {
+          commit('SET_SELECTED_ORGANIZATION', resolvedMembership.organization._id || resolvedMembership.organization);
+        }
       }
 
       return resolvedMembership;
@@ -347,10 +405,21 @@ export default {
         const response = await getCurrentUser();
         console.log('🔄 Refresh user data response:', response.data);
         const { user } = response.data;
-        
+
         commit('SET_USER', user);
 
-        const fallbackOrgId = user.organization?._id || user.organization;
+        const memberships = Array.isArray(user?.memberships) ? user.memberships : [];
+        commit('SET_MEMBERSHIPS', memberships);
+
+        const fallbackOrgId = state.selectedOrganizationId
+          || state.membership?.organization?._id
+          || state.membership?.organization
+          || memberships[0]?.organization?._id
+          || memberships[0]?.organization
+          || user.organization?._id
+          || user.organization;
+        // Prefer the explicitly selected organization. Fallbacks ensure backward compatibility with legacy backend responses.
+
         const membership = await resolveMembershipData({
           membership: null,
           organizationId: fallbackOrgId,
@@ -359,14 +428,82 @@ export default {
 
         if (membership) {
           commit('SET_MEMBERSHIP', membership);
+          if (membership?.organization?._id || typeof membership?.organization === 'string') {
+            commit('SET_SELECTED_ORGANIZATION', membership.organization._id || membership.organization);
+          }
         } else {
           console.warn('⚠️ No memberships found in response');
           commit('SET_MEMBERSHIP', null);
         }
-        
+
         return response.data;
       } catch (error) {
         console.error('❌ Failed to refresh user data:', error);
+        throw error;
+      }
+    },
+
+    async switchOrganization({ commit, dispatch, state }, organizationId) {
+      if (!organizationId || state.organizationLoading) {
+        return null;
+      }
+
+      commit('SET_ORGANIZATION_LOADING', true);
+      commit('SET_SELECTED_ORGANIZATION', organizationId);
+
+      try {
+        const membership = await fetchMembershipByOrg({ organizationId });
+        if (membership) {
+          commit('SET_MEMBERSHIP', membership);
+          return membership;
+        }
+
+        const resolvedMembership = await dispatch('fetchMembershipForCode', { code: null, organizationId });
+        if (resolvedMembership) {
+          return resolvedMembership;
+        }
+
+        commit('SET_MEMBERSHIP', null);
+        return null;
+      } catch (error) {
+        console.error('Error switching organization:', error);
+        throw error;
+      } finally {
+        commit('SET_ORGANIZATION_LOADING', false);
+      }
+    },
+
+    async refreshCurrentMembership({ commit, state }) {
+      try {
+        if (!state.membership?.organization) {
+          console.warn('[Auth] No current membership to refresh');
+          return null;
+        }
+
+        const organizationId = state.membership.organization._id || state.membership.organization;
+        
+        console.info('[Auth] Refreshing current membership', {
+          membershipId: state.membership._id,
+          organizationId
+        });
+
+        const refreshedMembership = await fetchMembershipByOrg({ organizationId });
+        
+        if (refreshedMembership) {
+          console.info('[Auth] Membership refreshed successfully', {
+            previousPoints: state.membership?.points,
+            newPoints: refreshedMembership.points,
+            membershipId: refreshedMembership._id
+          });
+          
+          commit('SET_MEMBERSHIP', refreshedMembership);
+          return refreshedMembership;
+        }
+
+        console.warn('[Auth] Failed to refresh membership - not found');
+        return state.membership;
+      } catch (error) {
+        console.error('[Auth] Error refreshing membership:', error);
         throw error;
       }
     }
@@ -379,6 +516,9 @@ export default {
     refreshTokenExpiresAt: state => state.refreshTokenExpiresAt,
     currentUser: state => state.user,
     currentMembership: state => state.membership,
+    memberships: state => state.memberships,
+    selectedOrganizationId: state => state.selectedOrganizationId,
+    isOrganizationLoading: state => state.organizationLoading,
     isLoading: state => state.loading,
     error: state => state.error
   }

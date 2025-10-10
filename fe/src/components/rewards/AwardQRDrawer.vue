@@ -213,7 +213,7 @@ watch(() => props.qrCode, (newQrCode) => {
     };
   } else {
     formData.value = {
-      points: 1,
+      points: 100,
       isActive: true,
       code: ''
     };

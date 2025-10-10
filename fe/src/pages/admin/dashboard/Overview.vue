@@ -16,8 +16,10 @@
           :icon-color="stat.iconColor"
           :loading="loading"
           :error="error"
+          :clickable="stat.id === 'totalMembers'"
           class="hover:border-primary-300 hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 animate-fade-slide-up"
           :style="{ animationDelay: stat.animationDelay }"
+          @click="handleStatClick(stat)"
         />
       </div>
 
@@ -109,12 +111,14 @@
 <script setup>
 import { computed, onMounted, ref, watch } from 'vue'
 import { useStore } from 'vuex'
+import { useRouter } from 'vue-router'
 import { Icon } from '@iconify/vue'
 import StatsCard from '../../../components/dashboard/StatsCard.vue'
 import { useToast } from '../../../plugins/toast'
 import QRComponent from '../../../components/QRComponent.vue'
 
 const store = useStore()
+const router = useRouter()
 const toast = useToast()
 
 const stats = computed(() => store.getters['organization/stats'] ?? [])
@@ -190,6 +194,12 @@ const closeAwardSheet = () => {
 
 const selectAwardCode = (index) => {
   selectedAwardIndex.value = index
+}
+
+const handleStatClick = (stat) => {
+  if (stat.id === 'totalMembers') {
+    router.push({ name: 'members' })
+  }
 }
 
 function getDefaultStats() {

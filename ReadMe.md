@@ -15,3 +15,37 @@ Perks for brewery
 Partnership with TriviaRat
 if you already have a triviarat account, BrewTokens is free to use!
 image: fe/src/images/triviarat-logo.png
+
+
+POSTMARK SAMPLE:
+npm install postmark --save
+
+// Require:
+var postmark = require("postmark");
+
+// Send an email:
+var client = new postmark.ServerClient("cfcf1784-ebb9-43b1-abd1-dcc823c803e6");
+
+client.sendEmailWithTemplate({
+  "From": "contact@brewtokens.com",
+  "To": "client@gmail.com",
+  "TemplateAlias": "welcome-magic",
+  "TemplateModel": {
+    "product_url": "product_url_Value",
+    "product_name": "product_name_Value",
+    "name": "name_Value",
+    "magic_login_url": "magic_login_url_Value",
+    "support_email": "support_email_Value",
+    "help_url": "help_url_Value",
+    "live_chat_url": "live_chat_url_Value",
+    "sender_name": "sender_name_Value",
+    "company_name": "company_name_Value",
+    "company_address": "company_address_Value",
+    "action_url": "action_url_Value",
+    "login_url": "login_url_Value",
+    "username": "username_Value",
+    "trial_length": "trial_length_Value",
+    "trial_start_date": "trial_start_date_Value",
+    "trial_end_date": "trial_end_date_Value"
+  }
+});

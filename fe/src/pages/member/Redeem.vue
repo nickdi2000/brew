@@ -353,15 +353,44 @@ const updateTimeElapsed = () => {
 const redeemReward = async () => {
   if (!reward.value || !canRedeem.value || isRedeeming.value) return;
 
+  // Store initial state for potential rollback
+  const initialPoints = membership.value?.points ?? 0;
+  const initialMembershipState = { ...membership.value };
+
   try {
     isRedeeming.value = true;
-    await rewardsApi.redeemReward(reward.value._id, membership.value?.id);
+    
+    console.info('[Redeem] Starting reward redemption', {
+      rewardId: reward.value._id,
+      rewardName: reward.value.name,
+      pointsCost: reward.value.pointsCost,
+      currentPoints: initialPoints,
+      membershipId: membership.value?.id
+    });
 
-    // Update points in Vuex store
-    const newPoints = (membership.value?.points ?? 0) - reward.value.pointsCost;
-    store.commit('auth/UPDATE_MEMBERSHIP_POINTS', newPoints);
+    // Call backend API - this now uses transactionService with proper validation
+    const response = await rewardsApi.redeemReward(reward.value._id, membership.value?.id);
+    
+    console.info('[Redeem] Redemption API call successful', {
+      response,
+      rewardId: reward.value._id
+    });
 
-    // Show success state
+    // Refetch membership data to get the accurate, server-calculated balance
+    // This ensures we have the most up-to-date points from the transaction system
+    await store.dispatch('auth/refreshCurrentMembership');
+    
+    const updatedMembership = store.getters['auth/currentMembership'];
+    const newBalance = updatedMembership?.points ?? 0;
+    
+    console.info('[Redeem] Membership refreshed after redemption', {
+      previousPoints: initialPoints,
+      newPoints: newBalance,
+      expectedDeduction: reward.value.pointsCost,
+      actualDeduction: initialPoints - newBalance
+    });
+
+    // Show success state only after confirming the backend operation succeeded
     redemptionSuccess.value = true;
     redemptionTime.value = new Date();
     
@@ -370,9 +399,43 @@ const redeemReward = async () => {
     timerInterval = window.setInterval(updateTimeElapsed, 1000);
     
     toast('Reward redeemed successfully!', 'success');
+    
   } catch (err) {
-    toast('Failed to redeem reward. Please try again.', 'error');
-    console.error('Error redeeming reward:', err);
+    console.error('[Redeem] Redemption failed', {
+      error: err.message,
+      stack: err.stack,
+      rewardId: reward.value?._id,
+      membershipId: membership.value?.id,
+      initialPoints
+    });
+    
+    // Ensure local state is consistent by refetching membership
+    // This handles cases where the request partially succeeded
+    try {
+      await store.dispatch('auth/refreshCurrentMembership');
+      console.info('[Redeem] Membership state recovered after error');
+    } catch (recoveryError) {
+      console.error('[Redeem] Failed to recover membership state', recoveryError);
+      // If recovery fails, we should probably show a more serious error
+    }
+    
+    // Show user-friendly error message based on error type
+    let errorMessage = 'Failed to redeem reward. Please try again.';
+    
+    if (err.message?.includes('Insufficient points')) {
+      errorMessage = 'You do not have enough points for this reward.';
+    } else if (err.message?.includes('out of stock')) {
+      errorMessage = 'This reward is currently out of stock.';
+    } else if (err.message?.includes('expired')) {
+      errorMessage = 'This reward has expired.';
+    } else if (err.message?.includes('not available')) {
+      errorMessage = 'This reward is currently not available.';
+    } else if (err.message?.includes('not found')) {
+      errorMessage = 'This reward could not be found.';
+    }
+    
+    toast(errorMessage, 'error');
+    
   } finally {
     isRedeeming.value = false;
   }

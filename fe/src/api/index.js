@@ -372,6 +372,14 @@ const getOrganization = async () => {
   console.log('📦 Organization API Response:', response.data);
   return response;
 };
+const getSuperOrganizations = async (passcode) => {
+  const response = await api.get('/super/organizations', {
+    headers: {
+      'X-Super-Passcode': passcode
+    }
+  });
+  return response.data;
+};
 const getOrganizationByCode = (code) => api.get(`/organization/by-code/${code}`);
 const updateOrganization = (data) => api.put('/organization', data);
 const uploadOrganizationBanner = (imageData) => {
@@ -571,4 +579,5 @@ export {
   createAwardQRCode,
   updateAwardQRCode,
   deleteAwardQRCode,
+  getSuperOrganizations,
 };

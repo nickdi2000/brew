@@ -172,7 +172,9 @@
                     :icon="canRedeem(reward) ? 'mdi:gift' : 'mdi:lock'" 
                     class="h-5 w-5"
                   />
-                  <span v-if="!reward.isAvailable">Currently Unavailable</span>
+                  <span v-if="!reward.isActive">Currently Unavailable</span>
+                  <span v-else-if="reward.isExpired || (reward.expiresAt && new Date(reward.expiresAt) <= new Date())">Expired</span>
+                  <span v-else-if="reward.isOutOfStock || (typeof reward.quantity === 'number' && reward.quantity <= 0)">Out of Stock</span>
                   <span v-else-if="(membership?.points ?? 0) < reward.pointsCost">
                     Need {{ reward.pointsCost - (membership?.points ?? 0) }} More Points
                   </span>
@@ -281,22 +283,20 @@ const getRewardIcon = (reward: Reward): string => {
 
 const canRedeem = (reward: Reward): boolean => {
   const points = membership.value?.points ?? 0;
-  return (
-    reward.isAvailable &&
-    points >= reward.pointsCost &&
-    (!reward.quantity || reward.quantity > 0) &&
-    (!reward.expiresAt || new Date(reward.expiresAt) > new Date())
-  );
+  const quantityAvailable = reward.quantity === null || reward.quantity > 0;
+  const notExpired = !reward.expiresAt || new Date(reward.expiresAt) > new Date();
+
+  return reward.isActive && quantityAvailable && notExpired && points >= reward.pointsCost;
 };
 
 const getRewardButtonText = (reward: Reward): string => {
-  if (!reward.isAvailable) {
+  if (!reward.isActive) {
     return 'Unavailable';
   }
-  if (reward.isExpired) {
+  if (reward.isExpired || (reward.expiresAt && new Date(reward.expiresAt) <= new Date())) {
     return 'Expired';
   }
-  if (reward.isOutOfStock) {
+  if (reward.isOutOfStock || (typeof reward.quantity === 'number' && reward.quantity <= 0)) {
     return 'Out of Stock';
   }
   if ((membership.value?.points ?? 0) < reward.pointsCost) {

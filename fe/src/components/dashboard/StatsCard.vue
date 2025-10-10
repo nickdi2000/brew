@@ -1,5 +1,9 @@
 <template>
-  <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4 sm:p-6">
+  <div 
+    class="bg-white rounded-lg shadow-sm border border-gray-100 p-4 sm:p-6"
+    :class="{ 'cursor-pointer transition-all duration-200 hover:shadow-md hover:border-gray-200': clickable }"
+    @click="handleClick"
+  >
     <div class="flex items-center justify-between gap-3">
       <div :class="iconWrapperClass">
         <Icon :icon="icon" class="h-5 w-5 sm:h-6 sm:w-6" :class="iconColorClass" />
@@ -54,6 +58,10 @@ const props = defineProps({
   error: {
     type: String,
     default: ''
+  },
+  clickable: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -78,5 +86,13 @@ const iconWrapperClass = computed(() => [
 const iconColorClass = computed(() => props.iconColor || 'text-amber-500')
 
 const showError = computed(() => !props.loading && Boolean(props.error))
+
+const emit = defineEmits(['click'])
+
+const handleClick = () => {
+  if (props.clickable) {
+    emit('click')
+  }
+}
 </script>
 

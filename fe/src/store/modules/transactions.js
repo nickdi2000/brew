@@ -25,6 +25,12 @@ export default {
     },
     SET_BALANCE(state, balance) {
       state.currentBalance = balance;
+    },
+    RESET_STATE(state) {
+      state.transactions = [];
+      state.loading = false;
+      state.error = null;
+      state.currentBalance = 0;
     }
   },
 
@@ -42,6 +48,10 @@ export default {
       } finally {
         commit('SET_LOADING', false);
       }
+    },
+
+    resetState({ commit }) {
+      commit('RESET_STATE');
     },
 
     async createTransaction({ commit }, { memberId, transactionData }) {

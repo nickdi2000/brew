@@ -5,7 +5,6 @@ const cors = require('cors');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
-const logger = require('./utils/logger');
 const userRoutes = require('./routes/userRoutes');
 const waitlistRoutes = require('./routes/waitlistRoutes');
 const authRoutes = require('./routes/authRoutes');
@@ -13,12 +12,12 @@ const googleAuthRoutes = require('./routes/googleAuthRoutes');
 const organizationRoutes = require('./routes/organizationRoutes');
 const rewardRoutes = require('./routes/rewardRoutes');
 const qrCodeRoutes = require('./routes/qrCodeRoutes');
-const logRoutes = require('./routes/logRoutes');
 const memberRoutes = require('./routes/memberRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const transactionRoutes = require('./routes/transactionRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 const healthRoutes = require('./routes/healthRoutes');
+const superRoutes = require('./routes/superRoutes');
 
 // Import models to ensure they are registered with Mongoose
 require('./models/Organization');
@@ -39,14 +38,26 @@ app.use(express.json());
 app.use((req, res, next) => {
   const start = Date.now();
   
-  // Log the incoming request
-  logger.logRequest(req);
+  console.info('Incoming request', {
+    method: req.method,
+    url: req.originalUrl,
+    params: req.params,
+    query: req.query,
+    ip: req.ip,
+    userId: req.user?._id
+  });
 
   // Override res.json to capture and log the response
   const originalJson = res.json;
   res.json = function(body) {
     const responseTime = Date.now() - start;
-    logger.logResponse(req, res, body, { responseTime });
+    console.info('Response sent', {
+      method: req.method,
+      url: req.originalUrl,
+      statusCode: res.statusCode,
+      responseTime,
+      hasBody: Boolean(body)
+    });
     return originalJson.call(this, body);
   };
 
@@ -66,27 +77,27 @@ app.use('/api/auth', googleAuthRoutes);
 app.use('/api/organization', organizationRoutes);
 app.use('/api/rewards', rewardRoutes);
 app.use('/api/qr-codes', qrCodeRoutes);
-app.use('/api/log', logRoutes);
 app.use('/api/memberships', memberRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/health', healthRoutes);
+app.use('/api/super', superRoutes);
 
 // MongoDB Connection
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URL);
-    logger.info('MongoDB connected successfully');
+    console.info('MongoDB connected successfully');
   } catch (error) {
-    logger.error('MongoDB connection error:', { error: error.message, stack: error.stack });
+    console.error('MongoDB connection error:', { error: error.message, stack: error.stack });
     process.exit(1);
   }
 };
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  logger.error('Unhandled error:', {
+  console.error('Unhandled error:', {
     error: err.message,
     stack: err.stack,
     url: req.url,
@@ -117,20 +128,20 @@ const startServer = async () => {
         };
         
         https.createServer(httpsOptions, app).listen(PORT, () => {
-          logger.info(`HTTPS Server is running on port ${PORT}`);
+          console.info(`HTTPS Server is running on port ${PORT}`);
         });
       } else {
-        logger.error('SSL certificate files not found. Please ensure localhost.key and localhost.crt exist in the ssl/ directory.');
+        console.error('SSL certificate files not found. Please ensure localhost.key and localhost.crt exist in the ssl/ directory.');
         process.exit(1);
       }
     } else {
       // HTTP server (fallback)
       app.listen(PORT, () => {
-        logger.info(`HTTP Server is running on port ${PORT}`);
+        console.info(`HTTP Server is running on port ${PORT}`);
       });
     }
   } catch (error) {
-    logger.error('Failed to start server:', { error: error.message, stack: error.stack });
+    console.error('Failed to start server:', { error: error.message, stack: error.stack });
     process.exit(1);
   }
 };

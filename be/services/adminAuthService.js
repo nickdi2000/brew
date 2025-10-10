@@ -101,7 +101,7 @@ const createDefaultReward = async (organizationId, organizationName) => {
       description: 'Redeem 1000 points for a free drink reward!',
       pointsCost: 1000,
       type: 'product',
-      imageUrl: 'https://brewtokens.com/images/beer.jpg',
+      imageUrl: 'https://brewtokens.com/images/brewery-beers-coins.png',
       isActive: true,
       organizationId,
       redemptionInstructions: 'Show this reward to the staff to redeem.',

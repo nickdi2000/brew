@@ -53,7 +53,7 @@
               <div class="flex-1 min-w-0">
                 <h2 class="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">Portal Access QR Code</h2>
                 <p class="text-gray-600 leading-relaxed text-sm sm:text-base">
-                  This public QR code serves as your brewery's universal access point. Members can use it to log in to their accounts, and new customers can scan it to register - making it perfect for display at your venue.
+                  This public QR code serves as your venue's universal access point. Members can use it to log in to their accounts, and new customers can scan it to register.  Note that the 'rewards' qr code can also be used to register/sign-up as well, but this code excludes the ability to self-reward points, making it more suitable to display somewhere like a wall in your venue (away from the cash register).
                 </p>
               </div>
               <div v-if="organization?.code" class="flex flex-col sm:flex-row gap-2 sm:gap-3 flex-shrink-0">

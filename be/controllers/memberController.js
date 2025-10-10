@@ -1,5 +1,6 @@
 const Organization = require('../models/Organization');
 const Member = require('../models/Member');
+const transactionService = require('../services/transactionService');
 const { formatResponse, formatError } = require('../utils/responseFormatter');
 
 // Get all members for the organization
@@ -54,14 +55,41 @@ exports.getMembers = async (req, res) => {
       Member.countDocuments(query)
     ]);
 
-    const formattedMembers = members.map(member => ({
+    // Extract organization ID properly (handle both object and string cases)
+    let organizationId;
+    if (typeof user.organization === 'string') {
+      organizationId = user.organization;
+    } else if (user.organization?._id) {
+      // Handle case where _id might be an ObjectId object
+      organizationId = String(user.organization._id);
+    } else {
+      console.error('[getMembers] Cannot extract organization ID from:', user.organization);
+      return res.status(400).json(formatError('Invalid organization context'));
+    }
+    
+    // Get transaction-based point balances for all members for consistency
+    const memberBalances = await Promise.all(
+      members.map(member => 
+        transactionService.getBalance(member._id, organizationId)
+          .catch(err => {
+            console.warn('Failed to get balance for member', {
+              memberId: member._id,
+              organizationId,
+              error: err.message
+            });
+            return 0; // Fallback to 0 if balance calculation fails
+          })
+      )
+    );
+
+    const formattedMembers = members.map((member, index) => ({
       _id: member._id,
       firstName: member.firstName || '',
       lastName: member.lastName || '',
       email: member.user?.email || '',
       status: member.status || 'inactive',
       membershipLevel: member.membershipLevel || 'bronze',
-      points: member.points || 0,
+      points: memberBalances[index], // Use transaction-calculated balance
       lastVisit: member.lastVisit || null
     }));
 
@@ -97,6 +125,32 @@ exports.getMemberById = async (req, res) => {
       return res.status(404).json(formatError('Member not found'));
     }
 
+    // Extract organization ID properly (handle both object and string cases)
+    console.log('[DEBUG] user.organization structure:', {
+      organization: user.organization,
+      type: typeof user.organization,
+      hasId: !!user.organization?._id,
+      id: user.organization?._id,
+      isString: typeof user.organization === 'string'
+    });
+    
+    // Robust organization ID extraction that handles ObjectId objects
+    let organizationId;
+    if (typeof user.organization === 'string') {
+      organizationId = user.organization;
+    } else if (user.organization?._id) {
+      // Handle case where _id might be an ObjectId object
+      organizationId = String(user.organization._id);
+    } else {
+      console.error('[DEBUG] Cannot extract organization ID from:', user.organization);
+      return res.status(400).json(formatError('Invalid organization context'));
+    }
+    
+    console.log('[DEBUG] extracted organizationId:', organizationId, 'type:', typeof organizationId);
+    
+    // Get transaction-based balance for consistency
+    const currentBalance = await transactionService.getBalance(member._id, organizationId);
+
     return res.json(formatResponse({
       data: {
         _id: member._id,
@@ -105,7 +159,7 @@ exports.getMemberById = async (req, res) => {
         email: member.user.email,
         status: member.status,
         membershipLevel: member.membershipLevel,
-        points: member.points,
+        points: currentBalance, // Use transaction-calculated balance
         lastVisit: member.lastVisit
       },
       message: 'Member retrieved successfully'
@@ -258,15 +312,21 @@ exports.updateMemberStatus = async (req, res) => {
   }
 };
 
-// Update member points
+// Update member points - Uses transactionService for consistency and audit trail
 exports.updateMemberPoints = async (req, res) => {
   try {
     const { id } = req.params;
     const { points, operation = 'add' } = req.body;
     const user = req.user;
 
+    // Defensive validation
     if (!user?.organization) {
+      console.warn('[Member] Missing organization context for points update', { user });
       return res.status(400).json(formatError('User must be associated with an organization'));
+    }
+
+    if (!id) {
+      return res.status(400).json(formatError('Member ID is required'));
     }
 
     if (typeof points !== 'number' || points < 0) {
@@ -274,43 +334,131 @@ exports.updateMemberPoints = async (req, res) => {
     }
 
     if (!['add', 'subtract', 'set'].includes(operation)) {
-      return res.status(400).json(formatError('Invalid operation'));
+      return res.status(400).json(formatError('Invalid operation. Must be: add, subtract, or set'));
     }
 
-    let updateQuery;
-    if (operation === 'add') {
-      updateQuery = { $inc: { points } };
-    } else if (operation === 'subtract') {
-      updateQuery = { $inc: { points: -points } };
-    } else {
-      updateQuery = { $set: { points } };
-    }
-
-    const member = await Member.findOneAndUpdate(
-      { _id: id, organization: user.organization },
-      updateQuery,
-      { new: true }
-    ).populate('user', 'email');
+    // Verify member exists in organization
+    const member = await Member.findOne({
+      _id: id,
+      organization: user.organization
+    }).populate('user', 'email');
 
     if (!member) {
+      console.warn('[Member] Member not found for points update', {
+        memberId: id,
+        organizationId: user.organization
+      });
       return res.status(404).json(formatError('Member not found'));
     }
 
-    // Ensure points don't go negative
-    if (member.points < 0) {
-      member.points = 0;
-      await member.save();
+    // Extract organization ID properly (handle both object and string cases)
+    let organizationId;
+    if (typeof user.organization === 'string') {
+      organizationId = user.organization;
+    } else if (user.organization?._id) {
+      // Handle case where _id might be an ObjectId object
+      organizationId = String(user.organization._id);
+    } else {
+      console.error('[updateMemberPoints] Cannot extract organization ID from:', user.organization);
+      return res.status(400).json(formatError('Invalid organization context'));
     }
+
+    // Get current balance using transaction aggregation
+    const currentBalance = await transactionService.getBalance(id, organizationId);
+    
+    let transactionAmount;
+    let transactionType;
+    
+    if (operation === 'add') {
+      transactionAmount = points;
+      transactionType = 'adjust';
+    } else if (operation === 'subtract') {
+      transactionAmount = -points;
+      transactionType = 'adjust';
+      // Prevent negative balances
+      if (currentBalance + transactionAmount < 0) {
+        return res.status(400).json(formatError(
+          `Insufficient points. Current balance: ${currentBalance}, attempted deduction: ${points}`
+        ));
+      }
+    } else { // operation === 'set'
+      transactionAmount = points - currentBalance;
+      transactionType = 'adjust';
+      // Prevent setting negative balances
+      if (points < 0) {
+        return res.status(400).json(formatError('Cannot set negative point balance'));
+      }
+    }
+
+    // Only create transaction if there's actually a change
+    if (transactionAmount === 0) {
+      return res.json(formatResponse({
+        data: {
+          _id: member._id,
+          points: currentBalance,
+          message: 'No change required'
+        },
+        message: 'Member points unchanged'
+      }));
+    }
+
+    console.info('[Member] Processing points update', {
+      memberId: id,
+      operation,
+      points,
+      currentBalance,
+      transactionAmount,
+      performedBy: user._id
+    });
+
+    // Create transaction for audit trail and consistency
+    await transactionService.accruePoints({
+      memberId: id,
+      organizationId: organizationId,
+      amount: transactionAmount,
+      type: transactionType,
+      method: 'manual',
+      performedBy: user._id,
+      metadata: {
+        operation,
+        requestedPoints: points,
+        previousBalance: currentBalance,
+        adminAction: true,
+        timestamp: new Date().toISOString()
+      }
+    });
+
+    // Get new balance after transaction
+    const newBalance = await transactionService.getBalance(id, organizationId);
+
+    console.info('[Member] Points updated successfully', {
+      memberId: id,
+      previousBalance: currentBalance,
+      newBalance,
+      transactionAmount,
+      performedBy: user._id
+    });
 
     return res.json(formatResponse({
       data: {
         _id: member._id,
-        points: member.points
+        points: newBalance,
+        previousPoints: currentBalance,
+        change: transactionAmount
       },
       message: 'Member points updated successfully'
     }));
+
   } catch (error) {
-    console.error('Error updating member points:', error);
+    console.error('[Member] Error updating member points:', {
+      error: error.message,
+      stack: error.stack,
+      memberId: req.params?.id,
+      operation: req.body?.operation,
+      points: req.body?.points,
+      organizationId: req.user?.organization,
+      performedBy: req.user?._id
+    });
     return res.status(500).json(formatError('Error updating member points', error.message));
   }
 };
@@ -348,7 +496,7 @@ exports.getMembershipByCode = async (req, res) => {
         organization: membership.organization,
         role: membership.role,
         status: membership.status,
-        points: membership.points,
+        points: await transactionService.getBalance(membership._id, organization._id),
         user: {
           email: membership.user?.email,
           picture: membership.user?.picture
@@ -394,16 +542,12 @@ exports.getMembershipByOrganization = async (req, res) => {
       return res.status(404).json(formatError('Membership not found for this organization'));
     }
 
-    // Get recent transactions for this membership (last 10 transactions)
-    const Transaction = require('../models/Transaction');
-    const recentTransactions = await Transaction.find({
-      member: membership._id,
-      organization: organizationId
-    })
-    .sort({ createdAt: -1 })
-    .limit(10)
-    .populate('reward', 'name')
-    .populate('performedBy', 'email');
+    const balance = await transactionService.getBalance(membership._id, organizationId);
+    const { transactions: recentTransactions } = await transactionService.listTransactions(
+      membership._id,
+      organizationId,
+      { limit: 10 }
+    );
 
     return res.json(formatResponse({
       data: {
@@ -411,25 +555,12 @@ exports.getMembershipByOrganization = async (req, res) => {
         organization: membership.organization,
         role: membership.role,
         status: membership.status,
-        points: membership.points,
+        points: balance,
         user: {
           email: membership.user?.email,
           picture: membership.user?.picture
         },
-        recentTransactions: recentTransactions.map(transaction => ({
-          _id: transaction._id,
-          amount: transaction.amount,
-          type: transaction.type,
-          method: transaction.method,
-          reward: transaction.reward ? {
-            name: transaction.reward.name
-          } : null,
-          performedBy: transaction.performedBy ? {
-            email: transaction.performedBy.email
-          } : null,
-          metadata: transaction.metadata,
-          createdAt: transaction.createdAt
-        })),
+        recentTransactions,
         createdAt: membership.createdAt,
         updatedAt: membership.updatedAt
       },

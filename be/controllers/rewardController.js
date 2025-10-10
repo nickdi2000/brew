@@ -2,7 +2,7 @@ const Reward = require('../models/Reward');
 const Transaction = require('../models/Transaction');
 const Member = require('../models/Member');
 const { formatResponse, formatError } = require('../utils/responseFormatter');
-const logger = require('../utils/logger');
+const transactionService = require('../services/transactionService');
 
 // Get rewards list with pagination and filters
 exports.getRewards = async (req, res) => {
@@ -66,7 +66,7 @@ exports.getRewards = async (req, res) => {
       message: 'Rewards retrieved successfully'
     }));
   } catch (error) {
-    logger.error('Get rewards error:', { error: error.message, stack: error.stack });
+    console.error('Get rewards error:', { error: error.message, stack: error.stack });
     res.status(500).json(formatError('Failed to retrieve rewards', error.message));
   }
 };
@@ -88,7 +88,7 @@ exports.getReward = async (req, res) => {
       message: 'Reward retrieved successfully'
     }));
   } catch (error) {
-    logger.error('Get reward error:', { error: error.message, stack: error.stack });
+    console.error('Get reward error:', { error: error.message, stack: error.stack });
     res.status(500).json(formatError('Failed to retrieve reward', error.message));
   }
 };
@@ -96,7 +96,7 @@ exports.getReward = async (req, res) => {
 // Create reward
 exports.createReward = async (req, res) => {
   try {
-    logger.info('Creating reward - Auth debug:', {
+    console.info('Creating reward - Auth debug:', {
       user: req.user,
       organizationId: req.user?.organizationId,
       headers: req.headers,
@@ -104,12 +104,12 @@ exports.createReward = async (req, res) => {
     });
 
     if (!req.user) {
-      logger.error('No user found in request');
+      console.error('No user found in request');
       return res.status(401).json(formatError('User not authenticated'));
     }
 
     if (!req.user.organizationId) {
-      logger.error('No organizationId found in user:', req.user);
+      console.error('No organizationId found in user:', req.user);
       return res.status(400).json(formatError('User has no organization ID'));
     }
 
@@ -118,162 +118,129 @@ exports.createReward = async (req, res) => {
       organizationId: req.user.organizationId
     });
 
-    logger.info('Attempting to save reward:', {
+    console.info('Attempting to save reward:', {
       rewardData: reward.toObject(),
       organizationId: reward.organizationId
     });
 
     await reward.save();
 
-    logger.info('Reward saved successfully:', reward.toObject());
+    console.info('Reward saved successfully:', reward.toObject());
 
     res.status(201).json(formatResponse({
       data: reward,
       message: 'Reward created successfully'
     }));
   } catch (error) {
-    logger.error('Create reward error:', { error: error.message, stack: error.stack });
+    console.error('Create reward error:', { error: error.message, stack: error.stack });
     res.status(500).json(formatError('Failed to create reward', error.message));
   }
 };
 
-// Redeem a reward
+// Redeem a reward - Uses transactionService for atomic, consistent operations
 exports.redeemReward = async (req, res) => {
   try {
+    // Defensive validation of required parameters
+    if (!req.params?.id) {
+      console.warn('[Rewards] Missing reward ID in redemption request');
+      return res.status(400).json(formatError('Reward ID is required'));
+    }
+
+    if (!req.user?.organizationId) {
+      console.warn('[Rewards] Missing organization context in redemption request', {
+        user: req.user,
+        headers: req.headers
+      });
+      return res.status(400).json(formatError('Organization context required'));
+    }
+
+    // Extract and validate membership ID
+    const membershipId = req.body?.membershipId || req.user?.membershipId;
+    if (!membershipId) {
+      console.warn('[Rewards] No membership ID available for redemption', {
+        requestBody: req.body,
+        userMembershipId: req.user?.membershipId
+      });
+      return res.status(400).json(formatError('Membership ID required for redemption'));
+    }
+
     // Diagnostic logging for incoming request context
-    logger.info('[Rewards] Redeem request received', {
-      path: req.originalUrl,
-      method: req.method,
-      params: req.params,
-      query: req.query,
-      headers: {
-        'x-organization-id': req.headers['x-organization-id'] || null,
-        'x-membership-id': req.headers['x-membership-id'] || null,
-        authorization: req.headers.authorization ? 'present' : 'absent'
-      },
-      resolvedUser: req.user
-        ? {
-            userId: req.user._id || null,
-            organizationId: req.user.organizationId || null,
-            membershipId: req.user.membershipId || null
-          }
-        : null
-    });
-    // Get the reward and verify it exists
-    const reward = await Reward.findOne({
-      _id: req.params.id,
-      organizationId: req.user.organizationId
+    console.info('[Rewards] Processing redemption request', {
+      rewardId: req.params.id,
+      membershipId,
+      organizationId: req.user.organizationId,
+      userId: req.user._id,
+      requestSource: req.body?.membershipId ? 'body' : 'user_context'
     });
 
-    if (!reward) {
-      logger.warn('[Rewards] Reward not found for redemption', {
-        rewardId: req.params.id,
-        organizationId: req.user.organizationId
-      });
-      return res.status(404).json(formatError('Reward not found'));
-    }
-
-    // Verify reward is available
-    if (!reward.isAvailable) {
-      logger.warn('[Rewards] Reward not available', {
-        rewardId: reward._id,
-        isActive: reward.isActive,
-        isExpired: reward.isExpired,
-        isOutOfStock: reward.isOutOfStock
-      });
-      return res.status(400).json(formatError('Reward is not available'));
-    }
-
-    // Check quantity if applicable
-    if (reward.quantity !== null && reward.quantity <= 0) {
-      logger.warn('[Rewards] Reward out of stock', {
-        rewardId: reward._id,
-        quantity: reward.quantity
-      });
-      return res.status(400).json(formatError('Reward is out of stock'));
-    }
-
-    // Check expiration if applicable
-    if (reward.expiresAt && new Date(reward.expiresAt) < new Date()) {
-      logger.warn('[Rewards] Reward expired', {
-        rewardId: reward._id,
-        expiresAt: reward.expiresAt
-      });
-      return res.status(400).json(formatError('Reward has expired'));
-    }
-
-    // Get current member points
-    const membershipId = req.body.membershipId || req.user.membershipId;
-    const membership = await Member.findOne({
-      _id: membershipId,
-      organization: req.user.organizationId
-    });
-
-    if (!membership) {
-      logger.warn('[Rewards] Membership not found for redemption', {
-        membershipId,
-        organizationId: req.user.organizationId,
-        requestBody: req.body
-      });
-      return res.status(404).json(formatError('Membership not found'));
-    }
-
-    // Check if member has enough points
-    if (membership.points < reward.pointsCost) {
-      logger.warn('[Rewards] Insufficient points for redemption', {
-        membershipId: membership._id,
-        memberPoints: membership.points,
-        pointsRequired: reward.pointsCost
-      });
-      return res.status(400).json(formatError('Insufficient points'));
-    }
-
-    // Create transaction record
-    const transaction = new Transaction({
-      member: membershipId, // Use the same membership ID we validated above
-      organization: req.user.organizationId,
-      type: 'redeem',
-      method: 'redemption',
-      amount: -reward.pointsCost,
-      reward: reward._id,
+    // Use the robust transactionService.redeemReward which handles:
+    // - Atomic database transactions
+    // - Proper balance validation using aggregated transactions
+    // - Reward availability checks
+    // - Concurrent redemption protection
+    const result = await transactionService.redeemReward({
+      memberId: membershipId,
+      organizationId: req.user.organizationId,
+      rewardId: req.params.id,
+      performedBy: req.user._id,
       metadata: {
-        rewardName: reward.name,
-        pointsCost: reward.pointsCost,
-        memberId: membershipId // Add for audit trail
+        ...req.body?.metadata,
+        redemptionSource: 'reward_portal',
+        userAgent: req.headers['user-agent'],
+        timestamp: new Date().toISOString()
       }
     });
 
-    // Update member points
-    membership.points -= reward.pointsCost;
-
-    // Update reward quantity if applicable
-    if (reward.quantity !== null) {
-      reward.quantity -= 1;
-    }
-
-    // Save all changes
-    await Promise.all([
-      transaction.save(),
-      membership.save(),
-      reward.quantity !== null ? reward.save() : Promise.resolve()
-    ]);
-
-    logger.info('[Rewards] Redemption completed', {
-      rewardId: reward._id,
-      membershipId: membership._id,
+    console.info('[Rewards] Redemption completed successfully', {
+      rewardId: req.params.id,
+      membershipId,
       organizationId: req.user.organizationId,
-      pointsDeducted: reward.pointsCost,
-      newMemberPoints: membership.points,
-      newRewardQuantity: reward.quantity
+      pointsDeducted: result.transaction.amount,
+      newBalance: result.balance,
+      transactionId: result.transaction._id
     });
 
+    // Return consistent response format
     res.json(formatResponse({
-      success: true,
+      data: {
+        success: true,
+        transaction: result.transaction,
+        newBalance: result.balance,
+        membershipId,
+        rewardId: req.params.id
+      },
       message: 'Reward redeemed successfully'
     }));
+
   } catch (error) {
-    logger.error('Redeem reward error:', { error: error.message, stack: error.stack });
-    res.status(500).json(formatError('Failed to redeem reward', error.message));
+    // Comprehensive error logging with context
+    console.error('[Rewards] Redemption failed', {
+      error: error.message,
+      stack: error.stack,
+      rewardId: req.params?.id,
+      membershipId: req.body?.membershipId || req.user?.membershipId,
+      organizationId: req.user?.organizationId,
+      userId: req.user?._id,
+      timestamp: new Date().toISOString()
+    });
+
+    // Return appropriate error status based on error type
+    let statusCode = 500;
+    if (error.message.includes('not found') || error.message.includes('Member not found')) {
+      statusCode = 404;
+    } else if (
+      error.message.includes('Insufficient points') ||
+      error.message.includes('not available') ||
+      error.message.includes('out of stock') ||
+      error.message.includes('expired')
+    ) {
+      statusCode = 400;
+    }
+
+    res.status(statusCode).json(formatError(
+      error.message || 'Failed to redeem reward',
+      process.env.NODE_ENV === 'development' ? error.stack : undefined
+    ));
   }
 };
 
@@ -298,7 +265,7 @@ exports.updateReward = async (req, res) => {
       message: 'Reward updated successfully'
     }));
   } catch (error) {
-    logger.error('Update reward error:', { error: error.message, stack: error.stack });
+    console.error('Update reward error:', { error: error.message, stack: error.stack });
     res.status(500).json(formatError('Failed to update reward', error.message));
   }
 };
@@ -320,7 +287,7 @@ exports.deleteReward = async (req, res) => {
       message: 'Reward deleted successfully'
     }));
   } catch (error) {
-    logger.error('Delete reward error:', { error: error.message, stack: error.stack });
+    console.error('Delete reward error:', { error: error.message, stack: error.stack });
     res.status(500).json(formatError('Failed to delete reward', error.message));
   }
 };
@@ -348,7 +315,7 @@ exports.updateQuantity = async (req, res) => {
       message: 'Reward quantity updated successfully'
     }));
   } catch (error) {
-    logger.error('Update reward quantity error:', { error: error.message, stack: error.stack });
+    console.error('Update reward quantity error:', { error: error.message, stack: error.stack });
     res.status(500).json(formatError('Failed to update reward quantity', error.message));
   }
 };
