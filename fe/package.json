@@ -15,6 +15,7 @@
     "test:e2e:headed": "cypress run --headed --spec 'cypress/e2e/**/*.cy.js'"
   },
   "dependencies": {
+    "@chenfengyuan/vue-qrcode": "^2.0.0",
     "@iconify/vue": "^5.0.0",
     "@types/qrcode": "^1.5.5",
     "@vueuse/components": "^13.9.0",
