@@ -26,7 +26,7 @@ jobs:
           VITE_GOOGLE_CLIENT_SECRET: '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'
           VITE_GEO_API_KEY: 'dbcfb1d93cb6491fb7f3e050c157995a'
         run: |
-          npm ci
+          npm ci --force
           VITE_API_URL='https://brewbucks.com/api/v1/' npm run prod
 
       - name: Setup SSH
