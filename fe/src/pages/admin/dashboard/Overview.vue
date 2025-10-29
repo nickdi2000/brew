@@ -16,7 +16,7 @@
           :icon-color="stat.iconColor"
           :loading="loading"
           :error="error"
-          :clickable="stat.id === 'totalMembers'"
+          :clickable="!!stat.route"
           class="hover:border-primary-300 hover:shadow-md transition-all duration-300 transform hover:-translate-y-1 animate-fade-slide-up"
           :style="{ animationDelay: stat.animationDelay }"
           @click="handleStatClick(stat)"
@@ -34,7 +34,7 @@
 
     <div class="mt-8">
       <button
-        class="w-full md:w-auto btn btn-primary bg-black hover:bg-black/90 border-black flex items-center justify-center gap-2"
+        class="w-full md:w-auto btn btn-primary bg-black text-white hover:bg-black/90 border-black flex items-center justify-center gap-2"
         @click="openAwardSheet"
       >
         <Icon icon="mdi:qrcode" class="h-5 w-5" />
@@ -197,8 +197,13 @@ const selectAwardCode = (index) => {
 }
 
 const handleStatClick = (stat) => {
-  if (stat.id === 'totalMembers') {
-    router.push({ name: 'members' })
+  console.log('stat', stat)
+  if (stat.route) {
+    const routeConfig = { name: stat.route }
+    if (stat.routeQuery) {
+      routeConfig.query = stat.routeQuery
+    }
+    router.push(routeConfig)
   }
 }
 
@@ -207,22 +212,28 @@ function getDefaultStats() {
     {
       id: 'totalMembers',
       label: 'Total Members',
-      value: 0
+      value: 0,
+      route: 'members'
     },
     {
       id: 'activeRewards',
       label: 'Active Rewards',
-      value: 0
+      value: 0,
+      route: 'rewards'
     },
     {
       id: 'pointsIssued',
       label: 'Points Issued',
-      value: 0
+      value: 0,
+      route: 'transactions',
+      routeQuery: { type: 'earn' }
     },
     {
       id: 'redemptions',
       label: 'Redemptions',
-      value: 0
+      value: 0,
+      route: 'transactions',
+      routeQuery: { type: 'redeem' }
     }
   ]
 }
@@ -232,22 +243,28 @@ function getStatMeta(id) {
     totalMembers: {
       icon: 'mdi:account-group',
       iconColor: 'text-blue-500',
-      iconBackground: 'bg-blue-50'
+      iconBackground: 'bg-blue-50',
+      route: 'members'
     },
     activeRewards: {
       icon: 'mdi:gift',
       iconColor: 'text-purple-500',
-      iconBackground: 'bg-purple-50'
+      iconBackground: 'bg-purple-50',
+      route: 'rewards'
     },
     pointsIssued: {
       icon: 'mdi:beer',
       iconColor: 'text-amber-500',
-      iconBackground: 'bg-amber-50'
+      iconBackground: 'bg-amber-50',
+      route: 'transactions',
+      routeQuery: { type: 'earn' }
     },
     redemptions: {
       icon: 'mdi:ticket-confirmation',
       iconColor: 'text-green-500',
-      iconBackground: 'bg-green-50'
+      iconBackground: 'bg-green-50',
+      route: 'transactions',
+      routeQuery: { type: 'redeem' }
     }
   }
 

@@ -33,7 +33,7 @@
         v-on:dblclick.stop="dev = !dev"
           src="/images/brewtokens-logo-beer.webp"
           alt="BrewTokens"
-          class="mx-auto h-20 w-auto mb-0 animate-fade-in cursor-pointer select-none"
+          class="mx-auto h-12 w-auto mb-0 animate-fade-in cursor-pointer select-none"
         />
    
       </div>
@@ -59,12 +59,10 @@
               type="button"
               :class="[
                 'flex-1 py-2 px-4 rounded-md font-medium text-sm transition-all duration-300',
-                isRegistrationDisabled ? 'opacity-70' : '',
                 activeTab === 'register' 
                   ? 'bg-white text-gray-900 shadow-sm' 
                   : 'text-gray-500 hover:text-gray-700'
               ]"
-              :aria-disabled="isRegistrationDisabled"
               @click="setActiveTab('register')"
             >
               <Icon icon="mdi:account-plus" class="inline-block w-4 h-4 mr-2" />
@@ -92,8 +90,14 @@
                   type="email"
                   required
                   data-cy="email-input"
-                  class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm transition-all duration-200 hover:border-amber-300"
+                  :class="[
+                    'appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none sm:text-sm transition-all duration-200',
+                    loginForm.highlightEmailError
+                      ? 'border-red-500 ring-4 ring-red-200 animate-pulse'
+                      : 'border-gray-300 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 hover:border-amber-300'
+                  ]"
                   placeholder="Enter your email"
+                  @input="loginForm.highlightEmailError = false"
                 />
               </div>
             </div>
@@ -128,10 +132,43 @@
                   {{ isLoading ? 'Signing in...' : 'Sign in' }}
                 </span>
               </button>
-              <ContinueWithGoogleButton
-                :disabled="isLoading"
-                @success="handleGoogleAdminSuccess"
-              />
+
+              <button
+                type="button"
+                :disabled="isLoading || loginForm.isMagicSubmitting || loginForm.magicLinkSent"
+                class="flex items-center justify-center gap-2 text-sm transition-all duration-200 text-center w-full"
+                :class="[
+                  loginForm.magicLinkSent
+                    ? 'text-gray-400 cursor-default'
+                    : 'text-amber-600 hover:text-amber-700 underline',
+                ]"
+                @click="handleMagicLinkLogin"
+              >
+                <Icon
+                  :icon="loginForm.magicLinkSent ? 'mdi:check-circle' : 'mdi:link'"
+                  class="w-4 h-4 transition-transform duration-300"
+                  :class="{ 'scale-110 text-green-500': loginForm.magicLinkSent }"
+                />
+                <span class="relative overflow-hidden">
+                  <span
+                    class="block transition-all duration-300 text-center"
+                    :class="{
+                      'translate-y-full opacity-0 absolute inset-0': loginForm.magicLinkSent,
+                    }"
+                  >
+                    {{ loginForm.isMagicSubmitting ? 'Sending magic link…' : 'Email me a magic login link' }}
+                  </span>
+                  <span
+                    class="block absolute inset-0 transition-all duration-300"
+                    :class="{
+                      '-translate-y-full opacity-0': !loginForm.magicLinkSent,
+                      'translate-y-0 opacity-100 text-green-600': loginForm.magicLinkSent,
+                    }"
+                  >
+                    Magic link sent
+                  </span>
+                </span>
+              </button>
 
               <div class="relative" v-if="dev">
                 <div class="absolute inset-0 flex items-center">
@@ -220,282 +257,84 @@
             data-cy="register-form" 
             @submit.prevent="handleRegisterSubmit"
           >
-            <template v-if="betaEnabled">
-              <div v-if="!isInviteCodeValid" class="space-y-6">
-                <div class="text-center mb-6">
-                  <h3 class="text-xl font-semibold text-gray-800 mb-2">Enter Invite Code</h3>
-                  <p class="text-sm text-gray-600">Enter your invitation code to unlock registration</p>
+            <div class="space-y-6">
+              <div class="group">
+                <label for="register-email" class="block text-sm font-medium text-gray-700 group-hover:text-amber-700 transition-colors">
+                  <Icon icon="mdi:email" class="inline-block w-4 h-4 mr-1" />
+                  Email
+                </label>
+                <div class="mt-1">
+                  <input
+                    id="register-email"
+                    v-model="registerForm.email"
+                    type="email"
+                    required
+                    data-cy="register-email-input"
+                    class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm transition-all duration-200 hover:border-amber-300"
+                    placeholder="you@brewandcoffee.com"
+                  />
                 </div>
-                
-                <form @submit.prevent="handleInviteCodeSubmit" class="space-y-4">
-                  <div class="relative">
-                    <input
-                      v-model="inviteCode"
-                      type="text"
-                      class="block w-full px-4 py-3 text-center text-lg tracking-wider border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200 placeholder:text-gray-400 hover:border-amber-300"
-                      placeholder="Enter your code"
-                      :disabled="isValidatingCode || isInviteCodeValid"
-                      :class="{
-                        'border-green-400 bg-green-50': isInviteCodeValid,
-                        'border-red-400 bg-red-50': showErrorBanner
-                      }"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    class="w-full btn btn-primary relative overflow-hidden group"
-                    :disabled="isValidatingCode || isInviteCodeValid"
-                  >
-                    <span class="relative z-10 flex items-center justify-center gap-2">
-                      <Icon :icon="isValidatingCode ? 'mdi:loading' : 'mdi:key'" 
-                            :class="['w-5 h-5', isValidatingCode ? 'animate-spin' : '']" />
-                      {{ isValidatingCode ? 'Validating...' : 'Validate Code' }}
-                    </span>
-                  </button>
-
-                  <transition
-                    enter-active-class="transition-all duration-300 ease-out"
-                    enter-from-class="opacity-0 transform -translate-y-2"
-                    enter-to-class="opacity-100 transform translate-y-0"
-                    leave-active-class="transition-all duration-200 ease-in"
-                    leave-from-class="opacity-100 transform translate-y-0"
-                    leave-to-class="opacity-0 transform -translate-y-2"
-                  >
-                    <div v-if="showSuccessBanner" class="p-4 rounded-lg bg-green-50 border border-green-200 space-y-3">
-                      <p class="text-green-700 font-medium flex items-center justify-center gap-2">
-                        <Icon icon="mdi:check-circle" class="w-5 h-5" />
-                        Invitation code accepted!
-                      </p>
-                      <CoinFlip class="mx-auto transform scale-75" :value="100" />
-                    </div>
-                  </transition>
-
-                  <transition
-                    enter-active-class="transition-all duration-300 ease-out"
-                    enter-from-class="opacity-0 transform -translate-y-2"
-                    enter-to-class="opacity-100 transform translate-y-0"
-                    leave-active-class="transition-all duration-200 ease-in"
-                    leave-from-class="opacity-100 transform translate-y-0"
-                    leave-to-class="opacity-0 transform -translate-y-2"
-                  >
-                    <div v-if="showErrorBanner" class="p-3 rounded-lg bg-red-50 border border-red-200">
-                      <p class="text-sm text-red-600 text-center flex items-center justify-center gap-2">
-                        <Icon icon="mdi:alert-circle" class="w-5 h-5" />
-                        {{ inviteCodeError }}
-                      </p>
-                    </div>
-                  </transition>
-
-                  <div class="text-center text-sm text-gray-500">
-                    <p>Need an invite code? Request access from our
-                      <router-link to="/" class="text-amber-600 hover:text-amber-700 underline">landing page</router-link>
-                    </p>
-                  </div>
-                </form>
               </div>
 
-              <transition
-                enter-active-class="transition-all duration-500 ease-out"
-                enter-from-class="opacity-0 scale-95"
-                enter-to-class="opacity-100 scale-100"
-                leave-active-class="transition-all duration-300 ease-in"
-                leave-from-class="opacity-100 scale-100"
-                leave-to-class="opacity-0 scale-95"
-              >
-                <div v-if="isInviteCodeValid" class="mb-8 text-center">
-                  <div class="inline-flex items-center justify-center px-6 py-3 bg-green-100 rounded-full">
-                    <Icon icon="mdi:check-circle" class="w-6 h-6 text-green-600 mr-2" />
-                    <span class="text-green-800 font-semibold">Registration Unlocked!</span>
-                  </div>
-                  <p class="mt-3 text-green-600">Please complete your registration below</p>
+              <div class="group">
+                <label for="register-password" class="block text-sm font-medium text-gray-700 group-hover:text-amber-700 transition-colors">
+                  <Icon icon="mdi:lock" class="inline-block w-4 h-4 mr-1" />
+                  Password
+                </label>
+                <div class="mt-1">
+                  <input
+                    id="register-password"
+                    v-model="registerForm.password"
+                    type="password"
+                    required
+                    minlength="6"
+                    data-cy="register-password-input"
+                    class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm transition-all duration-200 hover:border-amber-300"
+                    placeholder="Create a secure password"
+                  />
                 </div>
-              </transition>
-
-              <transition
-                enter-active-class="transition-all duration-500 ease-out"
-                enter-from-class="opacity-0 -translate-y-4"
-                enter-to-class="opacity-100 translate-y-0"
-                leave-active-class="transition-all duration-300 ease-in"
-                leave-from-class="opacity-100 translate-y-0"
-                leave-to-class="opacity-0 -translate-y-4"
-              >
-                <div v-if="isInviteCodeValid" class="space-y-6">
-                  <div class="group">
-                    <label for="brewery-name" class="block text-sm font-medium text-gray-700 group-hover:text-amber-700 transition-colors">
-                      <Icon icon="mdi:store" class="inline-block w-4 h-4 mr-1" />
-                      Brewery Name
-                    </label>
-                    <div class="mt-1">
-                      <input
-                        id="brewery-name"
-                        v-model="registerForm.breweryName"
-                        type="text"
-                        required
-                        data-cy="brewery-name-input"
-                        class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm transition-all duration-200 hover:border-amber-300"
-                        placeholder="Enter your brewery name"
-                      />
-                    </div>
-                  </div>
-
-                  <div class="group">
-                    <label for="register-email" class="block text-sm font-medium text-gray-700 group-hover:text-amber-700 transition-colors">
-                      <Icon icon="mdi:email" class="inline-block w-4 h-4 mr-1" />
-                      Email address
-                    </label>
-                    <div class="mt-1">
-                      <input
-                        id="register-email"
-                        v-model="registerForm.email"
-                        type="email"
-                        required
-                        data-cy="register-email-input"
-                        class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm transition-all duration-200 hover:border-amber-300"
-                        placeholder="Enter your email"
-                      />
-                    </div>
-                  </div>
-
-                  <div class="group">
-                    <label for="register-password" class="block text-sm font-medium text-gray-700 group-hover:text-amber-700 transition-colors">
-                      <Icon icon="mdi:lock" class="inline-block w-4 h-4 mr-1" />
-                      Password
-                    </label>
-                    <div class="mt-1">
-                      <input
-                        id="register-password"
-                        v-model="registerForm.password"
-                        type="password"
-                        required
-                        minlength="6"
-                        data-cy="register-password-input"
-                        class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm transition-all duration-200 hover:border-amber-300"
-                        placeholder="Enter your password (min. 6 characters)"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </transition>
+              </div>
 
               <div class="space-y-4">
                 <button
                   type="submit"
-                  :disabled="isLoading || !isInviteCodeValid"
+                  :disabled="isLoading"
                   data-cy="register-button"
-                  :class="[
-                    'btn btn-primary w-full group relative overflow-hidden transition-all duration-300',
-                    (isLoading || !isInviteCodeValid) ? 'opacity-70 cursor-not-allowed' : ''
-                  ]"
+                  class="btn btn-outline w-full group relative overflow-hidden transition-all duration-300"
                 >
                   <span class="relative z-10 flex items-center justify-center gap-2">
                     <Icon icon="mdi:account-plus" class="w-5 h-5" />
-                    {{ isLoading ? 'Creating Account...' : 'Create Brewery Account' }}
+                    {{ isLoading ? 'Creating Account...' : 'Create Account' }}
                   </span>
                 </button>
               </div>
+            </div>
 
-              <div v-if="error && activeTab === 'register'" class="mt-4 p-3 bg-red-50 rounded-lg border border-red-200">
-                <p class="text-red-600 text-sm text-center flex items-center justify-center gap-2">
-                  <Icon icon="mdi:alert-circle" class="w-5 h-5" />
-                  {{ error }}
-                </p>
-              </div>
-            </template>
-
-            <template v-else>
-              <div class="space-y-6">
-                <div class="group">
-                  <label for="register-brewery-name" class="block text-sm font-medium text-gray-700 group-hover:text-amber-700 transition-colors">
-                    <Icon icon="mdi:store" class="inline-block w-4 h-4 mr-1" />
-                    Venue Name
-                  </label>
-                  <div class="mt-1">
-                    <input
-                      id="register-brewery-name"
-                      v-model="registerForm.breweryName"
-                      type="text"
-                      required
-                      data-cy="register-brewery-name-input"
-                      class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm transition-all duration-200 hover:border-amber-300"
-                      placeholder="Gordon Brewhouse"
-                    />
-                  </div>
-                </div>
-
-                <div class="group">
-                  <label for="register-email" class="block text-sm font-medium text-gray-700 group-hover:text-amber-700 transition-colors">
-                    <Icon icon="mdi:email" class="inline-block w-4 h-4 mr-1" />
-                    Work email
-                  </label>
-                  <div class="mt-1">
-                    <input
-                      id="register-email"
-                      v-model="registerForm.email"
-                      type="email"
-                      required
-                      data-cy="register-email-input"
-                      class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm transition-all duration-200 hover:border-amber-300"
-                      placeholder="you@brewhouse.com"
-                    />
-                  </div>
-                </div>
-
-                <div class="group">
-                  <label for="register-password" class="block text-sm font-medium text-gray-700 group-hover:text-amber-700 transition-colors">
-                    <Icon icon="mdi:lock" class="inline-block w-4 h-4 mr-1" />
-                    Password
-                  </label>
-                  <div class="mt-1">
-                    <input
-                      id="register-password"
-                      v-model="registerForm.password"
-                      type="password"
-                      required
-                      minlength="6"
-                      data-cy="register-password-input"
-                      class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm transition-all duration-200 hover:border-amber-300"
-                      placeholder="Create a secure password"
-                    />
-                  </div>
-                </div>
-
-                <div class="text-xs text-gray-500">
-                  <p>By creating an account you agree to our
-                    <router-link to="/terms-of-service" class="text-amber-600 hover:text-amber-700 underline">Terms of Service</router-link>
-                    and
-                    <router-link to="/privacy-policy" class="text-amber-600 hover:text-amber-700 underline">Privacy Policy</router-link>.
-                  </p>
-                </div>
-
-                <div class="space-y-4">
-                  <button
-                    type="submit"
-                    :disabled="isLoading"
-                    data-cy="register-button"
-                    class="btn btn-primary w-full group relative overflow-hidden transition-all duration-300"
-                  >
-                    <span class="relative z-10 flex items-center justify-center gap-2">
-                      <Icon icon="mdi:account-plus" class="w-5 h-5" />
-                      {{ isLoading ? 'Creating Account...' : 'Create Account' }}
-                    </span>
-                  </button>
-
-                  <p class="text-center text-sm text-gray-500">
-                    Already have an account?
-                    <button type="button" class="text-amber-600 hover:text-amber-700 underline" @click="setActiveTab('login')">Sign in</button>
-                  </p>
-                </div>
-              </div>
-
-              <div v-if="error && activeTab === 'register'" class="mt-4 p-3 bg-red-50 rounded-lg border border-red-200">
-                <p class="text-red-600 text-sm text-center flex items-center justify-center gap-2">
-                  <Icon icon="mdi:alert-circle" class="w-5 h-5" />
-                  {{ error }}
-                </p>
-              </div>
-            </template>
+            <div v-if="error && activeTab === 'register'" class="mt-4 p-3 bg-red-50 rounded-lg border border-red-200">
+              <p class="text-red-600 text-sm text-center flex items-center justify-center gap-2">
+                <Icon icon="mdi:alert-circle" class="w-5 h-5" />
+                {{ error }}
+              </p>
+            </div>
           </form>
+        </div>
+
+        <!-- Google Sign In - Available for both Login and Register -->
+        <div v-if="activeTab === 'login' || activeTab === 'register'" class="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
+          <div class="relative">
+            <div class="absolute inset-0 flex items-center">
+              <div class="w-full border-t border-gray-300"></div>
+            </div>
+            <div class="relative flex justify-center text-sm">
+              <span class="px-2 bg-white text-gray-500">or</span>
+            </div>
+          </div>
+          <div class="mt-6 flex justify-center">
+            <ContinueWithGoogleButton
+              :disabled="isLoading"
+              @success="handleGoogleAdminSuccess"
+            />
+          </div>
         </div>
 
         <p class="mt-4 text-center text-xs text-gray-400">
@@ -508,19 +347,16 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useStore } from 'vuex'
 import { useRoute, useRouter } from 'vue-router'
 import { Icon } from '@iconify/vue'
 import { useToast } from '@/plugins/toast'
 import packageJson from '../../package.json' with { type: 'json' }
-import CoinFlip from '@/components/CoinFlip.vue'
 import ContinueWithGoogleButton from '@/components/auth/ContinueWithGoogleButton.vue'
+import { generateMagicLoginLink } from '@/api'
 import { sanitizeAdminGooglePayload } from '@/utils/authSanitizers'
-
-// Get signup status from environment variable
-const BETA_STORAGE_KEY = 'beta'
-const ADMIN_USER_KEY = 'adminUser'
+import locationMixin from '@/mixins/locationMixin'
 
 // Add fade-in animation to Tailwind
 const style = document.createElement('style')
@@ -536,95 +372,7 @@ document.head.appendChild(style)
 
 const route = useRoute()
 
-const inviteCode = ref('')
-const isInviteCodeValid = ref(false)
-const inviteCodeError = ref('')
-const isValidatingCode = ref(false)
 const dev = ref(false)
-const betaEnabled = ref(false)
-
-const validateInviteCode = (code) => {
-  // Extract letters and number parts
-  const match = code.toLowerCase().match(/^([a-z]+)(\d+)$/)
-  if (!match) return false
-  
-  const [_, letters, number] = match
-  // Check if number equals letters.length * 5
-  return parseInt(number) === letters.length * 5
-}
-
-const showSuccessBanner = ref(false)
-const showErrorBanner = ref(false)
-
-const parseBooleanParam = (value) => {
-  if (typeof value !== 'string') {
-    return null
-  }
-
-  const normalized = value.toLowerCase().trim()
-
-  if (normalized === 'true') {
-    return true
-  }
-
-  if (normalized === 'false') {
-    return false
-  }
-
-  return null
-}
-
-const isBetaModeEnabled = () => {
-  if (typeof window === 'undefined') {
-    return false
-  }
-
-  const queryBeta = parseBooleanParam(Array.isArray(route.query.beta) ? route.query.beta.at(-1) : route.query.beta)
-  if (queryBeta !== null) {
-    return queryBeta
-  }
-
-  try {
-    if (window.localStorage.getItem(BETA_STORAGE_KEY) === 'true') {
-      return true
-    }
-    return Boolean(window.localStorage.getItem(ADMIN_USER_KEY))
-  } catch (error) {
-    console.error('Failed to read beta flag in Login page', error)
-    return false
-  }
-}
-
-const handleInviteCodeSubmit = async () => {
-  inviteCodeError.value = ''
-  showErrorBanner.value = false
-  showSuccessBanner.value = false
-  
-  if (!inviteCode.value.trim()) {
-    inviteCodeError.value = 'Please enter an invitation code'
-    showErrorBanner.value = true
-    return
-  }
-
-  // Simulate API call with slight delay
-  isValidatingCode.value = true
-  await new Promise(resolve => setTimeout(resolve, 600))
-  
-  const isValid = validateInviteCode(inviteCode.value)
-  isValidatingCode.value = false
-
-  if (isValid) {
-    showSuccessBanner.value = true
-    isInviteCodeValid.value = true
-    // Clear any previous error
-    inviteCodeError.value = ''
-  } else {
-    inviteCodeError.value = 'Invalid invitation code. Please try again.'
-    showErrorBanner.value = true
-    isInviteCodeValid.value = false
-  }
-}
-
 const toast = useToast()
 
 const appVersion = computed(() => packageJson.version ?? '0.0.0')
@@ -642,12 +390,14 @@ const activeTab = ref('login')
 // Login form
 const loginForm = reactive({
   email: '',
-  password: ''
+  password: '',
+  isMagicSubmitting: false,
+  magicLinkSent: false,
+  highlightEmailError: false
 })
 
 // Registration form
 const registerForm = reactive({
-  breweryName: '',
   email: '',
   password: ''
 })
@@ -695,29 +445,6 @@ const syncTabFromRoute = () => {
 
 syncTabFromRoute()
 
-watch(
-  () => betaEnabled.value,
-  (enabled) => {
-    if (!enabled) {
-      isInviteCodeValid.value = false
-      inviteCode.value = ''
-      showSuccessBanner.value = false
-      showErrorBanner.value = false
-    }
-  },
-)
-
-watch(
-  () => route.query.beta,
-  () => {
-    betaEnabled.value = isBetaModeEnabled()
-  },
-)
-
-onMounted(() => {
-  betaEnabled.value = isBetaModeEnabled()
-})
-
 
 const handleLoginSubmit = async () => {
   try {
@@ -728,7 +455,10 @@ const handleLoginSubmit = async () => {
     const redirect = router.currentRoute.value.query.redirect || '/admin'
     
     await store.dispatch('login', { 
-      credentials: loginForm,
+      credentials: {
+        email: loginForm.email,
+        password: loginForm.password
+      },
       redirect
     })
   } catch (err) {
@@ -739,12 +469,45 @@ const handleLoginSubmit = async () => {
   }
 }
 
-const handleRegisterSubmit = async () => {
-  if (betaEnabled.value && !isInviteCodeValid.value) {
-    inviteCodeError.value = 'Please enter a valid invitation code'
+const handleMagicLinkLogin = async () => {
+  if (!loginForm.email) {
+    toast('Enter your account email before requesting a magic link.', 'error')
+    loginForm.highlightEmailError = true
+    
+    // Focus the email input
+    setTimeout(() => {
+      document.getElementById('login-email')?.focus()
+    }, 100)
+    
+    // Remove highlight after 3 seconds
+    setTimeout(() => {
+      loginForm.highlightEmailError = false
+    }, 3000)
+    
     return
   }
 
+  loginForm.isMagicSubmitting = true
+
+  try {
+    const response = await generateMagicLoginLink(loginForm.email)
+
+    if (!response?.success) {
+      throw new Error(response?.message || 'Unable to send magic link. Please try again later.')
+    }
+
+    toast('Check your inbox! Your magic login link is on the way.', 'success')
+    loginForm.magicLinkSent = true
+  } catch (err) {
+    const message = err?.response?.data?.message || err?.message || 'Unable to send magic link. Please try again later.'
+    console.error('Magic login link request failed:', message)
+    toast(message, 'error')
+  } finally {
+    loginForm.isMagicSubmitting = false
+  }
+}
+
+const handleRegisterSubmit = async () => {
   try {
     if (typeof window !== 'undefined' && typeof window.gtag_report_conversion === 'function') {
       window.gtag_report_conversion()
@@ -753,6 +516,16 @@ const handleRegisterSubmit = async () => {
     console.error('Google tag conversion error:', err)
   }
 
+  let location = null
+  try { 
+    await locationMixin._getGeo()
+    location = locationMixin._location
+  } catch (err) {
+    console.error('Location error:', err)
+  }
+
+ 
+
   try {
     isLoading.value = true
     error.value = ''
@@ -760,16 +533,13 @@ const handleRegisterSubmit = async () => {
     // Get redirect from query params or default to /admin
     const redirect = router.currentRoute.value.query.redirect || '/admin'
     
-    const userData = betaEnabled.value
-      ? { ...registerForm }
-      : {
-          breweryName: registerForm.breweryName,
-          email: registerForm.email,
-          password: registerForm.password,
-        }
-
     await store.dispatch('register', { 
-      userData,
+      userData: {
+        breweryName: '', // Optional, can be set later
+        email: registerForm.email,
+        password: registerForm.password,
+        location: location,
+      },
       redirect
     })
   } catch (err) {

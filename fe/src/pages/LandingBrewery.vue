@@ -155,7 +155,7 @@ onUnmounted(() => {
               <span>Login</span>
               <div class="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-400 transition-all duration-300 group-hover:w-full"></div>
             </router-link>
-            <a href="#join-beta" class="group relative bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-3 rounded-2xl hover:shadow-2xl transition-all duration-300 font-medium overflow-hidden">
+            <a href="#join" class="group relative bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-3 rounded-2xl hover:shadow-2xl transition-all duration-300 font-medium overflow-hidden">
               <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
               <span class="relative">Join Beta</span>
             </a>
@@ -174,7 +174,7 @@ onUnmounted(() => {
             <a href="#brewery-benefits" class="block px-4 py-3 rounded-xl text-slate-300 hover:text-white hover:bg-slate-700/50 transition-all duration-300">For Breweries</a>
             <a href="#partnership" class="block px-4 py-3 rounded-xl text-slate-300 hover:text-white hover:bg-slate-700/50 transition-all duration-300">Partnership</a>
             <router-link to="/login" class="block px-4 py-3 rounded-xl text-slate-300 hover:text-white hover:bg-slate-700/50 transition-all duration-300">Login</router-link>
-            <a href="#join-beta" class="block px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:shadow-lg transition-all duration-300">Join Beta</a>
+            <a href="#join" class="block px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:shadow-lg transition-all duration-300">Get Started</a>
           </div>
         </div>
       </nav>
@@ -227,7 +227,7 @@ onUnmounted(() => {
                 </svg>
               </a>
               <a 
-                href="#join-beta" 
+                href="#join" 
                 class="inline-flex items-center justify-center space-x-3 bg-slate-800/80 hover:bg-slate-700/80 text-white border-2 border-slate-600 hover:border-blue-400 px-8 py-4 rounded-2xl transition-all duration-300 font-semibold shadow-lg hover:shadow-xl backdrop-blur-sm"
               >
                 <span>Join Beta</span>
@@ -731,10 +731,10 @@ onUnmounted(() => {
                   
                   <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
                     <a 
-                      href="#join-beta" 
+                      href="#join" 
                       class="group inline-flex items-center justify-center space-x-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl transition-all duration-300 font-semibold shadow-md hover:shadow-lg"
                     >
-                      <span>Join Beta</span>
+                      <span>Get Started</span>
                       <svg class="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
                       </svg>
@@ -758,7 +758,7 @@ onUnmounted(() => {
       </section>
 
       <!-- Coming Soon Section -->
-      <section id="join-beta" class="py-32 relative">
+      <section id="join" class="py-32 relative">
         <!-- Background elements -->
         <div class="absolute inset-0 overflow-hidden">
           <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-slate-500/3 rounded-full blur-3xl"></div>
@@ -774,7 +774,7 @@ onUnmounted(() => {
                 <span class="bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent"> Soon</span>
               </h2>
               <p class="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
-                Join our beta program to shape the future of brewery rewards
+                Launch your BrewTokens experience today
               </p>
             </div>
 

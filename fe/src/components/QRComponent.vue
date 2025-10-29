@@ -3,14 +3,14 @@
     <component
       :is="qrcodeTag"
       :value="safeValue"
-      :options="{ width: size, margin: qrMargin }"
+      :options="qrOptions"
       :tag="tag"
       class="block"
-      :style="{ width: size + 'px', height: size + 'px', backgroundColor: 'white' }"
+      :style="{ width: size + 'px', height: size + 'px', backgroundColor: backgroundColor }"
     />
     <div
       v-if="showSignature"
-      :style="{ width: blockSize + 'px', height: size + 'px', opacity: signatureOpacity, backgroundColor: 'white' }"
+      :style="{ width: blockSize + 'px', height: size + 'px', opacity: signatureOpacity, backgroundColor: backgroundColor }"
       aria-hidden="true"
       class="flex flex-col"
     >
@@ -20,7 +20,7 @@
         :style="{
           width: blockSize + 'px',
           height: blockHeight + 'px',
-          backgroundColor: on ? '#000' : '#fff'
+          backgroundColor: on ? qrColor : (backgroundColor === 'transparent' ? 'transparent' : backgroundColor)
         }"
       />
     </div>
@@ -62,11 +62,28 @@ const props = defineProps({
   backgroundColor: {
     type: String,
     default: 'transparent'
+  },
+  qrColor: {
+    type: String,
+    default: '#000000'
   }
 })
 
 const qrcodeTag = computed(() => VueQrcode)
 const safeValue = computed(() => String(props.value ?? ''))
+
+// QR code options with color configuration
+const qrOptions = computed(() => {
+  const options = {
+    width: props.size,
+    margin: props.qrMargin,
+    color: {
+      dark: props.qrColor,  // QR code dots color
+      light: props.backgroundColor === 'transparent' ? '#00000000' : props.backgroundColor  // Transparent or custom background
+    }
+  }
+  return options
+})
 
 // Heuristic block width approximating a narrow column
 const blockSize = computed(() => {

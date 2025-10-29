@@ -188,17 +188,44 @@
           </div>
         </div>
 
-        <!-- Add Image Button -->
-        <div v-if="!formData.bannerImage && !showImageUpload" class="flex justify-center">
-          <button
-            type="button"
-            @click="showImageUpload = true"
-            class="btn btn-primary"
-            :disabled="isUploading"
-          >
-            <Icon icon="mdi:image-plus" class="h-5 w-5 mr-2" />
-            Upload Banner Image
-          </button>
+        <!-- Add Image Button - Empty State -->
+        <div v-if="!formData.bannerImage && !showImageUpload">
+          <div class="relative w-full h-48 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border-2 border-dashed border-gray-300 overflow-hidden group hover:border-amber-400 hover:bg-gradient-to-br hover:from-amber-50 hover:to-amber-100 transition-all duration-300">
+            <!-- Decorative Elements -->
+            <div class="absolute inset-0 opacity-5 pointer-events-none">
+              <div class="absolute top-4 left-4 w-16 h-16 border-2 border-gray-400 rounded-lg"></div>
+              <div class="absolute bottom-4 right-4 w-20 h-20 border-2 border-gray-400 rounded-full"></div>
+              <div class="absolute top-1/2 right-8 w-12 h-12 border-2 border-gray-400" style="transform: translateY(-50%) rotate(45deg);"></div>
+            </div>
+            
+            <!-- Center Content -->
+            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <div class="text-center space-y-3">
+                <div class="mx-auto w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-md group-hover:shadow-lg group-hover:scale-110 transition-all duration-300">
+                  <Icon icon="mdi:image-outline" class="h-8 w-8 text-gray-400 group-hover:text-amber-500 transition-colors" />
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-gray-600 group-hover:text-gray-900 transition-colors">No banner image set</p>
+                  <p class="text-xs text-gray-500 mt-1">Add a banner to personalize your member portal</p>
+                </div>
+                <button
+                  type="button"
+                  @click.stop="showImageUpload = true"
+                  class="btn btn-primary mt-2 pointer-events-auto"
+                  :disabled="isUploading"
+                >
+                  <Icon icon="mdi:image-plus" class="h-5 w-5 mr-2" />
+                  Upload Banner Image
+                </button>
+              </div>
+            </div>
+            
+            <!-- Corner Brackets -->
+            <div class="absolute top-2 left-2 w-8 h-8 border-t-2 border-l-2 border-gray-300 group-hover:border-amber-400 transition-colors pointer-events-none"></div>
+            <div class="absolute top-2 right-2 w-8 h-8 border-t-2 border-r-2 border-gray-300 group-hover:border-amber-400 transition-colors pointer-events-none"></div>
+            <div class="absolute bottom-2 left-2 w-8 h-8 border-b-2 border-l-2 border-gray-300 group-hover:border-amber-400 transition-colors pointer-events-none"></div>
+            <div class="absolute bottom-2 right-2 w-8 h-8 border-b-2 border-r-2 border-gray-300 group-hover:border-amber-400 transition-colors pointer-events-none"></div>
+          </div>
         </div>
       </div>
 

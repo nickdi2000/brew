@@ -85,7 +85,7 @@
                       type="email"
                       name="email"
                       autocomplete="email"
-                      placeholder="you@brewery.com"
+                      placeholder="you@yourplace.com"
                       class="mt-2 w-full rounded-xl border border-white/10 bg-gray-900/70 px-4 py-3 text-sm text-white placeholder-gray-500 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/60"
                       :disabled="isSubmitting"
                       required
@@ -99,7 +99,7 @@
                       v-model="comments"
                       name="message"
                       rows="6"
-                      placeholder="Share how we can help your venue"
+                      placeholder="How can we help?"
                       class="mt-2 w-full rounded-xl border border-white/10 bg-gray-900/70 px-4 py-3 text-sm text-white placeholder-gray-500 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/60"
                       :disabled="isSubmitting"
                       required
@@ -153,18 +153,29 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { Icon } from '@iconify/vue';
 import heroQrCode from '@/assets/images/hero-qr-code.png';
 import { submitContactRequest } from '@/api';
 import { useToast } from '@/plugins/toast';
+import { useLocation } from '@/composables/useLocation';
 
 const toast = useToast();
+const { getLocation, getLocationSync } = useLocation();
+
+// Fetch location on mount if not already loaded
+onMounted(async () => {
+  try {
+    await getLocation();
+  } catch (error) {
+    console.error('Error fetching location on contact page:', error);
+  }
+});
 
 const highlights = [
   {
     title: 'Talk with our founders',
-    copy: 'Share your goals and we will tailor a BrewTokens walkthrough to your taproom.',
+    copy: 'Share your goals and we will tailor a BrewTokens walkthrough to your venue.',
     icon: 'mdi:account-voice',
   },
   {
@@ -211,7 +222,14 @@ const handleSubmit = async () => {
   isSubmitting.value = true;
 
   try {
-    const response = await submitContactRequest({ email: trimmedEmail, message: trimmedMessage });
+    // Get location data to include with submission
+    const location = getLocationSync();
+    
+    const response = await submitContactRequest({ 
+      email: trimmedEmail, 
+      message: trimmedMessage,
+      location: location
+    });
 
     if (response.data?.success) {
       submitSuccess.value = true;

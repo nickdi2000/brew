@@ -13,7 +13,7 @@
               <Icon icon="mdi:menu" class="h-6 w-6" />
             </button>
             <div class="flex-shrink-0 flex items-center ml-2 md:ml-0">
-              <h1 class="text-xl font-bold text-white font-display">BrewTokens Admin</h1>
+            <!-- used to be logo here -->
             </div>
           </div>
           <div class="flex items-center">
@@ -77,10 +77,15 @@
     <Drawer
       :show="showMobileMenu"
       @close="showMobileMenu = false"
-      width="max-w-xs"
+      width="w-[85vw]"
+      direction="left"
+      bg-class="bg-slate-900"
+      header-text-class="text-white"
+      header-border-class="border-slate-700"
+      close-button-class="bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700"
     >
       <template #header>
-        <h2 class="text-lg font-medium text-gray-900">Menu</h2>
+        <h2 class="text-xl font-bold font-display">BrewTokens Admin</h2>
       </template>
       <template #content>
         <Sidebar

@@ -1,76 +1,5 @@
-const parseBooleanParam = (value) => {
-  if (typeof value !== 'string') {
-    return null;
-  }
-
-  const normalized = value.toLowerCase().trim();
-
-  if (normalized === 'true') {
-    return true;
-  }
-
-  if (normalized === 'false') {
-    return false;
-  }
-
-  return null;
-};
-
-const shouldEnableBetaFromStorage = () => {
-  if (typeof window === 'undefined') {
-    return false;
-  }
-
-  try {
-    const stored = window.localStorage.getItem(BETA_STORAGE_KEY);
-    if (stored === 'true') {
-      return true;
-    }
-
-    const adminUser = window.localStorage.getItem(ADMIN_USER_KEY);
-    return Boolean(adminUser);
-  } catch (error) {
-    console.error('Failed to read beta flag from localStorage', error);
-    return false;
-  }
-};
-
-const applyBetaState = (value, options = {}) => {
-  const { persist = true, syncRoute = true } = options;
-  betaEnabled.value = value;
-
-  if (!value) {
-    finalizeClose();
-  }
-
-  if (persist) {
-    setBetaLocalStorage(value);
-  }
-
-  if (syncRoute) {
-    ensureRouteBetaParam(value);
-  }
-};
-
-let stopRouteWatcher = null;
-
-const cleanupRouteWatcher = () => {
-  if (typeof stopRouteWatcher === 'function') {
-    stopRouteWatcher();
-    stopRouteWatcher = null;
-  }
-};
 <template>
   <div class="min-h-screen bg-gray-950 font-sans text-gray-100">
-    <transition name="beta-overlay-fade">
-      <div
-        v-if="overlayVisible"
-        class="fixed inset-0 z-40 bg-gray-950/70 backdrop-blur-sm"
-        aria-hidden="true"
-        role="presentation"
-        @click.self="closeBetaModal"
-      ></div>
-    </transition>
     <!-- Navbar -->
     <nav class="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-gray-950/90 backdrop-blur">
       <div class="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -82,14 +11,14 @@ const cleanupRouteWatcher = () => {
           <router-link to="/contact" class="text-base font-medium text-gray-300 transition hover:text-white">Contact</router-link>
           <router-link to="/login" class="btn btn-secondary px-5 py-2 text-base">Login</router-link>
         </div>
-        <button class="btn btn-secondary px-4 py-2 text-sm md:hidden">Menu</button>
+        <router-link to="/login" class="btn btn-primary px-4 py-2 text-sm md:hidden">Start</router-link>
       </div>
     </nav>
 
     <!-- Hero -->
     <section class="relative overflow-hidden pt-32 pb-24 text-gray-100">
       <div class="absolute inset-0">
-        <img :src="heroQrCode" alt="Guests scanning BrewTokens QR code" class="h-full w-full object-cover" />
+        <img :src="heroQrCode" alt="Guests scanning BrewTokens QR code" class="h-full w-full object-contain sm:object-cover" />
         <div class="absolute inset-0 bg-gradient-to-br from-gray-950/95 via-gray-950/80 to-indigo-900/70"></div>
       </div>
 
@@ -111,7 +40,7 @@ const cleanupRouteWatcher = () => {
                 <button
                   class="btn btn-primary px-8 py-3 text-lg font-semibold"
                   type="button"
-                  @click="focusBetaCard"
+                  @click="$router.push('/login?tab=register')"
                 >
                   Get started
                 </button>
@@ -127,12 +56,9 @@ const cleanupRouteWatcher = () => {
             </div>
 
             <div class="lg:col-span-5">
-              <component
-                :is="betaEnabled ? BetaSignupCard : LandingRegistrationCard"
+              <LandingRegistrationCard
                 ref="betaCardRef"
-                :highlight="betaEnabled ? betaHighlight : registrationHighlight"
-                :aria-hidden="staticCardHidden"
-                :class="staticCardClass"
+                :highlight="registrationHighlight"
                 @login-request="handleRegistrationLoginClick"
                 @focus-card="handleFocusCard"
               />
@@ -141,19 +67,6 @@ const cleanupRouteWatcher = () => {
         </div>
       </div>
     </section>
-
-    <transition name="beta-card-modal" appear>
-      <div v-if="floatingCardVisible" class="beta-card-modal">
-        <BetaSignupCard
-          v-if="betaEnabled"
-          ref="modalCardRef"
-          :card-style="floatingCardStyle"
-          :highlight="true"
-          :is-modal="true"
-          @close="closeBetaModal"
-        />
-      </div>
-    </transition>
 
     <!-- Feature Sections -->
     <section
@@ -249,6 +162,96 @@ const cleanupRouteWatcher = () => {
       </div>
     </section>
 
+    <!-- Video Tutorial Section -->
+    <section class="bg-gray-900 py-24">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="text-center">
+          <div class="inline-flex items-center justify-center space-x-2 rounded-full border border-white/10 bg-white/10 px-4 py-1 text-sm font-semibold text-indigo-200">
+            <Icon icon="mdi:play-circle" class="h-4 w-4" />
+            <span>Video Tutorial</span>
+          </div>
+          <h2 class="mt-6 text-3xl font-bold text-white sm:text-4xl lg:text-5xl">See BrewTokens in action</h2>
+          <p class="mx-auto mt-4 max-w-2xl text-lg text-gray-300">
+            Watch our quick walkthrough to discover how easy it is to launch and manage your loyalty program.
+          </p>
+        </div>
+
+        <div class="mt-12">
+          <div
+            class="group relative mx-auto max-w-4xl cursor-pointer overflow-hidden rounded-3xl border border-white/10 shadow-2xl transition-all duration-300 hover:border-indigo-500/50 hover:shadow-indigo-500/20"
+            @click="openVideoModal"
+          >
+            <!-- Thumbnail -->
+            <div class="relative aspect-video bg-black">
+              <img
+                src="/videos/dashboard-screenshot.png"
+                alt="BrewTokens Tutorial"
+                class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+              <!-- Play Button Overlay -->
+              <div class="absolute inset-0 flex items-center justify-center bg-black/40 transition-all duration-300 group-hover:bg-black/30">
+                <div class="flex h-24 w-24 items-center justify-center rounded-full bg-indigo-600 shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:bg-indigo-500">
+                  <Icon icon="mdi:play" class="h-12 w-12 text-white" />
+                </div>
+              </div>
+              <!-- Duration Badge -->
+              <div class="absolute bottom-4 right-4 rounded-lg bg-black/80 px-3 py-1 text-sm font-medium text-white backdrop-blur">
+                <Icon icon="mdi:clock-outline" class="mr-1 inline-block h-4 w-4" />
+                2:30
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Video Modal -->
+    <Teleport to="body">
+      <Transition
+        enter-active-class="transition-opacity duration-300"
+        leave-active-class="transition-opacity duration-300"
+        enter-from-class="opacity-0"
+        leave-to-class="opacity-0"
+      >
+        <div
+          v-if="showVideoModal"
+          class="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm"
+          @click="closeVideoModal"
+        >
+          <!-- Modal Content -->
+          <div
+            class="relative w-full max-w-6xl"
+            @click.stop
+          >
+            <!-- Close Button -->
+            <button
+              class="absolute -top-12 right-0 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-all hover:bg-white/20"
+              @click="closeVideoModal"
+              type="button"
+            >
+              <Icon icon="mdi:close" class="h-6 w-6" />
+            </button>
+
+            <!-- Video Container -->
+            <div class="overflow-hidden rounded-2xl shadow-2xl">
+              <div class="relative aspect-video bg-black">
+                <video
+                  ref="videoPlayer"
+                  class="h-full w-full"
+                  controls
+                  autoplay
+                  @ended="handleVideoEnded"
+                >
+                  <source src="/videos/brewtokens-walkthru.mp4" type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
     <!-- Footer -->
     <footer class="border-t border-white/10 bg-gray-950 py-12 text-gray-400">
       <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-4 sm:flex-row sm:px-6 lg:px-8">
@@ -272,20 +275,33 @@ const cleanupRouteWatcher = () => {
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { ref, onMounted } from 'vue';
 import { Icon } from '@iconify/vue';
 import heroQrCode from '@/assets/images/hero-qr-code.png';
 import qrAwardBrewery from '@/assets/images/qr-award-brewery.png';
 import qrCode from '@/assets/images/qr-code.png';
 import singleQr from '@/assets/images/single-qr.png';
-import BetaSignupCard from '@/components/marketing/BetaSignupCard.vue';
 import LandingRegistrationCard from '@/components/marketing/LandingRegistrationCard.vue';
 import whiteLabelBrewery from '/images/white-label-brewery.png';
+import { useLocation } from '@/composables/useLocation';
 
 const currentYear = new Date().getFullYear();
-const route = useRoute();
-const router = useRouter();
+const { getLocation } = useLocation();
+
+// Video modal state
+const showVideoModal = ref(false);
+const videoPlayer = ref(null);
+
+// Fetch user location on mount for later use in registration and contact
+onMounted(async () => {
+  try {
+    console.log('Fetching location on landing page');
+    let location = await getLocation();
+    console.log('Location fetched on landing page:', location);
+  } catch (error) {
+    console.error('Error fetching location on landing page:', error);
+  }
+});
 
 const heroHighlights = [
   {
@@ -383,351 +399,47 @@ const whiteLabelHighlights = [
   },
 ];
 
-const overlayVisible = ref(false);
-const floatingCardVisible = ref(false);
-const staticCardHidden = ref(false);
-const betaHighlight = ref(false);
-const isCardAnimating = ref(false);
-const floatingCardStyle = ref({});
-const betaCardRef = ref(null);
-const modalCardRef = ref(null);
-const betaEnabled = ref(false);
 const registrationHighlight = ref(false);
+const betaCardRef = ref(null);
 
-const BETA_STORAGE_KEY = 'beta';
-const ADMIN_USER_KEY = 'adminUser';
-
-const staticCardClass = computed(() => ({
-  'pointer-events-none select-none opacity-0': staticCardHidden.value,
-}));
-
-const animationDurationMs = 460;
-const transitionEasing = 'cubic-bezier(0.33, 1, 0.68, 1)';
-const transitionProperty = `top ${animationDurationMs}ms ${transitionEasing}, left ${animationDurationMs}ms ${transitionEasing}, transform ${animationDurationMs}ms ${transitionEasing}, width ${animationDurationMs}ms ${transitionEasing}, height ${animationDurationMs}ms ${transitionEasing}, max-height ${animationDurationMs}ms ${transitionEasing}, opacity 220ms ease-in-out`;
-
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-const nextFrame = () =>
-  new Promise((resolve) => {
-    if (typeof window === 'undefined') {
-      resolve();
-      return;
-    }
-
-    window.requestAnimationFrame(() => {
-      resolve();
-    });
-  });
-
-const normalizeQueryValue = (value) => {
-  if (Array.isArray(value)) {
-    return value[value.length - 1];
-  }
-  return value ?? undefined;
-};
-
-const getBetaFlagFromRoute = () => parseBooleanParam(normalizeQueryValue(route.query.beta));
-
-const buildFloatingStyleFromRect = (rect) => ({
-  position: 'fixed',
-  top: `${rect.top}px`,
-  left: `${rect.left}px`,
-  width: `${rect.width}px`,
-  height: `${rect.height}px`,
-  zIndex: 60,
-  transform: 'translate3d(0, 0, 0)',
-  transition: transitionProperty,
-  opacity: 1,
-});
-
-const getHeroCardElement = () => betaCardRef.value?.getCardEl() ?? null;
-const setBetaLocalStorage = (value) => {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  try {
-    if (value) {
-      window.localStorage.setItem(BETA_STORAGE_KEY, 'true');
-    } else {
-      window.localStorage.removeItem(BETA_STORAGE_KEY);
-    }
-  } catch (error) {
-    console.error('Failed to set beta flag in localStorage', error);
-  }
-};
-
-const parseBooleanParam = (value) => {
-  if (typeof value !== 'string') {
-    return null;
-  }
-
-  const normalized = value.toLowerCase().trim();
-
-  if (normalized === 'true') {
-    return true;
-  }
-
-  if (normalized === 'false') {
-    return false;
-  }
-
-  return null;
-};
-
-const shouldEnableBetaFromStorage = () => {
-  if (typeof window === 'undefined') {
-    return false;
-  }
-
-  try {
-    const stored = window.localStorage.getItem(BETA_STORAGE_KEY);
-    if (stored === 'true') {
-      return true;
-    }
-
-    const adminUser = window.localStorage.getItem(ADMIN_USER_KEY);
-    return Boolean(adminUser);
-  } catch (error) {
-    console.error('Failed to read beta flag from localStorage', error);
-    return false;
-  }
-};
-
-const applyBetaState = (value, { persist = true } = {}) => {
-  betaEnabled.value = value;
-
-  if (!value) {
-    finalizeClose();
-  }
-
-  if (persist) {
-    setBetaLocalStorage(value);
-  }
-};
-
-let stopRouteWatcher = null;
-
-const cleanupRouteWatcher = () => {
-  if (typeof stopRouteWatcher === 'function') {
-    stopRouteWatcher();
-    stopRouteWatcher = null;
-  }
-};
-
-const initializeBetaMode = () => {
-  const parsed = getBetaFlagFromRoute();
-
-  if (parsed !== null) {
-    applyBetaState(parsed, { persist: true, syncRoute: false });
-    return;
-  }
-
-  const shouldEnable = shouldEnableBetaFromStorage();
-  applyBetaState(shouldEnable, { persist: false });
-};
-
-const watchRouteChanges = () => {
-  cleanupRouteWatcher();
-
-  stopRouteWatcher = watch(
-    () => route.query.beta,
-    (newValue) => {
-      const parsed = getBetaFlagFromRoute();
-
-      if (parsed !== null) {
-        applyBetaState(parsed, { persist: false, syncRoute: false });
-        return;
-      }
-
-      const shouldEnable = shouldEnableBetaFromStorage();
-      applyBetaState(shouldEnable, { persist: false });
-    },
-  );
-};
-
-const focusBetaCard = async () => {
-  if (!betaEnabled.value) {
-    const cardEl = getHeroCardElement();
-    if (cardEl && typeof cardEl.scrollIntoView === 'function') {
-      cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-    registrationHighlight.value = true;
-    await wait(280);
-    registrationHighlight.value = false;
-    return;
-  }
-
-  if (isCardAnimating.value) {
-    return;
-  }
-
-  if (floatingCardVisible.value) {
-    modalCardRef.value?.focusEmailInput();
-    return;
-  }
-
-  const cardEl = getHeroCardElement();
-  if (!cardEl) {
-    return;
-  }
-
-  isCardAnimating.value = true;
-  betaHighlight.value = true;
-
-  if (typeof cardEl.scrollIntoView === 'function') {
+const focusRegistrationCard = async () => {
+  const cardEl = betaCardRef.value?.getCardEl?.();
+  if (cardEl && typeof cardEl.scrollIntoView === 'function') {
     cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
-
-  await wait(280);
-
-  const rect = cardEl.getBoundingClientRect();
-
-  overlayVisible.value = true;
-  floatingCardVisible.value = true;
-  floatingCardStyle.value = buildFloatingStyleFromRect(rect);
-
-  await nextTick();
-  staticCardHidden.value = true;
-
-  await nextFrame();
-
-  floatingCardStyle.value = {
-    ...floatingCardStyle.value,
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    width: 'min(90vw, 34rem)',
-    height: 'auto',
-    maxHeight: 'min(85vh, 40rem)',
-  };
-
-  await wait(animationDurationMs);
-
-  modalCardRef.value?.focusEmailInput();
-  isCardAnimating.value = false;
-};
-
-const finalizeClose = () => {
-  floatingCardVisible.value = false;
-  overlayVisible.value = false;
-  staticCardHidden.value = false;
-  betaHighlight.value = false;
-  isCardAnimating.value = false;
-  floatingCardStyle.value = {};
-};
-
-const closeBetaModal = async () => {
-  if (!betaEnabled.value) {
-    return;
-  }
-
-  if (!floatingCardVisible.value || isCardAnimating.value) {
-    if (!isCardAnimating.value) {
-      overlayVisible.value = false;
-    }
-    return;
-  }
-
-  const cardEl = getHeroCardElement();
-
-  if (!cardEl) {
-    floatingCardStyle.value = {
-      ...floatingCardStyle.value,
-      opacity: 0,
-      transform: 'translate(-50%, -55%) scale(0.96)',
-    };
-
-    await wait(animationDurationMs);
-    finalizeClose();
-    return;
-  }
-
-  isCardAnimating.value = true;
-  staticCardHidden.value = false;
-  betaHighlight.value = true;
-
-  await nextTick();
-
-  const rect = cardEl.getBoundingClientRect();
-  floatingCardStyle.value = {
-    ...floatingCardStyle.value,
-    height: `${rect.height}px`,
-    maxHeight: `${rect.height}px`,
-  };
-
-  await nextFrame();
-
-  floatingCardStyle.value = {
-    ...floatingCardStyle.value,
-    top: `${rect.top}px`,
-    left: `${rect.left}px`,
-    transform: 'translate3d(0, 0, 0)',
-    width: `${rect.width}px`,
-    height: `${rect.height}px`,
-    maxHeight: `${rect.height}px`,
-  };
-
-  await wait(animationDurationMs);
-
-  finalizeClose();
-};
-
-const handleKeydown = (event) => {
-  if (event.key === 'Escape') {
-    closeBetaModal();
-  }
+  registrationHighlight.value = true;
+  await new Promise((resolve) => setTimeout(resolve, 280));
+  registrationHighlight.value = false;
 };
 
 const handleRegistrationLoginClick = () => {
-  closeBetaModal();
+  focusRegistrationCard();
 };
 
 const handleFocusCard = () => {
-  if (betaEnabled.value) {
-    focusBetaCard();
-    return;
-  }
-
-  registrationHighlight.value = true;
-  wait(animationDurationMs).then(() => {
-    registrationHighlight.value = false;
-  });
+  focusRegistrationCard();
 };
 
-let previousBodyOverflow = '';
+// Video modal functions
+const openVideoModal = () => {
+  showVideoModal.value = true;
+  // Prevent body scroll when modal is open
+  document.body.style.overflow = 'hidden';
+};
 
-watch(overlayVisible, (visible) => {
-  if (typeof document === 'undefined') {
-    return;
+const closeVideoModal = () => {
+  showVideoModal.value = false;
+  // Restore body scroll
+  document.body.style.overflow = '';
+  // Pause video when closing
+  if (videoPlayer.value) {
+    videoPlayer.value.pause();
+    videoPlayer.value.currentTime = 0;
   }
+};
 
-  if (visible) {
-    previousBodyOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-  } else {
-    document.body.style.overflow = previousBodyOverflow;
-  }
-});
-
-onMounted(() => {
-  if (typeof window === 'undefined') {
-    return;
-  }
-
-  window.addEventListener('keydown', handleKeydown);
-  initializeBetaMode();
-  watchRouteChanges();
-});
-
-onBeforeUnmount(() => {
-  if (typeof window !== 'undefined') {
-    window.removeEventListener('keydown', handleKeydown);
-  }
-
-  if (typeof document !== 'undefined') {
-    document.body.style.overflow = previousBodyOverflow;
-  }
-
-  cleanupRouteWatcher();
-});
+const handleVideoEnded = () => {
+  // Optionally auto-close modal when video ends
+  // closeVideoModal();
+};
 </script>

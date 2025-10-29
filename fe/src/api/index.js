@@ -87,7 +87,10 @@ api.interceptors.request.use(
       '/health',
       '/auth/google/login',
       '/auth/google/admin/login',
-      '/auth/refresh'
+      '/auth/refresh',
+      '/auth/check-credentials',
+      '/auth/register',
+      '/auth/login'
     ];
     
     const isPublicEndpoint = publicEndpoints.some(endpoint => config.url.includes(endpoint));
@@ -380,6 +383,46 @@ const getSuperOrganizations = async (passcode) => {
   });
   return response.data;
 };
+const getSuperOrganizationDetails = async (passcode, organizationId) => {
+  const response = await api.get(`/super/organizations/${organizationId}`, {
+    headers: {
+      'X-Super-Passcode': passcode
+    }
+  });
+  return response.data;
+};
+const getSuperQRCodes = async (passcode) => {
+  const response = await api.get('/super/qr-codes', {
+    headers: {
+      'X-Super-Passcode': passcode
+    }
+  });
+  return response.data;
+};
+const createSuperQRCode = async (passcode, payload) => {
+  const response = await api.post('/super/qr-codes', payload, {
+    headers: {
+      'X-Super-Passcode': passcode
+    }
+  });
+  return response.data;
+};
+const updateSuperQRCode = async (passcode, id, payload) => {
+  const response = await api.put(`/super/qr-codes/${id}`, payload, {
+    headers: {
+      'X-Super-Passcode': passcode
+    }
+  });
+  return response.data;
+};
+const deleteSuperQRCode = async (passcode, id) => {
+  const response = await api.delete(`/super/qr-codes/${id}`, {
+    headers: {
+      'X-Super-Passcode': passcode
+    }
+  });
+  return response.data;
+};
 const getOrganizationByCode = (code) => api.get(`/organization/by-code/${code}`);
 const updateOrganization = (data) => api.put('/organization', data);
 const uploadOrganizationBanner = (imageData) => {
@@ -393,6 +436,9 @@ const createAwardQRCode = (data) => api.post('/qr-codes', data);
 const updateAwardQRCode = (id, data) => api.put(`/qr-codes/${id}`, data);
 const deleteAwardQRCode = (id) => api.delete(`/qr-codes/${id}`);
 
+// Transactions API functions
+const getTransactions = (params = {}) => api.get('/transactions', { params });
+
 // Function to cancel all pending requests and create a new token source
 export const cancelPendingRequests = (message = 'Operation cancelled by user') => {
   if (cancelTokenSource) {
@@ -403,6 +449,22 @@ export const cancelPendingRequests = (message = 'Operation cancelled by user') =
 };
 
 // Authentication functions
+const checkUserCredentials = async (email, password) => {
+  try {
+    console.log('🔍 Checking user credentials:', { email });
+    const response = await api.post('/auth/check-credentials', { email, password });
+    console.log('✅ Credentials check response:', response.data);
+    return response;
+  } catch (error) {
+    console.error('❌ Check credentials API error:', {
+      status: error.response?.status,
+      message: error.response?.data?.message,
+      data: error.response?.data
+    });
+    throw error;
+  }
+};
+
 const register = async (userData) => {
   try {
     console.log('📝 Sending registration request:', {
@@ -439,6 +501,11 @@ const register = async (userData) => {
 
 const getCurrentUser = async () => {
   const response = await api.get('/auth/me');
+  return response.data;
+};
+
+const generateMagicLoginLink = async (email) => {
+  const response = await api.post('/auth/magic-login/generate', { email });
   return response.data;
 };
 
@@ -550,6 +617,25 @@ const demoLogin = async (organizationCode) => {
   }
 };
 
+const sendAdminWelcomeEmailManually = async (passcode, organizationId, payload) => {
+  const body = {
+    ...(payload?.adminEmail ? { adminEmail: payload.adminEmail } : {}),
+    ...(payload?.adminFirstName ? { adminFirstName: payload.adminFirstName } : {}),
+    ...(payload?.adminLastName ? { adminLastName: payload.adminLastName } : {}),
+  };
+
+  const response = await api.post(
+    '/super/organizations/' + organizationId + '/send-welcome',
+    body,
+    {
+      headers: {
+        'X-Super-Passcode': passcode
+      }
+    }
+  );
+  return response.data;
+};
+
 // Export the configured axios instance and API functions
 export {
   api as default,
@@ -557,10 +643,12 @@ export {
   submitContactRequest,
   checkHealth,
   // Authentication
+  checkUserCredentials,
   register,
   getCurrentUser,
   googleLogin,
   demoLogin,
+  generateMagicLoginLink,
   // Member management
   getMembers,
   getMemberDetails,
@@ -580,4 +668,12 @@ export {
   updateAwardQRCode,
   deleteAwardQRCode,
   getSuperOrganizations,
+  getSuperOrganizationDetails,
+  getSuperQRCodes,
+  createSuperQRCode,
+  updateSuperQRCode,
+  deleteSuperQRCode,
+  sendAdminWelcomeEmailManually,
+  // Transactions
+  getTransactions,
 };

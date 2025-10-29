@@ -23,7 +23,7 @@ const storage = {
   },
   set: (key, value, stringifyJson = true) => {
     try {
-      if (value === null) {
+      if (value === null || value === undefined) {
         localStorage.removeItem(key);
       } else {
         localStorage.setItem(key, stringifyJson ? JSON.stringify(value) : value);
@@ -32,6 +32,22 @@ const storage = {
       console.error('Error writing to localStorage:', e);
     }
   }
+};
+
+const persistSession = (commit, { token, user, refreshToken, refreshTokenExpiresAt }) => {
+  if (token) {
+    commit('SET_TOKEN', token);
+  }
+  if (user) {
+    commit('SET_USER', user);
+  }
+  if (refreshToken) {
+    commit('SET_REFRESH_TOKEN', refreshToken);
+  }
+  if (refreshTokenExpiresAt) {
+    commit('SET_REFRESH_TOKEN_EXPIRES_AT', refreshTokenExpiresAt);
+  }
+  commit('SET_LAST_ACTIVITY');
 };
 
 export default createStore({
@@ -155,16 +171,8 @@ export default createStore({
         const { token, user, organization, refreshToken, refreshTokenExpiresAt } = response.data.data;
         
         // Store auth data
-        commit('SET_TOKEN', token);
-        commit('SET_USER', user);
-        if (refreshToken) {
-          commit('SET_REFRESH_TOKEN', refreshToken);
-        }
-        if (refreshTokenExpiresAt) {
-          commit('SET_REFRESH_TOKEN_EXPIRES_AT', refreshTokenExpiresAt);
-        }
-        commit('SET_LAST_ACTIVITY');
-
+        persistSession(commit, { token, user, refreshToken, refreshTokenExpiresAt });
+        
         // Store organization data if available
         if (organization) {
           // You might want to add organization to a separate module
@@ -197,15 +205,7 @@ export default createStore({
         const { token, user, refreshToken, refreshTokenExpiresAt } = response.data.data;
         
         // Store auth data
-        commit('SET_TOKEN', token);
-        commit('SET_USER', user);
-        if (refreshToken) {
-          commit('SET_REFRESH_TOKEN', refreshToken);
-        }
-        if (refreshTokenExpiresAt) {
-          commit('SET_REFRESH_TOKEN_EXPIRES_AT', refreshTokenExpiresAt);
-        }
-        commit('SET_LAST_ACTIVITY');
+        persistSession(commit, { token, user, refreshToken, refreshTokenExpiresAt });
 
         // Handle redirect after login
         const redirectPath = redirect || '/admin';
@@ -214,6 +214,32 @@ export default createStore({
         // Start session monitoring
         dispatch('startSessionMonitor');
         
+        return response.data;
+      } catch (error) {
+        commit('CLEAR_AUTH');
+        throw error;
+      }
+    },
+
+    async magicLogin({ commit, dispatch }, { token, redirect, skipRedirect } = {}) {
+      try {
+        const response = await api.post('/auth/magic-login/consume', { token });
+
+        if (!response.data.success) {
+          throw new Error(response.data.message);
+        }
+
+        const { token: accessToken, user, refreshToken, refreshTokenExpiresAt } = response.data.data;
+
+        persistSession(commit, { token: accessToken, user, refreshToken, refreshTokenExpiresAt });
+
+        if (!skipRedirect) {
+          const redirectPath = redirect || '/admin';
+          await router.push(redirectPath);
+        }
+
+        dispatch('startSessionMonitor');
+
         return response.data;
       } catch (error) {
         commit('CLEAR_AUTH');

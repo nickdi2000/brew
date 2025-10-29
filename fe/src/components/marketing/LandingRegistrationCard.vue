@@ -41,13 +41,10 @@
         Register your venue
       </button>
 
-      <button
-        class="btn btn-secondary w-full py-3 text-base font-semibold"
-        type="button"
-        @click="openLogin"
-      >
-        Already have an account? Log in
-      </button>
+      <ContinueWithGoogleButton
+        class="w-full"
+        @success="handleGoogleAdminSuccess"
+      />
     </div>
   </div>
 </template>
@@ -55,7 +52,11 @@
 <script setup>
 import { Icon } from '@iconify/vue';
 import { computed, ref } from 'vue';
+import { useStore } from 'vuex';
 import { useRouter } from 'vue-router';
+import { useToast } from '@/plugins/toast';
+import ContinueWithGoogleButton from '@/components/auth/ContinueWithGoogleButton.vue';
+import { sanitizeAdminGooglePayload } from '@/utils/authSanitizers';
 
 const props = defineProps({
   highlight: {
@@ -64,9 +65,11 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(['login-request', 'focus-card']);
+const emit = defineEmits(['focus-card']);
 
 const router = useRouter();
+const store = useStore();
+const toast = useToast();
 
 const cardRef = ref(null);
 
@@ -92,11 +95,44 @@ const openRegistration = () => {
     .catch(() => {});
 };
 
-const openLogin = () => {
-  emit('login-request');
-  router
-    .push({ name: 'admin-login' })
-    .catch(() => {});
+const handleGoogleAdminSuccess = async (authPayload) => {
+  try {
+    const {
+      token,
+      refreshToken,
+      refreshTokenExpiresAt,
+      user,
+    } = sanitizeAdminGooglePayload(authPayload);
+
+    if (!token || !user) {
+      throw new Error('Invalid authentication payload');
+    }
+
+    store.commit('SET_TOKEN', token);
+    store.commit('SET_USER', user);
+
+    if (refreshToken) {
+      store.commit('SET_REFRESH_TOKEN', refreshToken);
+    }
+
+    if (refreshTokenExpiresAt) {
+      store.commit('SET_REFRESH_TOKEN_EXPIRES_AT', refreshTokenExpiresAt);
+    }
+
+    store.commit('SET_LAST_ACTIVITY');
+
+    const redirect = router.currentRoute.value.query.redirect || '/admin';
+    await router.push(redirect);
+    store.dispatch('startSessionMonitor');
+  } catch (error) {
+    console.error('Admin Google login handling failed:', error);
+    toast(
+      error.response?.data?.message ||
+        error.message ||
+        'Failed to sign in with Google',
+      'error',
+    );
+  }
 };
 
 defineExpose({

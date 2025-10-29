@@ -2,9 +2,12 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 
 const User = require('../models/User');
+const MagicLoginToken = require('../models/MagicLoginToken');
 const Organization = require('../models/Organization');
 const QRCode = require('../models/QRCode');
 const Reward = require('../models/Reward');
+const { sendAdminWelcomeEmail } = require('./postmarkService');
+const { createMagicTokenForUser } = require('./magicLoginService');
 
 class ServiceError extends Error {
   constructor(message, status = 400, meta = null) {
@@ -287,6 +290,20 @@ const registerAdminAccount = async ({ breweryName, email, password, qrCode, goog
 
   await user.save();
 
+  let magicLoginUrl = null;
+  try {
+    const { magicLoginUrl: generatedUrl } = await createMagicTokenForUser({
+      user,
+      metadata: {
+        source: 'admin-registration',
+        organizationId: organization._id,
+      },
+    });
+    magicLoginUrl = generatedUrl;
+  } catch (error) {
+    console.error('Failed to create registration magic login token:', error.message || error);
+  }
+
   const authTokens = await issueAuthTokens(user);
 
   const payload = {
@@ -298,6 +315,19 @@ const registerAdminAccount = async ({ breweryName, email, password, qrCode, goog
   };
 
   const message = buildRegistrationMessage(defaultQRCode, defaultReward);
+
+  const welcomeEmailPromise = sendAdminWelcomeEmail({
+    toEmail: normalizedEmail,
+    organizationName: breweryName,
+    adminFirstName: user.firstName,
+    adminLastName: user.lastName,
+    loginEmail: normalizedEmail,
+    magicLoginUrl,
+  });
+
+  welcomeEmailPromise.catch((error) => {
+    console.error('Failed to send admin welcome email:', error?.message || error);
+  });
 
   return { payload, message };
 };

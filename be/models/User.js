@@ -97,6 +97,10 @@ const userSchema = new mongoose.Schema({
   refreshTokenExpiresAt: {
     type: Date,
     default: null
+  },
+  location: {
+    type: Object,
+    default: null
   }
 });
 

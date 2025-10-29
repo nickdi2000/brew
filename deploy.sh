@@ -262,14 +262,9 @@ main() {
     log_success "Deployment completed successfully!"
     echo ""
     
-    # Ask if user wants to see logs
-    read -p "$(echo -e ${YELLOW}Do you want to view PM2 logs? [y/N]: ${NC})" -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        show_pm2_logs
-    else
-        log_info "To view logs later, run: ssh -i $SSH_KEY $SERVER 'pm2 logs $PM2_APP_NAME'"
-    fi
+    # Show last 50 lines of logs and exit after 2 seconds
+    log_info "Displaying recent logs..."
+    ssh -i "$SSH_KEY" "$SERVER" "timeout 2s pm2 logs $PM2_APP_NAME --lines 50"
 }
 
 # Run main function

@@ -13,8 +13,8 @@
     </div>
 
     <div class="space-y-6">
-      <!-- Filters -->
-      <div v-if="!loading" class="mb-4">
+      <!-- Filters - Only show if we have members -->
+      <div v-if="!loading && members.length > 0" class="mb-4">
         <div class="flex items-center gap-3">
           <div class="relative max-w-xs w-full sm:w-auto">
             <input
@@ -38,7 +38,44 @@
 
       <!-- Members List -->
       <div class="bg-white shadow rounded-lg">
-        <div class="overflow-x-auto">
+        <!-- Empty State - No Table Needed -->
+        <div v-if="!loading && filteredMembers.length === 0" class="px-4 py-12 sm:px-6 sm:py-16">
+          <div class="flex flex-col items-center justify-center max-w-md mx-auto text-center">
+            <Icon :icon="hasActiveFilters ? 'mdi:magnify-close' : 'mdi:account-group'" class="h-16 w-16 sm:h-20 sm:w-20 text-gray-400 mb-4" />
+            <h3 class="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
+              <template v-if="hasActiveFilters">No members match your search</template>
+              <template v-else>No members yet</template>
+            </h3>
+            <p class="text-sm sm:text-base text-gray-500 mb-6">
+              <template v-if="hasActiveFilters">
+                Try adjusting your filters or search terms.
+              </template>
+              <template v-else>
+                Get started by sharing your <router-link to="/admin/qr-codes?tab=portal" class="text-amber-600 hover:text-amber-700 underline font-medium">member portal link</router-link> to start growing your community!
+              </template>
+            </p>
+            <button
+              v-if="hasActiveFilters"
+              type="button"
+              class="btn btn-secondary inline-flex items-center"
+              @click="clearFilters"
+            >
+              <Icon icon="mdi:filter-remove" class="h-5 w-5 mr-2" />
+              Clear filters
+            </button>
+            <!-- <router-link
+              v-else
+              to="/admin/members/new"
+              class="btn btn-primary inline-flex items-center"
+            >
+              <Icon icon="mdi:account-plus" class="h-5 w-5 mr-2" />
+              Add Your First Member
+            </router-link> -->
+          </div>
+        </div>
+
+        <!-- Table with Members -->
+        <div v-else class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
@@ -67,50 +104,6 @@
                   <div class="flex-1 space-y-2">
                     <div class="h-4 bg-gray-200 rounded w-3/4"></div>
                     <div class="h-4 bg-gray-200 rounded w-1/2"></div>
-                  </div>
-                </div>
-              </td>
-            </tr>
-            <tr v-else-if="filteredMembers.length === 0">
-              <td colspan="5" class="px-6 py-4 text-center text-gray-500">
-                <div class="flex flex-col items-center py-6">
-                  <Icon :icon="hasActiveFilters ? 'mdi:magnify-close' : 'mdi:account-group'" class="h-12 w-12 text-gray-400" />
-                  <h3 class="mt-2 text-sm font-medium text-gray-900">
-                    <template v-if="hasActiveFilters">No members match your search</template>
-                    <template v-else>No members found</template>
-                  </h3>
-                  <p class="mt-1 text-sm text-gray-500">
-                    <template v-if="hasActiveFilters">
-                      Try adjusting your filters or search terms.
-                    </template>
-                    <template v-else>
-                      Share your <router-link to="/admin/qr-codes?tab=portal" class="text-amber-600 hover:text-amber-700 underline">member portal link</router-link> to start growing your community!
-                    </template>
-                  </p>
-                  <button
-                    v-if="hasActiveFilters"
-                    type="button"
-                    class="mt-3 btn btn-secondary"
-                    @click="clearFilters"
-                  >
-                    Clear filters
-                  </button>
-                  <div v-else class="mt-3 max-w-2xl mx-auto w-full hidden">
-                    <div class="flex items-center justify-center space-x-3 bg-gray-50 py-3 px-4 rounded-lg border border-gray-200">
-                      <Icon icon="mdi:link-variant" class="h-5 w-5 text-gray-400 flex-shrink-0" />
-                      <span class="text-gray-900 font-medium">{{ portalLink }}</span>
-                      <button
-                        @click="copyToClipboard"
-                        class="inline-flex items-center text-amber-600 hover:text-amber-700 focus:outline-none"
-                      >
-                        <Icon icon="mdi:content-copy" class="h-5 w-5" />
-                        <span class="ml-1 text-sm">Copy</span>
-                      </button>
-                    </div>
-                    <p v-if="showCopied" class="mt-2 text-sm text-green-600 text-center">
-                      <Icon icon="mdi:check-circle" class="inline h-4 w-4 mr-1" />
-                      Copied to clipboard!
-                    </p>
                   </div>
                 </div>
               </td>
@@ -163,11 +156,11 @@
               </td>
             </tr>
           </tbody>
-        </table>
+          </table>
         </div>
 
-        <!-- Pagination -->
-        <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+        <!-- Pagination - Only show if we have members -->
+        <div v-if="members.length > 0" class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
           <div class="flex-1 flex justify-between sm:hidden">
             <button
               @click="prevPage"

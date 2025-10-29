@@ -22,8 +22,20 @@ exports.list = async (req, res) => {
 
 exports.create = async (req, res) => {
   try {
-    const orgId = req.user.organization._id;
-    const { points = 0, expiresAt = null, isActive = true, name } = req.body;
+    const orgId = req.user?.organization?._id;
+    if (!orgId) {
+      return res.status(400).json(formatError('Organization context is required to create QR codes'));
+    }
+
+    const {
+      points = 0,
+      expiresAt = null,
+      isActive = true,
+      name,
+      printed = false,
+      type = '',
+      qrContent
+    } = req.body;
     const code = generateCode();
     const doc = await QRCode.create({ 
       organization: orgId, 
@@ -31,6 +43,9 @@ exports.create = async (req, res) => {
       points, 
       expiresAt, 
       isActive,
+      printed,
+      type,
+      qrContent,
       name: name || `${points} Points QR Code` // Use points value in default name
     });
     res.json(formatResponse({ data: doc, message: 'QR code created' }));

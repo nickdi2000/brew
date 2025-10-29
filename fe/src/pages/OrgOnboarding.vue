@@ -34,17 +34,18 @@
         class="screen min-h-screen flex flex-col items-center justify-center px-6 py-8"
         :class="getScreenClass(1)"
       >
-        <!-- Massive CoinFlip at the top -->
-        <div class="mb-8 md:mb-16 transform hover:scale-110 transition-all duration-500 drop-shadow-2xl">
-          <div class="scale-150 md:scale-200">
-            <CoinFlip :value="'$'" />
+        <!-- CoinFlip or SpinningQrPlaque at the top -->
+        <div class="mb-6 md:mb-12 transform hover:scale-110 transition-all duration-500 drop-shadow-2xl">
+          <div class="scale-75 sm:scale-100 md:scale-125">
+            <SpinningQrPlaque v-if="qrType === 'plaque'" />
+            <CoinFlip v-else :value="'$'" />
           </div>
         </div>
         
         <!-- Epic welcome content -->
         <div class="text-center max-w-4xl space-y-6 md:space-y-12">
-          <!-- Massive heading with epic gradient -->
-          <h1 class="text-5xl md:text-8xl lg:text-9xl font-black bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent leading-tight tracking-tight">
+          <!-- Heading with epic gradient -->
+          <h1 class="text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-black bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent leading-tight tracking-tight">
             <span class="block animate-fade-in-up" style="animation-delay: 0.2s;">BREW</span>
             <span class="block animate-fade-in-up" style="animation-delay: 0.4s;">TOKENS</span>
           </h1>
@@ -60,20 +61,20 @@
           </div>
           
           <!-- Simple description -->
-          <p v-if="!hasAttemptedCode" class="text-2xl md:text-3xl text-gray-300 font-light leading-relaxed animate-fade-in-up" style="animation-delay: 0.6s;">
+          <p v-if="!hasAttemptedCode" class="text-lg sm:text-xl md:text-2xl text-gray-300 font-light leading-relaxed animate-fade-in-up px-4" style="animation-delay: 0.6s;">
             Transform your venue into a
             <span class="bg-gradient-to-r from-amber-400 to-yellow-400 bg-clip-text text-transparent font-semibold">rewards destination</span>
           </p>
           
-          <!-- Epic call to action -->
-          <div class="pt-8 md:pt-16 animate-fade-in-up" style="animation-delay: 0.8s;">
+          <!-- Call to action -->
+          <div class="pt-6 md:pt-12 animate-fade-in-up" style="animation-delay: 0.8s;">
             <button 
-              class="group relative bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-600 hover:via-yellow-600 hover:to-amber-700 text-black font-black py-6 px-12 md:py-8 md:px-16 rounded-2xl text-xl md:text-2xl transition-all duration-500 transform hover:scale-110 hover:shadow-[0_0_50px_rgba(251,191,36,0.5)] focus:outline-none focus:ring-4 focus:ring-amber-500/50 shadow-2xl"
+              class="group relative bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-600 hover:via-yellow-600 hover:to-amber-700 text-black font-black py-4 px-8 sm:py-5 sm:px-10 md:py-6 md:px-14 rounded-2xl text-lg sm:text-xl md:text-2xl transition-all duration-500 transform hover:scale-110 hover:shadow-[0_0_50px_rgba(251,191,36,0.5)] focus:outline-none focus:ring-4 focus:ring-amber-500/50 shadow-2xl"
               @click="goToNextStep"
             >
-              <span class="relative z-10 flex items-center justify-center space-x-3">
+              <span class="relative z-10 flex items-center justify-center space-x-2 sm:space-x-3">
                 <span>GET STARTED</span>
-                <Icon icon="mdi:rocket-launch" class="w-6 h-6 md:w-8 md:h-8 transition-transform group-hover:translate-x-2 group-hover:-translate-y-1" />
+                <Icon icon="mdi:rocket-launch" class="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 transition-transform group-hover:translate-x-2 group-hover:-translate-y-1" />
               </span>
               
               <!-- Epic shine sweep -->
@@ -88,72 +89,29 @@
         </div>
       </div>
       
-      <!-- SCREEN 2: Account Status Selection -->
+      <!-- SCREEN 2: User Type Selection -->
       <div 
-        class="screen min-h-screen flex flex-col items-center justify-center px-6 py-8"
+        class="screen min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 py-8"
         :class="getScreenClass(2)"
       >
-        <div class="text-center max-w-2xl space-y-8">
-          <h2 class="text-4xl md:text-6xl font-black bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent leading-tight">
-            Welcome to BrewTokens!
-          </h2>
-          
-          <p class="text-xl md:text-2xl text-gray-300 font-light leading-relaxed">
-            Are you already registered or is this your first time?
-          </p>
-          
-          <div class="space-y-6 pt-8">
-            <!-- Primary: New Account -->
-            <button 
-              class="group w-full relative bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-600 hover:via-yellow-600 hover:to-amber-700 text-black font-black py-6 px-8 rounded-2xl text-lg md:text-xl transition-all duration-500 transform hover:scale-105 hover:shadow-[0_0_40px_rgba(251,191,36,0.4)] focus:outline-none focus:ring-4 focus:ring-amber-500/50 shadow-xl"
-              @click="selectAccountStatus('new')"
-            >
-              <span class="relative z-10 flex items-center justify-center space-x-3">
-                <Icon icon="mdi:account-plus" class="w-6 h-6" />
-                <span>I need to create a new account</span>
-              </span>
-              
-              <!-- Shine sweep -->
-              <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-1000 rounded-2xl"></div>
-            </button>
-            
-            <!-- Secondary: Existing Account -->
-            <button 
-              class="group w-full relative bg-gray-800 hover:bg-gray-700 text-white border-2 border-gray-600 hover:border-gray-500 py-6 px-8 rounded-2xl text-lg md:text-xl transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-gray-500/50"
-              @click="selectAccountStatus('existing')"
-            >
-              <span class="flex items-center justify-center space-x-3">
-                <Icon icon="mdi:account-check" class="w-6 h-6" />
-                <span>I already have an account</span>
-              </span>
-            </button>
-          </div>
-        </div>
-      </div>
-      
-      <!-- SCREEN 3: User Type Selection -->
-      <div 
-        class="screen min-h-screen flex flex-col items-center justify-center px-6 py-8"
-        :class="getScreenClass(3)"
-      >
-        <div class="text-center max-w-2xl space-y-8">
-          <h2 class="text-4xl md:text-6xl font-black bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent leading-tight">
+        <div class="text-center max-w-2xl space-y-6 md:space-y-8">
+          <h2 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent leading-tight">
             How can we help you?
           </h2>
           
-          <p class="text-xl md:text-2xl text-gray-300 font-light leading-relaxed">
+          <p class="text-lg sm:text-xl md:text-2xl text-gray-300 font-light leading-relaxed px-4">
             Tell us a bit about yourself to get started
           </p>
           
-          <div class="space-y-6 pt-8">
-            <!-- Primary: Brewery Owner/Manager -->
+          <div class="space-y-4 md:space-y-6 pt-6 md:pt-8">
+            <!-- Primary: Venue Owner/Manager -->
             <button 
-              class="group w-full relative bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-600 hover:via-yellow-600 hover:to-amber-700 text-black font-black py-6 px-8 rounded-2xl text-lg md:text-xl transition-all duration-500 transform hover:scale-105 hover:shadow-[0_0_40px_rgba(251,191,36,0.4)] focus:outline-none focus:ring-4 focus:ring-amber-500/50 shadow-xl"
-              @click="selectUserType('brewery')"
+              class="group w-full relative bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-600 hover:via-yellow-600 hover:to-amber-700 text-black font-black py-4 sm:py-5 md:py-6 px-6 sm:px-8 rounded-2xl text-base sm:text-lg md:text-xl transition-all duration-500 transform hover:scale-105 hover:shadow-[0_0_40px_rgba(251,191,36,0.4)] focus:outline-none focus:ring-4 focus:ring-amber-500/50 shadow-xl"
+              @click="selectUserType('venue')"
             >
-              <span class="relative z-10 flex items-center justify-center space-x-3">
-                <Icon icon="mdi:factory" class="w-6 h-6" />
-                <span>I own or manage a brewery</span>
+              <span class="relative z-10 flex items-center justify-center space-x-2 sm:space-x-3">
+                <Icon icon="mdi:store" class="w-5 h-5 sm:w-6 sm:h-6" />
+                <span>I manage a venue</span>
               </span>
               
               <!-- Shine sweep -->
@@ -162,12 +120,56 @@
             
             <!-- Secondary: Customer -->
             <button 
-              class="group w-full relative bg-gray-800 hover:bg-gray-700 text-white border-2 border-gray-600 hover:border-gray-500 py-6 px-8 rounded-2xl text-lg md:text-xl transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-gray-500/50"
+              class="group w-full relative bg-gray-800 hover:bg-gray-700 text-white border-2 border-gray-600 hover:border-gray-500 py-4 sm:py-5 md:py-6 px-6 sm:px-8 rounded-2xl text-base sm:text-lg md:text-xl transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-gray-500/50"
               @click="selectUserType('customer')"
             >
-              <span class="flex items-center justify-center space-x-3">
-                <Icon icon="mdi:gift-outline" class="w-6 h-6" />
-                <span>I just want to earn points</span>
+              <span class="flex items-center justify-center space-x-2 sm:space-x-3">
+                <Icon icon="mdi:gift-outline" class="w-5 h-5 sm:w-6 sm:h-6" />
+                <span>I just want points</span>
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- SCREEN 3: Account Status Selection (Venue owners only) -->
+      <div 
+        v-show="currentStep === 3 && userType === 'venue'"
+        class="screen min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 py-8"
+        :class="getScreenClass(3, 'venue')"
+      >
+        <div class="text-center max-w-2xl space-y-6 md:space-y-8">
+          <h2 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent leading-tight">
+            Welcome to BrewTokens!
+          </h2>
+          
+          <p class="text-lg sm:text-xl md:text-2xl text-gray-300 font-light leading-relaxed px-4">
+            Are you already registered or is this your first time?
+          </p>
+          
+          <div class="space-y-4 md:space-y-6 pt-6 md:pt-8">
+            <!-- Primary: New Account -->
+            <button 
+              class="group w-full relative bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-600 hover:via-yellow-600 hover:to-amber-700 text-black font-black py-4 sm:py-5 md:py-6 px-6 sm:px-8 rounded-2xl text-base sm:text-lg md:text-xl transition-all duration-500 transform hover:scale-105 hover:shadow-[0_0_40px_rgba(251,191,36,0.4)] focus:outline-none focus:ring-4 focus:ring-amber-500/50 shadow-xl"
+              @click="selectAccountStatus('new')"
+            >
+              <span class="relative z-10 flex items-center justify-center space-x-2 sm:space-x-3">
+                <Icon icon="mdi:account-plus" class="w-5 h-5 sm:w-6 sm:h-6" />
+                <span>I need to create an account</span>
+              </span>
+              
+              <!-- Shine sweep -->
+              <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-1000 rounded-2xl"></div>
+            </button>
+            
+            <!-- Secondary: Existing Account -->
+            <button 
+              class="group w-full relative bg-gray-800 hover:bg-gray-700 text-white border-2 border-gray-600 hover:border-gray-500 py-4 sm:py-5 md:py-6 px-6 sm:px-8 rounded-2xl text-base sm:text-lg md:text-xl transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-gray-500/50"
+              @click="selectAccountStatus('existing')"
+            >
+              <span class="flex items-center justify-center space-x-2 sm:space-x-3">
+                <Icon icon="mdi:account-check" class="w-5 h-5 sm:w-6 sm:h-6" />
+                <span>I already have an account</span>
               </span>
             </button>
           </div>
@@ -177,33 +179,33 @@
       <!-- SCREEN 4A: Customer End Screen -->
       <div 
         v-show="currentStep === 4 && userType === 'customer'"
-        class="screen min-h-screen flex flex-col items-center justify-center px-6 py-8"
+        class="screen min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 py-8"
         :class="getScreenClass(4, 'customer')"
       >
-        <div class="text-center max-w-2xl space-y-8">
-          <div class="text-amber-400 mb-6">
-            <Icon icon="mdi:clock-outline" class="w-20 h-20 mx-auto" />
+        <div class="text-center max-w-2xl space-y-6 md:space-y-8">
+          <div class="text-amber-400 mb-4">
+            <Icon icon="mdi:clock-outline" class="w-16 h-16 sm:w-20 sm:h-20 mx-auto" />
           </div>
           
-          <h2 class="text-4xl md:text-5xl font-black bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent leading-tight">
-            Almost there!
+          <h2 class="text-3xl sm:text-4xl md:text-5xl font-black bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent leading-tight">
+            QR Code Not Set Up Yet
           </h2>
           
-          <p class="text-xl md:text-2xl text-gray-300 font-light leading-relaxed">
-            This BrewToken isn't quite ready for customers yet. It needs to be set up by a brewery first.
+          <p class="text-lg sm:text-xl md:text-2xl text-gray-300 font-light leading-relaxed px-4">
+            This QR code hasn't been activated by a venue owner yet.
           </p>
           
-          <p class="text-lg text-gray-400">
-            Once a brewery activates this token, you'll be able to scan it and start earning rewards!
+          <p class="text-base sm:text-lg text-gray-400 px-4">
+            Know a business owner who'd love to reward their customers? Share this QR code with them to get started!
           </p>
           
-          <div class="pt-8">
+          <div class="pt-6 md:pt-8">
             <button 
-              class="group relative bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-600 hover:via-yellow-600 hover:to-amber-700 text-black font-black py-4 px-8 rounded-2xl text-lg transition-all duration-500 transform hover:scale-105 hover:shadow-[0_0_40px_rgba(251,191,36,0.4)] focus:outline-none focus:ring-4 focus:ring-amber-500/50 shadow-xl"
+              class="group relative bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-600 hover:via-yellow-600 hover:to-amber-700 text-black font-black py-3 sm:py-4 px-6 sm:px-8 rounded-2xl text-base sm:text-lg transition-all duration-500 transform hover:scale-105 hover:shadow-[0_0_40px_rgba(251,191,36,0.4)] focus:outline-none focus:ring-4 focus:ring-amber-500/50 shadow-xl"
               @click="goToHome"
             >
-              <span class="relative z-10 flex items-center justify-center space-x-3">
-                <Icon icon="mdi:home" class="w-5 h-5" />
+              <span class="relative z-10 flex items-center justify-center space-x-2 sm:space-x-3">
+                <Icon icon="mdi:home" class="w-4 h-4 sm:w-5 sm:h-5" />
                 <span>Go to Homepage</span>
               </span>
               
@@ -214,53 +216,131 @@
         </div>
       </div>
       
-      <!-- SCREEN 4B: Brewery Form -->
+      <!-- SCREEN 4B: Venue Name Form -->
       <div 
-        v-show="currentStep === 4 && userType === 'brewery'"
-        class="screen min-h-screen flex flex-col items-center justify-center px-6 py-8"
-        :class="getScreenClass(4, 'brewery')"
+        v-show="currentStep === 4 && userType === 'venue'"
+        class="screen min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 py-8"
+        :class="getScreenClass(4, 'venue')"
       >
-        <div class="text-center max-w-lg space-y-8">
-          <h2 class="text-4xl md:text-5xl font-black bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent leading-tight">
-            Tell us about your brewery
+        <div class="text-center max-w-lg space-y-6 md:space-y-8">
+          <h2 class="text-3xl sm:text-4xl md:text-5xl font-black bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent leading-tight">
+            Tell us about your venue
           </h2>
           
-          <p class="text-xl text-gray-300 font-light leading-relaxed">
+          <p class="text-lg sm:text-xl text-gray-300 font-light leading-relaxed px-4">
             Let's get your rewards program set up
           </p>
           
-          <form @submit.prevent="submitBreweryForm" class="space-y-6">
+          <form @submit.prevent="handleVenueNameSubmit" class="space-y-6">
             <div class="text-left">
-              <label for="breweryName" class="block text-sm font-medium text-gray-300 mb-2">
-                Brewery Name
+              <label for="venueName" class="block text-sm font-medium text-gray-300 mb-2">
+                Venue Name
               </label>
               <input 
-                id="breweryName"
-                v-model="breweryName"
+                id="venueName"
+                v-model="venueName"
                 type="text" 
                 required 
                 class="w-full px-4 py-3 bg-gray-900/60 backdrop-blur-sm border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-300"
-                placeholder="Enter your brewery name"
+                placeholder="Enter your venue name"
               />
             </div>
             
             <div class="pt-4">
               <button 
                 type="submit"
-                :disabled="isSubmitting || !breweryName.trim()"
-                class="group w-full relative bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-600 hover:via-yellow-600 hover:to-amber-700 disabled:from-gray-600 disabled:via-gray-600 disabled:to-gray-600 text-black font-black py-4 px-8 rounded-2xl text-lg transition-all duration-500 transform hover:scale-105 hover:shadow-[0_0_40px_rgba(251,191,36,0.4)] focus:outline-none focus:ring-4 focus:ring-amber-500/50 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
+                :disabled="!venueName.trim()"
+                class="group w-full relative bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-600 hover:via-yellow-600 hover:to-amber-700 disabled:from-gray-600 disabled:via-gray-600 disabled:to-gray-600 text-black font-black py-3 sm:py-4 px-6 sm:px-8 rounded-2xl text-base sm:text-lg transition-all duration-500 transform hover:scale-105 hover:shadow-[0_0_40px_rgba(251,191,36,0.4)] focus:outline-none focus:ring-4 focus:ring-amber-500/50 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
               >
-                <span class="relative z-10 flex items-center justify-center space-x-3">
-                  <Icon v-if="!isSubmitting" icon="mdi:rocket-launch" class="w-5 h-5" />
-                  <Icon v-else icon="mdi:loading" class="w-5 h-5 animate-spin" />
-                  <span>{{ isSubmitting ? 'Setting up...' : 'Continue' }}</span>
+                <span class="relative z-10 flex items-center justify-center space-x-2 sm:space-x-3">
+                  <Icon icon="mdi:arrow-right" class="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span>Continue</span>
+                </span>
+                
+                <!-- Shine sweep -->
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-1000 rounded-2xl"></div>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      <!-- SCREEN 5: Email & Google Auth -->
+      <div 
+        v-show="currentStep === 5 && userType === 'venue'"
+        class="screen min-h-screen flex flex-col items-center justify-center px-4 sm:px-6 py-8"
+        :class="getScreenClass(5, 'venue')"
+      >
+        <div class="text-center max-w-lg space-y-6 md:space-y-8">
+          <h2 class="text-3xl sm:text-4xl md:text-5xl font-black bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent leading-tight">
+            Create your account
+          </h2>
+          
+          <p class="text-lg sm:text-xl text-gray-300 font-light leading-relaxed px-4">
+            How would you like to sign up?
+          </p>
+          
+          <!-- Google Sign-in Button -->
+          <div class="flex flex-col items-center space-y-4">
+            <button
+              type="button"
+              class="gsi-material-button w-full max-w-sm"
+              :disabled="isSubmitting"
+              @click="handleGoogleClick"
+            >
+              <div class="gsi-material-button-state"></div>
+              <div class="gsi-material-button-content-wrapper">
+                <div class="gsi-material-button-icon">
+                  <Icon icon="logos:google-icon" class="h-5 w-5" />
+                </div>
+                <span class="gsi-material-button-contents">
+                  {{ isSubmitting ? 'Connecting...' : 'Continue with Google' }}
+                </span>
+              </div>
+            </button>
+            
+            <!-- Divider -->
+            <div class="relative w-full max-w-sm">
+              <div class="absolute inset-0 flex items-center">
+                <div class="w-full border-t border-gray-600"></div>
+              </div>
+              <div class="relative flex justify-center text-sm">
+                <span class="px-4 bg-black text-gray-400">or continue with email</span>
+              </div>
+            </div>
+            
+            <!-- Email Form -->
+            <form @submit.prevent="handleEmailSubmit" class="w-full max-w-sm space-y-6">
+              <div class="text-left">
+                <label for="userEmail" class="block text-sm font-medium text-gray-300 mb-2">
+                  Email Address
+                </label>
+                <input 
+                  id="userEmail"
+                  v-model="userEmail"
+                  type="email" 
+                  required 
+                  class="w-full px-4 py-3 bg-gray-900/60 backdrop-blur-sm border border-gray-600 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all duration-300"
+                  placeholder="your@email.com"
+                />
+              </div>
+              
+              <button 
+                type="submit"
+                :disabled="isSubmitting || !userEmail.trim()"
+                class="group w-full relative bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-600 hover:via-yellow-600 hover:to-amber-700 disabled:from-gray-600 disabled:via-gray-600 disabled:to-gray-600 text-black font-black py-3 sm:py-4 px-6 sm:px-8 rounded-2xl text-base sm:text-lg transition-all duration-500 transform hover:scale-105 hover:shadow-[0_0_40px_rgba(251,191,36,0.4)] focus:outline-none focus:ring-4 focus:ring-amber-500/50 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
+              >
+                <span class="relative z-10 flex items-center justify-center space-x-2 sm:space-x-3">
+                  <Icon v-if="!isSubmitting" icon="mdi:rocket-launch" class="w-4 h-4 sm:w-5 sm:h-5" />
+                  <Icon v-else icon="mdi:loading" class="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+                  <span>{{ isSubmitting ? 'Creating account...' : 'Create Account' }}</span>
                 </span>
                 
                 <!-- Shine sweep -->
                 <div v-if="!isSubmitting" class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transform -skew-x-12 translate-x-[-100%] group-hover:translate-x-[200%] transition-transform duration-1000 rounded-2xl"></div>
               </button>
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
       </div>
     </div>
@@ -282,10 +362,17 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
 import CoinFlip from '@/components/CoinFlip.vue';
+import SpinningQrPlaque from '@/components/SpinningQrPlaque.vue';
+import { register } from '@/api';
+import { useToast } from '@/plugins/toast';
+import { useStore } from 'vuex';
 
 const route = useRoute();
 const router = useRouter();
+const store = useStore();
+const toast = useToast();
 const attemptedCode = ref('');
+const qrType = ref(''); // 'plaque' or default (coin)
 
 // Wizard state
 const currentStep = ref(1);
@@ -293,8 +380,9 @@ const previousStep = ref(0);
 const isTransitioning = ref(false);
 const transitionDirection = ref('forward'); // 'forward' or 'backward'
 const accountStatus = ref(''); // 'new' or 'existing'
-const userType = ref(''); // 'brewery' or 'customer'
-const breweryName = ref('');
+const userType = ref(''); // 'venue' or 'customer'
+const venueName = ref('');
+const userEmail = ref('');
 const isSubmitting = ref(false);
 
 // Check if we have a code parameter from the Gold route
@@ -303,7 +391,7 @@ const hasAttemptedCode = computed(() => !!attemptedCode.value);
 // Screen class management for smooth transitions
 const getScreenClass = (stepNumber, requiredUserType = null) => {
   // Check if this screen should be shown based on user type
-  if (stepNumber === 4 && requiredUserType && userType.value !== requiredUserType) {
+  if (requiredUserType && userType.value !== requiredUserType) {
     return 'screen-hidden';
   }
   
@@ -324,7 +412,8 @@ const getScreenClass = (stepNumber, requiredUserType = null) => {
 
 // Navigation functions with smooth transitions
 const goToNextStep = async () => {
-  if (currentStep.value < 4 && !isTransitioning.value) {
+  const maxStep = userType.value === 'venue' ? 5 : 4;
+  if (currentStep.value < maxStep && !isTransitioning.value) {
     isTransitioning.value = true;
     transitionDirection.value = 'forward';
     previousStep.value = currentStep.value;
@@ -375,14 +464,21 @@ const selectAccountStatus = (status) => {
     return;
   }
   
-  // If new account, continue to user type selection
+  // If new account, continue to venue name form
   goToNextStep();
 };
 
 const selectUserType = (type) => {
   userType.value = type;
   console.log('👤 User type selected:', type);
-  goToNextStep();
+  
+  if (type === 'customer') {
+    // Customers skip account status and go directly to the end screen (step 4)
+    currentStep.value = 4;
+  } else {
+    // Venue owners go to account status selection (step 3)
+    goToNextStep();
+  }
 };
 
 const goToHome = () => {
@@ -390,32 +486,177 @@ const goToHome = () => {
   router.push('/');
 };
 
-const submitBreweryForm = async () => {
-  if (!breweryName.value.trim()) {
+const handleVenueNameSubmit = () => {
+  if (!venueName.value.trim()) {
+    return;
+  }
+  console.log('✅ Venue name collected:', venueName.value);
+  goToNextStep();
+};
+
+const handleGoogleClick = async () => {
+  if (isSubmitting.value) {
+    return;
+  }
+
+  try {
+    isSubmitting.value = true;
+
+    const auth = window.google?.accounts?.oauth2;
+    if (!auth) {
+      throw new Error('Google accounts SDK not loaded');
+    }
+
+    const codeClient = auth.initCodeClient({
+      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+      scope: 'openid profile email',
+      ux_mode: 'popup',
+      callback: async (response) => {
+        if (response.error) {
+          toast('Google authentication failed', 'error');
+          isSubmitting.value = false;
+          return;
+        }
+
+        try {
+          // Exchange the authorization code for ID token
+          const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              code: response.code,
+              client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+              client_secret: import.meta.env.VITE_GOOGLE_CLIENT_SECRET,
+              redirect_uri: window.location.origin,
+              grant_type: 'authorization_code'
+            })
+          });
+
+          const tokenData = await tokenResponse.json();
+
+          if (!tokenData.id_token) {
+            throw new Error('Failed to get ID token from Google');
+          }
+
+          // Call our backend with the ID token, venue name, and QR code
+          const apiResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3391/api'}/auth/google/admin/login`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              token: tokenData.id_token,
+              breweryName: venueName.value,
+              qrCode: attemptedCode.value || null
+            })
+          });
+
+          const apiData = await apiResponse.json();
+
+          if (!apiData.success) {
+            throw new Error(apiData.message || 'Registration failed');
+          }
+
+          const { token, user, organization, refreshToken, refreshTokenExpiresAt } = apiData.data;
+
+          // Store auth data
+          store.commit('SET_TOKEN', token);
+          store.commit('SET_USER', user);
+
+          if (refreshToken) {
+            store.commit('SET_REFRESH_TOKEN', refreshToken);
+          }
+          if (refreshTokenExpiresAt) {
+            store.commit('SET_REFRESH_TOKEN_EXPIRES_AT', refreshTokenExpiresAt);
+          }
+
+          // Store organization data
+          if (organization) {
+            store.commit('organization/SET_ORGANIZATION', organization);
+          }
+
+          toast('Account created successfully!', 'success');
+
+          // Redirect to admin dashboard
+          setTimeout(() => {
+            router.push('/admin');
+          }, 1000);
+
+        } catch (error) {
+          console.error('Google login API error:', error);
+          toast(error.message || 'Failed to sign in with Google', 'error');
+        } finally {
+          isSubmitting.value = false;
+        }
+      }
+    });
+
+    codeClient.requestCode();
+  } catch (error) {
+    console.error('Google auth error:', error);
+    toast(error.message || 'Failed to initialize Google Sign In', 'error');
+    isSubmitting.value = false;
+  }
+};
+
+const handleEmailSubmit = async () => {
+  if (!userEmail.value.trim() || !venueName.value.trim()) {
+    toast('Please provide all required information', 'error');
     return;
   }
   
   isSubmitting.value = true;
   
   try {
-    console.log('🏭 Submitting brewery form:', {
-      breweryName: breweryName.value,
-      attemptedCode: attemptedCode.value
+    console.log('📝 Submitting registration:', {
+      breweryName: venueName.value,
+      email: userEmail.value,
+      qrCode: attemptedCode.value
     });
     
-    // TODO: Implement actual brewery registration API call
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // Call the register API with email-based registration
+    const response = await register({
+      breweryName: venueName.value,
+      email: userEmail.value,
+      password: 'changeMe', // Default password that users can change later
+      qrCode: attemptedCode.value || null
+    });
     
-    // For now, just log and redirect
-    console.log('✅ Brewery registration completed (simulated)');
+    console.log('✅ Registration successful:', response.data);
     
-    // TODO: Navigate to brewery dashboard or success page
-    alert('Registration successful! (This is a placeholder - will be replaced with proper flow)');
-    
+    if (response.data.success) {
+      const { token, user, organization, refreshToken, refreshTokenExpiresAt } = response.data.data;
+      
+      // Store auth data in Vuex
+      store.commit('SET_TOKEN', token);
+      store.commit('SET_USER', user);
+      
+      if (refreshToken) {
+        store.commit('SET_REFRESH_TOKEN', refreshToken);
+      }
+      if (refreshTokenExpiresAt) {
+        store.commit('SET_REFRESH_TOKEN_EXPIRES_AT', refreshTokenExpiresAt);
+      }
+      
+      // Store organization data
+      if (organization) {
+        store.commit('organization/SET_ORGANIZATION', organization);
+        console.log('🏢 Organization created:', organization.name, 'with code:', organization.code);
+      }
+      
+      toast('Account created successfully! Check your email for login instructions.', 'success');
+      
+      // Redirect to admin dashboard after a short delay
+      setTimeout(() => {
+        router.push('/admin');
+      }, 2000);
+    }
   } catch (error) {
-    console.error('❌ Brewery registration failed:', error);
-    alert('Registration failed. Please try again.');
+    console.error('❌ Registration failed:', error);
+    const errorMessage = error.response?.data?.message || 'Registration failed. Please try again.';
+    toast(errorMessage, 'error');
   } finally {
     isSubmitting.value = false;
   }
@@ -426,6 +667,24 @@ onMounted(() => {
   if (route.query.code) {
     attemptedCode.value = String(route.query.code);
     console.log('📝 Organization onboarding initiated with attempted code:', attemptedCode.value);
+  }
+  
+  // Get the qrType parameter if it exists (e.g., ?qrType=plaque)
+  if (route.query.qrType) {
+    qrType.value = String(route.query.qrType);
+    console.log('🎨 QR display type:', qrType.value);
+  }
+  
+  // Load Google Sign-In SDK
+  if (!window.google?.accounts?.oauth2) {
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.onerror = () => {
+      console.error('Failed to load Google authentication SDK');
+    };
+    document.head.appendChild(script);
   }
 });
 </script>
@@ -793,7 +1052,12 @@ onMounted(() => {
 /* Ultra responsive text sizing */
 @media (max-width: 480px) {
   .text-5xl {
-    font-size: 3rem;
+    font-size: 2.5rem;
+  }
+  
+  /* Ensure proper spacing on very small screens */
+  .space-y-8 > * + * {
+    margin-top: 1.5rem;
   }
 }
 
@@ -807,5 +1071,101 @@ button:focus {
   .backdrop-blur-sm {
     background-color: rgba(17, 24, 39, 0.8);
   }
+}
+
+/* Google Sign-in Button Styles */
+.gsi-material-button {
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  -webkit-appearance: none;
+  background-color: #fff;
+  background-image: none;
+  border: 1px solid #747775;
+  border-radius: 4px;
+  box-sizing: border-box;
+  color: #1f1f1f;
+  cursor: pointer;
+  font-family: 'Roboto', Arial, sans-serif;
+  font-size: 14px;
+  height: 44px;
+  letter-spacing: 0.25px;
+  outline: none;
+  overflow: hidden;
+  padding: 0 12px;
+  position: relative;
+  text-align: center;
+  transition: background-color 0.218s, border-color 0.218s, box-shadow 0.218s, transform 0.218s;
+  vertical-align: middle;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gsi-material-button .gsi-material-button-icon {
+  height: 20px;
+  margin-right: 12px;
+  min-width: 20px;
+  width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gsi-material-button .gsi-material-button-content-wrapper {
+  align-items: center;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  height: 100%;
+  justify-content: center;
+  position: relative;
+  width: 100%;
+}
+
+.gsi-material-button .gsi-material-button-contents {
+  flex-grow: 1;
+  font-family: 'Roboto', Arial, sans-serif;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gsi-material-button .gsi-material-button-state {
+  transition: opacity 0.218s;
+  bottom: 0;
+  left: 0;
+  opacity: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.gsi-material-button:disabled {
+  cursor: not-allowed;
+  background-color: #ffffff61;
+  border-color: #1f1f1f1f;
+}
+
+.gsi-material-button:disabled .gsi-material-button-contents,
+.gsi-material-button:disabled .gsi-material-button-icon {
+  opacity: 0.38;
+}
+
+.gsi-material-button:not(:disabled):active .gsi-material-button-state,
+.gsi-material-button:not(:disabled):focus .gsi-material-button-state {
+  background-color: #303030;
+  opacity: 0.12;
+}
+
+.gsi-material-button:not(:disabled):hover {
+  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+  transform: translateY(-1px);
+}
+
+.gsi-material-button:not(:disabled):hover .gsi-material-button-state {
+  background-color: #303030;
+  opacity: 0.08;
 }
 </style>

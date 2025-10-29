@@ -18,6 +18,13 @@
               {{ memberId ? 'Edit Member' : 'Add New Member' }}
             </h3>
             
+            <!-- note about how members can actually be added via the QR code scan -->
+            <div class="mt-4 bg-amber-50/50 border border-amber-500/30 rounded-lg p-4">
+              <p class="text-sm text-amber-500">
+                Note: Generally you will not need to add members manually. They will be added automaticallywhen they scan the <router-link class="text-amber-500 hover:text-amber-600 underline font-bold" to="/admin/qr-codes">QR code</router-link> .
+              </p>
+            </div>
+
             <!-- Tabs -->
             <div class="mt-4 border-b border-gray-200">
               <nav class="-mb-px flex space-x-8" aria-label="Tabs">

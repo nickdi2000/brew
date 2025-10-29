@@ -1,0 +1,61 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Build Frontend
+        working-directory: ./fe
+        env:
+          VITE_API_URL: 'https://brewbucks.com/api/v1/'
+          VITE_GOOGLE_CLIENT_ID: '717671917889-r89pvtkt9l79lit9cj7ibl71avqshsl2.apps.googleusercontent.com'
+          VITE_GOOGLE_CLIENT_SECRET: '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'
+          VITE_GEO_API_KEY: 'dbcfb1d93cb6491fb7f3e050c157995a'
+        run: |
+          npm ci
+          VITE_API_URL='https://brewbucks.com/api/v1/' npm run prod
+
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_SERVER_IP: ${{ vars.SSH_SERVER_IP }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H $SSH_SERVER_IP >> ~/.ssh/known_hosts
+
+      - name: Deploy to Production
+        run: |
+          # Sync frontend build
+          rsync -avz --delete ./fe/dist/ root@${{ vars.SSH_SERVER_IP }}:/opt/brewbucks/fe/dist/
+
+          # Sync backend
+          rsync -avz --delete --exclude 'node_modules' --exclude '.env' ./be/ root@${{ vars.SSH_SERVER_IP }}:/opt//brewbucks/be/
+
+      - name: Install Backend Dependencies & Restart Services
+        run: |
+          ssh root@${{ vars.SSH_SERVER_IP }} << 'EOF'
+            cd /opt/brewbucks/be
+            npm ci --production
+            pm2 restart sun
+            systemctl restart nginx
+          EOF
+
+      - name: Cleanup
+        if: always()
+        run: rm -f ~/.ssh/id_rsa

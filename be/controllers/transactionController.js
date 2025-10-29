@@ -7,6 +7,74 @@ const { formatResponse, formatError } = require('../utils/responseFormatter');
  */
 module.exports = {
   /**
+   * List all transactions for an organization.
+   * Query: page, limit, type, sortBy, sortOrder
+   */
+  async listAll(req, res) {
+    try {
+      const { page = 1, limit = 20, type, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+      const organizationId = req.user.organizationId;
+
+      if (!organizationId) {
+        return res.status(400).json(formatError('Organization is required'));
+      }
+
+      const Transaction = require('../models/Transaction');
+      const Member = require('../models/Member');
+
+      // Build query
+      const query = { organization: organizationId };
+      if (type) {
+        query.type = type;
+      }
+
+      // Calculate pagination
+      const pageNum = parseInt(page);
+      const limitNum = parseInt(limit);
+      const skip = (pageNum - 1) * limitNum;
+
+      // Build sort object
+      const sort = {};
+      sort[sortBy] = sortOrder === 'asc' ? 1 : -1;
+
+      // Execute query with population
+      const [transactions, total] = await Promise.all([
+        Transaction.find(query)
+          .populate({
+            path: 'member',
+            select: 'user points avatar',
+            populate: {
+              path: 'user',
+              select: 'email firstName lastName'
+            }
+          })
+          .populate('reward', 'name pointsCost')
+          .populate('performedBy', 'email firstName lastName')
+          .sort(sort)
+          .skip(skip)
+          .limit(limitNum)
+          .lean(),
+        Transaction.countDocuments(query)
+      ]);
+
+      const result = {
+        transactions,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          totalPages: Math.ceil(total / limitNum)
+        }
+      };
+
+      return res.json(formatResponse({ data: result, message: 'Transactions retrieved' }));
+    } catch (error) {
+      console.error('List all transactions error', { error: error.message, stack: error.stack });
+      return res.status(500).json(formatError('Failed to retrieve transactions', error.message));
+    }
+  },
+
+  /**
    * List transactions for a member.
    * Query: page, limit, type
    */

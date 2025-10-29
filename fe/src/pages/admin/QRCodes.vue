@@ -53,7 +53,17 @@
               <div class="flex-1 min-w-0">
                 <h2 class="text-lg sm:text-xl font-semibold text-gray-900 mb-2 sm:mb-3">Portal Access QR Code</h2>
                 <p class="text-gray-600 leading-relaxed text-sm sm:text-base">
-                  This public QR code serves as your venue's universal access point. Members can use it to log in to their accounts, and new customers can scan it to register.  Note that the 'rewards' qr code can also be used to register/sign-up as well, but this code excludes the ability to self-reward points, making it more suitable to display somewhere like a wall in your venue (away from the cash register).
+                  This public QR code serves as your venue's universal access point.
+                  <button 
+                    v-if="!showPortalDetails"
+                    @click="showPortalDetails = true"
+                    class="text-amber-600 hover:text-amber-700 ml-1 underline"
+                  >
+                    Learn more...
+                  </button>
+                  <span v-if="showPortalDetails">
+                    Members can use it to log in to their accounts, and new customers can scan it to register. Note that the 'rewards' QR code can also be used to register/sign-up as well, but this code excludes the ability to self-reward points, making it more suitable to display somewhere like a wall in your venue (away from the cash register).
+                  </span>
                 </p>
               </div>
               <div v-if="organization?.code" class="flex flex-col sm:flex-row gap-2 sm:gap-3 flex-shrink-0">
@@ -323,6 +333,7 @@ const lastUpdatedTime = ref(new Date());
 const isDrawerOpen = ref(false);
 const selectedQRCode = ref<QRCode | null>(null);
 const activeTab = ref('points');
+const showPortalDetails = ref(false);
 
 // Get organization from Vuex store
 const organization = computed(() => store.getters['organization/config']);

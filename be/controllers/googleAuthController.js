@@ -49,12 +49,15 @@ exports.googleLogin = async (req, res) => {
 
       if (isAdminFlow) {
         try {
-          const breweryName = payload.name || (payload.hd ? payload.hd.split('.')[0] : email.split('@')[0]);
+          // Use breweryName from request body if provided, otherwise derive from Google profile
+          const breweryName = req.body.breweryName || payload.name || (payload.hd ? payload.hd.split('.')[0] : email.split('@')[0]);
+          const qrCode = req.body.qrCode || null;
+          
           const { payload: registrationPayload, message } = await registerAdminAccount({
             breweryName,
             email,
             password: null,
-            qrCode: null,
+            qrCode,
             googleProfile: payload
           });
 

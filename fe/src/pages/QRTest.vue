@@ -19,6 +19,23 @@
           </div>
 
           <div>
+            <label class="block text-sm font-medium text-gray-700">QR Code Color</label>
+            <div class="flex items-center gap-3 mt-1">
+              <input
+                v-model="qrColor"
+                type="color"
+                class="h-8 w-8 rounded border border-gray-300 cursor-pointer"
+              />
+              <button 
+                @click="qrColor = '#000000'"
+                class="text-xs text-gray-600 hover:text-gray-900"
+              >
+                Reset to black
+              </button>
+            </div>
+          </div>
+
+          <div>
             <label class="block text-sm font-medium text-gray-700">Background Color</label>
             <div class="flex items-center gap-3 mt-1">
               <input
@@ -34,6 +51,18 @@
               </button>
             </div>
           </div>
+
+          <div class="flex items-center gap-2">
+            <input
+              v-model="showCodeText"
+              type="checkbox"
+              id="showCodeText"
+              class="h-4 w-4 text-amber-600 focus:ring-amber-500 border-gray-300 rounded cursor-pointer"
+            />
+            <label for="showCodeText" class="text-sm font-medium text-gray-700 cursor-pointer">
+              Show code text below QR
+            </label>
+          </div>
         </div>
 
         <div v-if="!qrValue" class="text-sm text-gray-500">Enter a value to see the QR code.</div>
@@ -43,8 +72,9 @@
               :value="qrValue" 
               :show-signature="true"
               :background-color="backgroundColor"
+              :qr-color="qrColor"
             />
-            <div v-if="extractedCode" class="font-mono text-xs text-gray-400 mt-1">
+            <div v-if="showCodeText && extractedCode" class="font-mono text-xs text-gray-400 mt-1">
               {{ extractedCode }}
             </div>
           </div>
@@ -76,7 +106,9 @@ import { Icon } from '@iconify/vue'
 const qrValue = ref('https://brewtokens.com/gold?code=123456')
 const qrContainer = ref(null)
 const isDownloading = ref(false)
+const qrColor = ref('#000000')
 const backgroundColor = ref('transparent')
+const showCodeText = ref(true)
 
 const extractedCode = computed(() => {
   try {

@@ -12,6 +12,7 @@ import Settings from '../pages/admin/Settings.vue'
 import QRPrint from '../pages/admin/QRPrint.vue'
 import Rewards from '../pages/admin/Rewards.vue'
 import QRCodes from '../pages/admin/QRCodes.vue'
+import Transactions from '../pages/admin/Transactions.vue'
 import MyProfile from '../pages/admin/MyProfile.vue'
 import AdminContact from '../pages/admin/Contact.vue'
 import SuperAdmin from '../pages/admin/SuperAdmin.vue'
@@ -23,6 +24,7 @@ import TestBench from '../pages/dev/TestBench.vue'
 import QRTest from '../pages/QRTest.vue'
 import Gold from '../pages/Gold.vue'
 import OrgOnboarding from '../pages/OrgOnboarding.vue'
+import Start from '../pages/Start.vue'
 
 const routes = [
   // Public routes
@@ -30,6 +32,12 @@ const routes = [
     path: '/',
     name: 'landing',
     component: Landing,
+    meta: { public: true }
+  },
+  {
+    path: '/start',
+    name: 'start',
+    component: Start,
     meta: { public: true }
   },
   {
@@ -60,6 +68,12 @@ const routes = [
     path: '/login',
     name: 'admin-login',
     component: Login,
+    meta: { public: true }
+  },
+  {
+    path: '/magic-login/:token',
+    name: 'magic-login',
+    component: () => import('../pages/auth/MagicLogin.vue'),
     meta: { public: true }
   },
   {
@@ -373,6 +387,12 @@ const routes = [
         name: 'qr-codes',
         component: QRCodes,
         meta: { section: 'QR Codes' }
+      },
+      {
+        path: 'transactions',
+        name: 'transactions',
+        component: Transactions,
+        meta: { section: 'Transactions' }
       },
       // {
       //   path: 'challenges',
