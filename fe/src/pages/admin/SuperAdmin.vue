@@ -634,7 +634,7 @@ const downloadQRCode = async (qr) => {
     container.style.padding = '40px'
     document.body.appendChild(container)
 
-    const qrValue = qr.value || qr.qrContent || qr.code
+    const qrValue = `https://brewtokens.com/onboarding?code=${qr.code}`
     
     // Create a wrapper with the QR code and labels
     const wrapper = document.createElement('div')

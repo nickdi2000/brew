@@ -78,62 +78,81 @@ exports.getOrganizations = async (req, res) => {
   }
 };
 
-const sanitizeQRCode = (doc) => ({
-  _id: String(doc._id),
-  id: String(doc._id),
-  organizationId: doc.organization ? String(doc.organization) : null,
-  code: doc.code,
-  name: doc.name,
-  points: doc.points,
-  isActive: doc.isActive,
-  createdAt: doc.createdAt,
-  updatedAt: doc.updatedAt,
-  expiresAt: doc.expiresAt,
-  printed: doc.printed,
-  type: doc.type,
-  qrContent: doc.qrContent,
-  value: doc.qrContent || doc.code,
-  organization: doc.organization ? String(doc.organization) : null
-});
+const sanitizeQRCode = (doc) => {
+  const result = {
+    _id: String(doc._id),
+    id: String(doc._id),
+    organizationId: doc.organization ? String(doc.organization._id || doc.organization) : null,
+    code: doc.code,
+    name: doc.name,
+    status: doc.status || 'draft',
+    deliveryDescription: doc.deliveryDescription || null,
+    createdAt: doc.createdAt,
+    updatedAt: doc.updatedAt,
+    type: doc.type,
+    organization: null
+  };
+  
+  // If organization is populated, include its details
+  if (doc.organization && typeof doc.organization === 'object' && doc.organization.name) {
+    result.organization = {
+      id: String(doc.organization._id),
+      name: doc.organization.name,
+      code: doc.organization.code
+    };
+  }
+  
+  return result;
+};
 
 exports.getUnassignedQRCodes = async (req, res) => {
   try {
-    const qrCodes = await QRCode.find({ organization: null }).sort({ createdAt: -1 }).lean();
+    // Fetch all QR codes (not just unassigned) so we can see claimed ones too
+    const qrCodes = await QRCode.find({ organization: null })
+      .sort({ createdAt: -1 })
+      .lean();
+    
+    // Also fetch claimed QR codes to show in super admin
+    const claimedQRCodes = await QRCode.find({ 
+      organization: { $ne: null },
+      status: 'claimed' 
+    })
+      .populate('organization', 'name code')
+      .sort({ createdAt: -1 })
+      .lean();
+    
+    // Combine unassigned and claimed QR codes
+    const allQRCodes = [...qrCodes, ...claimedQRCodes];
+    
     return res.json(
       formatResponse({
-        data: qrCodes.map(sanitizeQRCode),
-        message: 'Unassigned QR codes retrieved successfully'
+        data: allQRCodes.map(sanitizeQRCode),
+        message: 'QR codes retrieved successfully'
       })
     );
   } catch (error) {
-    console.error('Error fetching unassigned QR codes:', error);
-    return res.status(500).json(formatError('Failed to fetch unassigned QR codes', error.message));
+    console.error('Error fetching QR codes:', error);
+    return res.status(500).json(formatError('Failed to fetch QR codes', error.message));
   }
 };
 
 exports.createUnassignedQRCode = async (req, res) => {
   try {
     const {
-      points = 0,
-      expiresAt = null,
-      isActive = true,
       name,
-      printed = false,
       type = '',
-      qrContent,
-      code
+      code,
+      status = 'draft',
+      deliveryDescription
     } = req.body || {};
 
     const payload = {
       organization: null,
       code: code || generateCode(),
-      points,
-      expiresAt,
-      isActive,
-      printed,
       type,
-      qrContent,
-      name: name || `${points} Points QR Code`
+      name: name || 'Onboarding QR Code',
+      status,
+      deliveryDescription: status === 'delivered' ? deliveryDescription : null
     };
 
     const doc = await QRCode.create(payload);
@@ -151,27 +170,29 @@ exports.updateUnassignedQRCode = async (req, res) => {
   try {
     const { id } = req.params;
     const {
-      points,
-      expiresAt,
-      isActive,
       name,
-      printed,
       type,
-      qrContent,
       code,
-      organization
+      organization,
+      status,
+      deliveryDescription
     } = req.body || {};
 
     const updateFields = {};
-    if (points !== undefined) updateFields.points = points;
-    if (expiresAt !== undefined) updateFields.expiresAt = expiresAt;
-    if (isActive !== undefined) updateFields.isActive = isActive;
     if (name !== undefined) updateFields.name = name;
-    if (printed !== undefined) updateFields.printed = printed;
     if (type !== undefined) updateFields.type = type;
-    if (qrContent !== undefined) updateFields.qrContent = qrContent;
     if (code !== undefined) updateFields.code = code;
     if (organization !== undefined) updateFields.organization = organization || null;
+    if (status !== undefined) {
+      updateFields.status = status;
+      // Only set deliveryDescription if status is 'delivered'
+      if (status === 'delivered' && deliveryDescription !== undefined) {
+        updateFields.deliveryDescription = deliveryDescription;
+      } else if (status !== 'delivered') {
+        // Clear deliveryDescription if status changes from 'delivered'
+        updateFields.deliveryDescription = null;
+      }
+    }
 
     const match = {
       _id: id,

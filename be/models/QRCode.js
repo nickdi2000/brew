@@ -42,6 +42,15 @@ const qrCodeSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
+  status: {
+    type: String,
+    enum: ['draft', 'printed', 'ordered', 'in-hand', 'delivered', 'claimed'],
+    default: 'draft'
+  },
+  deliveryDescription: {
+    type: String,
+    default: null
+  },
   createdAt: {
     type: Date,
     default: Date.now

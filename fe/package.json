@@ -1,7 +1,7 @@
 {
   "name": "fe",
   "private": true,
-  "version": "1.0.16",
+  "version": "1.0.17",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,7 +12,8 @@
     "cypress:run": "cypress run",
     "cypress:run:headless": "cypress run --headless",
     "test:e2e": "cypress run --spec 'cypress/e2e/**/*.cy.js'",
-    "test:e2e:headed": "cypress run --headed --spec 'cypress/e2e/**/*.cy.js'"
+    "test:e2e:headed": "cypress run --headed --spec 'cypress/e2e/**/*.cy.js'",
+    "test:smoke:production": "cypress run --config-file cypress.production.config.js --headless"
   },
   "dependencies": {
     "@chenfengyuan/vue-qrcode": "^2.0.0",

@@ -13,7 +13,7 @@
               <Icon icon="mdi:menu" class="h-6 w-6" />
             </button>
             <div class="flex-shrink-0 flex items-center ml-2 md:ml-0">
-            <!-- used to be logo here -->
+              <div class="text-2xl font-bold font-display text-white">BrewTokens</div>
             </div>
           </div>
           <div class="flex items-center">

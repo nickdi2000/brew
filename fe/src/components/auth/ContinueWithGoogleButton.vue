@@ -111,28 +111,30 @@ const handleClick = async () => {
   -webkit-appearance: none;
   background-color: #fff;
   background-image: none;
-  border: 1px solid #747775;
-  border-radius: 4px;
+  border: 2px solid #1f1f1f;
+  border-radius: 0.5rem;
   box-sizing: border-box;
   color: #1f1f1f;
   cursor: pointer;
   font-family: 'Roboto', Arial, sans-serif;
   font-size: 14px;
-  height: 44px;
+  font-weight: 500;
+  height: 48px;
   letter-spacing: 0.25px;
   outline: none;
   overflow: hidden;
-  padding: 0 12px;
+  padding: 0.75rem 1rem;
   position: relative;
   text-align: center;
-  transition: background-color 0.218s, border-color 0.218s, box-shadow 0.218s, transform 0.218s;
+  transition: all 0.2s;
   vertical-align: middle;
   white-space: nowrap;
   width: 100%;
-  max-width: 400px;
+  max-width: 100%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 .gsi-material-button .gsi-material-button-icon {
@@ -165,7 +167,7 @@ const handleClick = async () => {
 }
 
 .gsi-material-button .gsi-material-button-state {
-  transition: opacity 0.218s;
+  transition: opacity 0.2s;
   bottom: 0;
   left: 0;
   opacity: 0;
@@ -176,8 +178,9 @@ const handleClick = async () => {
 
 .gsi-material-button:disabled {
   cursor: not-allowed;
-  background-color: #ffffff61;
-  border-color: #1f1f1f1f;
+  background-color: #f9fafb;
+  border-color: #e5e7eb;
+  opacity: 0.5;
 }
 
 .gsi-material-button:disabled .gsi-material-button-contents,
@@ -187,18 +190,19 @@ const handleClick = async () => {
 
 .gsi-material-button:not(:disabled):active .gsi-material-button-state,
 .gsi-material-button:not(:disabled):focus .gsi-material-button-state {
-  background-color: #303030;
-  opacity: 0.12;
+  background-color: #1f1f1f;
+  opacity: 0.08;
 }
 
 .gsi-material-button:not(:disabled):hover {
-  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+  background-color: #f9fafb;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   transform: translateY(-1px);
 }
 
 .gsi-material-button:not(:disabled):hover .gsi-material-button-state {
-  background-color: #303030;
-  opacity: 0.08;
+  background-color: #1f1f1f;
+  opacity: 0.04;
 }
 </style>
 

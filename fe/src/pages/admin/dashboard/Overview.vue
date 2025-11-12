@@ -46,11 +46,11 @@
   <Transition name="fade">
     <div
       v-if="isAwardSheetOpen"
-      class="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+      class="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm flex items-end justify-center"
       @click.self="closeAwardSheet"
     >
       <div
-        class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl max-h-[85vh] overflow-hidden"
+        class="w-full md:max-w-2xl lg:max-w-3xl bg-white rounded-t-3xl shadow-2xl max-h-[85vh] overflow-hidden md:mb-0"
       >
         <div class="px-6 py-5 flex items-center justify-between border-b border-gray-100">
           <div>

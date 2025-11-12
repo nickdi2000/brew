@@ -42,6 +42,10 @@ const organizationSchema = new mongoose.Schema({
     unique: true,
     uppercase: true
   },
+  qrCodes: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'QRCode'
+  }],
   createdAt: {
     type: Date,
     default: Date.now

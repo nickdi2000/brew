@@ -125,7 +125,7 @@
                 type="submit"
                 :disabled="isLoading"
                 data-cy="login-button"
-                class="btn btn-primary w-full group relative overflow-hidden transition-all duration-300"
+                class="w-full bg-black text-white rounded-lg py-3 px-4 font-medium text-sm hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm hover:shadow-md group relative overflow-hidden"
               >
                 <span class="relative z-10 flex items-center justify-center gap-2">
                   <Icon icon="mdi:login" class="w-5 h-5" />
@@ -212,7 +212,7 @@
             <div class="group">
               <label for="brewery-name" class="block text-sm font-medium text-gray-700 group-hover:text-amber-700 transition-colors">
                 <Icon icon="mdi:store" class="inline-block w-4 h-4 mr-1" />
-                Brewery Name
+                Venue Name
               </label>
               <div class="mt-1">
                 <input
@@ -222,7 +222,7 @@
                   required
                   data-cy="brewery-name-input"
                   class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 sm:text-sm transition-all duration-200 hover:border-amber-300"
-                  placeholder="Enter your brewery name"
+                  placeholder="Enter your venue name"
                 />
               </div>
             </div>
@@ -589,7 +589,7 @@ const handleGoogleAdminSuccess = async (authPayload) => {
 
 const validateOnboardingForm = () => {
   if (!onboardingForm.breweryName.trim()) {
-    error.value = 'Please enter your brewery name'
+    error.value = 'Please enter your venue name'
     return false
   }
   if (!onboardingForm.qrCode) {

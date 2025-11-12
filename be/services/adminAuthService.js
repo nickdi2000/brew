@@ -145,19 +145,55 @@ const createOrganizationWithDefaults = async ({ breweryName, email, qrCode }) =>
 
   console.log(`Generated organization code: ${code}`);
 
+  // Check if qrCode is provided and is a pre-printed QR code (unassigned)
+  let claimedQRCode = null;
+  if (qrCode) {
+    try {
+      claimedQRCode = await QRCode.findOne({ 
+        code: qrCode.toUpperCase(), 
+        organization: null 
+      });
+      
+      if (claimedQRCode) {
+        console.log(`✅ Found pre-printed QR code: ${claimedQRCode.code} - will claim it for organization`);
+      } else {
+        console.log(`⚠️ QR code ${qrCode} not found or already assigned - will create default QR code`);
+      }
+    } catch (error) {
+      console.error(`❌ Error checking for pre-printed QR code:`, error);
+    }
+  }
+
   const organization = await Organization.create({
     name: breweryName,
     email,
-    description: `${breweryName} - A cool brewery, if I've ever seen one`,
-    code
+    description: `${breweryName} - A cool venue, if I've ever seen one`,
+    code,
+    qrCodes: claimedQRCode ? [claimedQRCode._id] : []
   });
 
   console.log(`✅ Created organization: ${organization.name} with code: ${organization.code}`);
 
-  const defaultQRCode = await createDefaultQRCode(organization._id, organization.name, qrCode || undefined);
+  // If we found a pre-printed QR code, claim it
+  if (claimedQRCode) {
+    claimedQRCode.organization = organization._id;
+    claimedQRCode.status = 'claimed';
+    await claimedQRCode.save();
+    console.log(`✅ Claimed pre-printed QR code ${claimedQRCode.code} for organization ${organization.name}`);
+  }
+
+  // Create a default points QR code
+  const defaultQRCode = await createDefaultQRCode(organization._id, organization.name, undefined);
+  
+  // Add the default QR code to the organization's qrCodes array
+  if (defaultQRCode) {
+    organization.qrCodes.push(defaultQRCode._id);
+    await organization.save();
+  }
+
   const defaultReward = await createDefaultReward(organization._id, organization.name);
 
-  return { organization, defaultQRCode, defaultReward };
+  return { organization, defaultQRCode, defaultReward, claimedQRCode };
 };
 
 const applyGoogleProfile = (user, payload) => {
@@ -251,7 +287,7 @@ const buildRegistrationMessage = (defaultQRCode, defaultReward) => {
 
 const registerAdminAccount = async ({ breweryName, email, password, qrCode, googleProfile }) => {
   if (!breweryName) {
-    throw new ServiceError('Brewery name is required');
+    throw new ServiceError('Venue name is required');
   }
   if (!email) {
     throw new ServiceError('Email is required');
@@ -264,10 +300,8 @@ const registerAdminAccount = async ({ breweryName, email, password, qrCode, goog
     throw new ServiceError('A user with this email already exists');
   }
 
-  const existingOrganization = await Organization.findOne({ name: breweryName });
-  if (existingOrganization) {
-    throw new ServiceError('A brewery with this name already exists');
-  }
+  // Note: We don't check for existing organization by name since names are not unique
+  // Names can be auto-generated and don't need to be unique across organizations
 
   const { organization, defaultQRCode, defaultReward } = await createOrganizationWithDefaults({
     breweryName,

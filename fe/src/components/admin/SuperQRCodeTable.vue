@@ -13,16 +13,7 @@
             Type
           </th>
           <th scope="col" class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-            Points
-          </th>
-          <th scope="col" class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-            Printed
-          </th>
-          <th scope="col" class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-            Active
-          </th>
-          <th scope="col" class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-            QR Value
+            Status
           </th>
           <th scope="col" class="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
             Actions
@@ -38,10 +29,7 @@
             </span>
           </td>
           <td class="px-4 py-3 text-sm text-gray-700">
-            <div class="flex flex-col">
-              <span class="font-medium text-gray-900">{{ qr.name || '—' }}</span>
-              <span v-if="qr.expiresAt" class="text-xs text-gray-500">Expires {{ formatDate(qr.expiresAt) }}</span>
-            </div>
+            <span class="font-medium text-gray-900">{{ qr.name || '—' }}</span>
           </td>
           <td class="px-4 py-3 text-sm text-gray-700">
             <span v-if="qr.type" class="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium capitalize text-amber-800">
@@ -50,22 +38,18 @@
             <span v-else class="text-xs text-gray-400">—</span>
           </td>
           <td class="px-4 py-3 text-sm text-gray-700">
-            <span class="font-semibold text-gray-900">{{ qr.points }}</span>
-          </td>
-          <td class="px-4 py-3 text-sm text-gray-700">
-            <Icon
-              :icon="qr.printed ? 'mdi:printer-check' : 'mdi:printer-off'"
-              :class="qr.printed ? 'text-emerald-600' : 'text-gray-400'"
-              class="h-5 w-5"
-            />
-          </td>
-          <td class="px-4 py-3 text-sm text-gray-700">
-            <span :class="qr.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-700'" class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium">
-              {{ qr.isActive ? 'Active' : 'Inactive' }}
-            </span>
-          </td>
-          <td class="max-w-xs px-4 py-3 text-xs text-gray-600">
-            <code class="block truncate" :title="qr.value || qr.qrContent || qr.code">{{ qr.value || qr.qrContent || qr.code }}</code>
+            <div class="flex flex-col gap-1">
+              <span 
+                :class="getStatusBadgeClass(qr.status || 'draft')" 
+                class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize w-fit"
+              >
+                <span :class="getStatusDotClass(qr.status || 'draft')" class="inline-block h-1.5 w-1.5 rounded-full"></span>
+                {{ qr.status || 'draft' }}
+              </span>
+              <span v-if="qr.status === 'claimed' && qr.organization" class="text-xs text-gray-600">
+                {{ qr.organization.name }}
+              </span>
+            </div>
           </td>
           <td class="px-4 py-3 text-right text-sm font-medium">
             <div class="flex items-center justify-end gap-2">
@@ -137,6 +121,30 @@ const formatDate = (value?: string | null) => {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return ''
   return date.toLocaleDateString()
+}
+
+const getStatusBadgeClass = (status: string) => {
+  const classes: Record<string, string> = {
+    'draft': 'bg-gray-100 text-gray-700',
+    'printed': 'bg-blue-100 text-blue-700',
+    'ordered': 'bg-yellow-100 text-yellow-700',
+    'in-hand': 'bg-purple-100 text-purple-700',
+    'delivered': 'bg-green-100 text-green-700',
+    'claimed': 'bg-emerald-100 text-emerald-700'
+  }
+  return classes[status] || classes['draft']
+}
+
+const getStatusDotClass = (status: string) => {
+  const classes: Record<string, string> = {
+    'draft': 'bg-gray-500',
+    'printed': 'bg-blue-500',
+    'ordered': 'bg-yellow-500',
+    'in-hand': 'bg-purple-500',
+    'delivered': 'bg-green-500',
+    'claimed': 'bg-emerald-500'
+  }
+  return classes[status] || classes['draft']
 }
 </script>
 

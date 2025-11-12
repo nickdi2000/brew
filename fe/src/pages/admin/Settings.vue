@@ -1,77 +1,84 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <div class="container mx-auto px-4 py-6">
-      <div class="flex items-center justify-between mb-6">
-        <h1 class="text-3xl font-bold text-gray-900">Settings</h1>
-        <button
-          @click="togglePreview"
-          class="btn btn-primary"
-          :class="{ 'btn-secondary': showPreview }"
-        >
-          <Icon :icon="showPreview ? 'mdi:eye-off' : 'mdi:eye'" class="h-4 w-4 mr-2" />
-          {{ showPreview ? 'Hide Preview' : 'Preview' }}
-        </button>
+      <div class="mb-6">
+        <h1 class="text-3xl font-bold text-gray-900 text-center">Settings</h1>
       </div>
 
-      <div class="grid gap-8" :class="showPreview ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'">
-        <!-- Settings Form -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div class="p-6">
-            <organization-form 
-              :organization="organization"
-              :loading="loading"
-              :show-preview="showPreview"
-              @submit="handleOrganizationUpdate"
-              @update:preview="previewData = $event"
-            />
+      <div class="max-w-7xl mx-auto">
+        <div class="grid gap-8 grid-cols-1 lg:grid-cols-2 items-start">
+          <!-- Settings Form -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="p-6">
+              <organization-form 
+                :organization="organization"
+                :loading="loading"
+                :show-preview="true"
+                @submit="handleOrganizationUpdate"
+                @update:preview="previewData = $event"
+              />
+            </div>
           </div>
-        </div>
 
-        <!-- Mobile Preview -->
-        <div 
-          v-show="showPreview"
-          class="transition-all duration-300 ease-in-out"
-          :class="showPreview ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'"
-        >
-          <h2 class="text-lg font-medium text-gray-900 mb-4">Member Portal Preview</h2>
-          <div class="relative mx-auto" style="max-width: 380px;">
-            <!-- Phone Frame -->
-            <div class="preview-phone relative mx-auto border-gray-800 dark:border-gray-800 bg-gray-800 border-[14px] rounded-[2.5rem] h-[720px] w-[380px]">
-              <div class="h-[32px] w-[3px] bg-gray-800 dark:bg-gray-800 absolute -start-[17px] top-[72px] rounded-s-lg"></div>
-              <div class="h-[46px] w-[3px] bg-gray-800 dark:bg-gray-800 absolute -start-[17px] top-[124px] rounded-s-lg"></div>
-              <div class="h-[46px] w-[3px] bg-gray-800 dark:bg-gray-800 absolute -start-[17px] top-[178px] rounded-s-lg"></div>
-              <div class="h-[64px] w-[3px] bg-gray-800 dark:bg-gray-800 absolute -end-[17px] top-[142px] rounded-e-lg"></div>
-              
-              <!-- Status Bar -->
-              <div class="rounded-t-[2rem] overflow-hidden w-[352px] h-[32px] bg-gray-900">
-                <div class="flex items-center justify-between px-4 py-1">
-                  <span class="text-white text-xs">9:41</span>
-                  <div class="flex items-center space-x-1">
-                    <Icon icon="mdi:signal" class="text-white h-4 w-4" />
-                    <Icon icon="mdi:wifi" class="text-white h-4 w-4" />
-                    <Icon icon="mdi:battery" class="text-white h-4 w-4" />
+          <!-- Mobile Preview -->
+          <div class="flex flex-col items-center">
+            <div class="flex items-center justify-between w-full max-w-[380px] mb-4">
+              <h2 class="text-lg font-medium text-gray-900">Member Portal Preview</h2>
+              <button
+                v-if="isPreviewSignedIn"
+                @click="isPreviewSignedIn = false"
+                class="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+              >
+                <Icon icon="mdi:refresh" class="h-4 w-4" />
+                Reset
+              </button>
+            </div>
+            <div class="relative" style="max-width: 380px;">
+              <!-- Phone Frame -->
+              <div class="preview-phone relative border-gray-800 dark:border-gray-800 bg-gray-800 border-[14px] rounded-[2.5rem] h-[720px] w-[380px]">
+                <div class="h-[32px] w-[3px] bg-gray-800 dark:bg-gray-800 absolute -start-[17px] top-[72px] rounded-s-lg"></div>
+                <div class="h-[46px] w-[3px] bg-gray-800 dark:bg-gray-800 absolute -start-[17px] top-[124px] rounded-s-lg"></div>
+                <div class="h-[46px] w-[3px] bg-gray-800 dark:bg-gray-800 absolute -start-[17px] top-[178px] rounded-s-lg"></div>
+                <div class="h-[64px] w-[3px] bg-gray-800 dark:bg-gray-800 absolute -end-[17px] top-[142px] rounded-e-lg"></div>
+                
+                <!-- Status Bar -->
+                <div class="rounded-t-[2rem] overflow-hidden w-[352px] h-[32px] bg-gray-900">
+                  <div class="flex items-center justify-between px-4 py-1">
+                    <span class="text-white text-xs">9:41</span>
+                    <div class="flex items-center space-x-1">
+                      <Icon icon="mdi:signal" class="text-white h-4 w-4" />
+                      <Icon icon="mdi:wifi" class="text-white h-4 w-4" />
+                      <Icon icon="mdi:battery" class="text-white h-4 w-4" />
+                    </div>
                   </div>
                 </div>
-              </div>
 
               <!-- Content -->
-              <div class="w-[352px] h-[644px] bg-white overflow-hidden pointer-events-none select-none">
-                <welcome-component
+              <div class="w-[352px] h-[644px] bg-white overflow-hidden select-none" :class="{ 'pointer-events-none': isPreviewSignedIn }">
+                <welcome-component-preview
+                  v-if="!isPreviewSignedIn"
                   :name="previewData?.name || organization?.name"
                   :description="previewData?.description || organization?.description"
                   :banner-image="previewData?.bannerImage || organization?.bannerImage"
-                  @sign-in="() => {}"
+                  @sign-in-complete="handlePreviewSignIn"
+                />
+                <member-portal-preview
+                  v-else
+                  :name="previewData?.name || organization?.name"
+                  :banner-image="previewData?.bannerImage || organization?.bannerImage"
                 />
               </div>
 
-              <!-- Home Indicator -->
-              <div class="rounded-b-[2rem] overflow-hidden w-[352px] h-[30px] bg-gray-900 flex items-center justify-center">
-                <div class="w-[120px] h-1 bg-gray-700 rounded-full"></div>
+                <!-- Home Indicator -->
+                <div class="rounded-b-[2rem] overflow-hidden w-[352px] h-[30px] bg-gray-900 flex items-center justify-center">
+                  <div class="w-[120px] h-1 bg-gray-700 rounded-full"></div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+      
       <div class="mt-8 text-center">
         <div class="text-xs text-gray-400">Last updated: {{ lastUpdated }}</div>
       </div>
@@ -84,7 +91,8 @@ import { ref, onMounted, computed } from 'vue';
 import { useStore } from 'vuex';
 import { getOrganization, updateOrganization } from '../../api';
 import OrganizationForm from '../../components/settings/OrganizationForm.vue';
-import WelcomeComponent from '../../components/members/WelcomeComponent.vue';
+import WelcomeComponentPreview from '../../components/members/WelcomeComponentPreview.vue';
+import MemberPortalPreview from '../../components/members/MemberPortalPreview.vue';
 import { Icon } from '@iconify/vue';
 import { useToast } from '../../plugins/toast';
 const toast = useToast();
@@ -94,7 +102,7 @@ const organization = ref<any>(null);
 const previewData = ref<any>(null);
 const loading = ref(false);
 const lastUpdatedTime = ref(new Date());
-const showPreview = ref(false);
+const isPreviewSignedIn = ref(false);
 
 const lastUpdated = computed(() => {
   return new Intl.DateTimeFormat('en-US', {
@@ -105,10 +113,6 @@ const lastUpdated = computed(() => {
     hour12: true
   }).format(lastUpdatedTime.value);
 });
-
-const togglePreview = () => {
-  showPreview.value = !showPreview.value;
-};
 
 const fetchOrganization = async () => {
   console.log('🔄 Starting fetchOrganization in Settings.vue');
@@ -147,24 +151,23 @@ const handleOrganizationUpdate = async (updatedData) => {
   }
 };
 
+const handlePreviewSignIn = () => {
+  isPreviewSignedIn.value = true;
+};
+
 onMounted(() => {
   fetchOrganization();
 });
 </script>
 
 <style scoped>
-/* Disable all interactions in the preview phone */
+/* Disable most interactions in the preview phone, but allow sign-in button when not signed in */
 .preview-phone * {
-  pointer-events: none !important;
   user-select: none !important;
-  cursor: default !important;
 }
 
-.preview-phone button,
-.preview-phone a,
-.preview-phone input,
-.preview-phone textarea,
-.preview-phone select {
+/* Only disable pointer events when signed in */
+.pointer-events-none * {
   pointer-events: none !important;
   cursor: default !important;
 }
