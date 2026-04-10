@@ -426,8 +426,8 @@ const deleteSuperQRCode = async (passcode, id) => {
 const getOrganizationByCode = (code) => api.get(`/organization/by-code/${code}`);
 const updateOrganization = (data) => api.put('/organization', data);
 const uploadOrganizationBanner = (imageData) => {
-  console.log('🚀 Uploading banner image to API');
-  return api.post('/organization/banner-image', { imageData });
+  console.log('🚀 Uploading banner image to API, size:', Math.round(imageData.length / 1024), 'KB');
+  return api.post('/organization/banner-image', { imageData }, { timeout: 60000 });
 };
 
 // QR Codes (Awarding points) management API functions

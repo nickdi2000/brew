@@ -453,13 +453,53 @@ const showImageUpload = ref(false);
 const fileInput = ref(null);
 const isUploading = ref(false);
 
+const MAX_WIDTH = 1600;
+const MAX_HEIGHT = 900;
+const JPEG_QUALITY = 0.8;
+
+const compressImage = (file) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+
+      let { width, height } = img;
+      if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+        const ratio = Math.min(MAX_WIDTH / width, MAX_HEIGHT / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const dataUrl = canvas.toDataURL('image/jpeg', JPEG_QUALITY);
+      console.log(`📐 Compressed: ${img.naturalWidth}x${img.naturalHeight} → ${width}x${height}, ` +
+        `${Math.round(file.size / 1024)}KB → ${Math.round(dataUrl.length * 0.75 / 1024)}KB`);
+      resolve(dataUrl);
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error('Failed to load image for compression'));
+    };
+
+    img.src = objectUrl;
+  });
+};
+
 const handleFileUpload = async (event) => {
   const file = event.target.files[0];
   if (!file) return;
   
   console.log('📁 File selected:', { name: file.name, size: file.size, type: file.type });
   
-  if (file.size > 10 * 1024 * 1024) { // 10MB limit
+  if (file.size > 10 * 1024 * 1024) {
     toast('File size must be less than 10MB', 'error');
     return;
   }
@@ -470,33 +510,23 @@ const handleFileUpload = async (event) => {
   }
   
   isUploading.value = true;
-  
-  const reader = new FileReader();
-  reader.onload = async (e) => {
-    try {
-      console.log('📷 Converting file to base64 and uploading...');
-      const response = await uploadOrganizationBanner(e.target.result);
-      console.log('✅ Upload response:', response.data);
-      
-      formData.value.bannerImage = response.data.data.bannerImage;
-      showImageUpload.value = false;
-      toast('Banner image uploaded successfully', 'success');
-    } catch (error) {
-      console.error('❌ Error uploading banner image:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to upload banner image';
-      toast(errorMessage, 'error');
-    } finally {
-      isUploading.value = false;
-    }
-  };
-  
-  reader.onerror = () => {
-    console.error('❌ Error reading file');
-    toast('Error reading file', 'error');
+
+  try {
+    const compressedDataUrl = await compressImage(file);
+    console.log('📷 Uploading compressed image...');
+    const response = await uploadOrganizationBanner(compressedDataUrl);
+    console.log('✅ Upload response:', response.data);
+    
+    formData.value.bannerImage = response.data.data.bannerImage;
+    showImageUpload.value = false;
+    toast('Banner image uploaded successfully', 'success');
+  } catch (error) {
+    console.error('❌ Error uploading banner image:', error);
+    const errorMessage = error.response?.data?.message || error.message || 'Failed to upload banner image';
+    toast(errorMessage, 'error');
+  } finally {
     isUploading.value = false;
-  };
-  
-  reader.readAsDataURL(file);
+  }
 };
 
 const handleFileDrop = (event) => {
