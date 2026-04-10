@@ -34,7 +34,10 @@ const app = express();
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+// Default express.json() limit is 100kb — too small for base64 banner uploads (frontend allows up to 10MB files).
+const jsonBodyLimit = process.env.JSON_BODY_LIMIT || '10mb';
+app.use(express.json({ limit: jsonBodyLimit }));
+app.use(express.urlencoded({ extended: true, limit: jsonBodyLimit }));
 
 // Request logging middleware
 app.use((req, res, next) => {
