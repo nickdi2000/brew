@@ -1,68 +1,60 @@
 <template>
-  <div class="min-h-screen bg-gray-950 font-sans text-gray-100">
+  <div class="min-h-screen font-sans">
     <!-- Navbar -->
-    <nav class="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-gray-950/90 backdrop-blur">
-      <div class="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+    <nav class="fixed top-0 left-0 right-0 z-50 border-b border-gray-200 bg-white/90 backdrop-blur">
+      <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <div class="flex items-center space-x-3">
-          <img src="/images/brew-tokens-logo.png" alt="BrewTokens Logo" class="h-12 w-12" />
-          <span class="text-2xl font-extrabold tracking-wide text-white">BrewTokens</span>
+          <img src="/images/brew-tokens-logo.png" alt="BrewTokens Logo" class="h-10 w-10" />
+          <span class="text-xl font-bold tracking-tight text-gray-900">BrewTokens</span>
         </div>
         <div class="hidden items-center space-x-6 md:flex">
-          <router-link to="/contact" class="text-base font-medium text-gray-300 transition hover:text-white">Contact</router-link>
-          <router-link to="/login" class="btn btn-secondary px-5 py-2 text-base">Login</router-link>
+          <router-link to="/contact" class="text-sm font-medium text-gray-600 transition hover:text-gray-900">Contact</router-link>
+          <router-link to="/login" class="btn btn-secondary px-5 py-2 text-sm">Login</router-link>
         </div>
         <router-link to="/login" class="btn btn-primary px-4 py-2 text-sm md:hidden">Start</router-link>
       </div>
     </nav>
 
     <!-- Hero -->
-    <section class="relative overflow-hidden pt-32 pb-24 text-gray-100">
-      <div class="absolute inset-0">
-        <img :src="heroQrCode" alt="Guests scanning BrewTokens QR code" class="h-full w-full object-contain sm:object-cover" />
-        <div class="absolute inset-0 bg-gradient-to-br from-gray-950/95 via-gray-950/80 to-indigo-900/70"></div>
-      </div>
-
-      <div class="relative z-10">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div class="grid grid-cols-1 items-start gap-12 lg:grid-cols-12">
-            <div class="space-y-8 text-center lg:col-span-7 lg:text-left">
-              <div class="inline-flex items-center justify-center space-x-2 rounded-full border border-white/10 bg-white/10 px-4 py-1 text-sm font-medium text-indigo-200 lg:justify-start">
-                <Icon icon="mdi:lightning-bolt" class="h-4 w-4" />
-                <span>Modern loyalty for taprooms</span>
-              </div>
-              <h1 class="text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-6xl xl:text-7xl">
-                Revolutionize Rewards with a Single QR Code
-              </h1>
-              <p class="mx-auto max-w-2xl text-lg text-gray-200 sm:text-xl lg:mx-0">
-                BrewTokens gives breweries, coffee shops, and neighborhood hangouts a premium loyalty experience—no hardware installs, no integrations, just effortless delight.
-              </p>
-              <div class="flex flex-col items-center justify-center gap-4 sm:flex-row sm:justify-start">
-                <button
-                  class="btn btn-primary px-8 py-3 text-lg font-semibold"
-                  type="button"
-                  @click="$router.push('/login?tab=register')"
-                >
-                  Get started
-                </button>
-                <router-link to="/contact" class="btn btn-secondary px-8 py-3 text-lg font-semibold">Contact us</router-link>
-              </div>
-              <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <article v-for="highlight in heroHighlights" :key="highlight.title" class="rounded-2xl border border-white/10 bg-white/10 p-5 text-left">
-                  <Icon :icon="highlight.icon" class="h-6 w-6 text-indigo-300" />
-                  <h3 class="mt-3 text-base font-semibold text-white">{{ highlight.title }}</h3>
-                  <p class="mt-2 text-sm text-gray-300">{{ highlight.copy }}</p>
-                </article>
-              </div>
+    <section class="bg-white pt-28 pb-20">
+      <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 items-start gap-12 lg:grid-cols-12">
+          <div class="space-y-6 text-center lg:col-span-7 lg:text-left">
+            <div class="inline-flex items-center justify-center space-x-2 rounded-full border border-indigo-100 bg-indigo-50 px-4 py-1 text-sm font-medium text-indigo-600 lg:justify-start">
+              <Icon icon="mdi:lightning-bolt" class="h-4 w-4" />
+              <span>QR-powered loyalty</span>
             </div>
-
-            <div class="lg:col-span-5">
-              <LandingRegistrationCard
-                ref="betaCardRef"
-                :highlight="registrationHighlight"
-                @login-request="handleRegistrationLoginClick"
-                @focus-card="handleFocusCard"
-              />
+            <h1 class="text-4xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
+              Loyalty rewards, <br class="hidden sm:block" />one scan at a time
+            </h1>
+            <p class="mx-auto max-w-xl text-lg text-gray-500 lg:mx-0">
+              Give your guests a premium rewards experience with a single QR code. No hardware, no integrations, no app downloads.
+            </p>
+            <div class="flex flex-col items-center justify-center gap-4 sm:flex-row lg:justify-start">
+              <button
+                class="btn btn-primary px-8 py-3 text-lg font-semibold"
+                type="button"
+                @click="$router.push('/login?tab=register')"
+              >
+                Get started free
+              </button>
+              <router-link to="/contact" class="btn btn-secondary px-8 py-3 text-lg font-semibold">Contact us</router-link>
+              <router-link to="/members/DEMO" class="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 transition hover:text-indigo-800">
+                Try the demo
+                <Icon icon="mdi:arrow-right" class="h-4 w-4" />
+              </router-link>
             </div>
+            <div class="grid grid-cols-1 gap-4 pt-2 sm:grid-cols-3">
+              <article v-for="highlight in heroHighlights" :key="highlight.title" class="rounded-xl border border-gray-100 bg-gray-50 p-5 text-left">
+                <Icon :icon="highlight.icon" class="h-6 w-6 text-indigo-500" />
+                <h3 class="mt-3 text-sm font-semibold text-gray-900">{{ highlight.title }}</h3>
+                <p class="mt-1 text-sm text-gray-500">{{ highlight.copy }}</p>
+              </article>
+            </div>
+          </div>
+
+          <div class="lg:col-span-5">
+            <PhoneGraphic link-to="/members/DEMO" />
           </div>
         </div>
       </div>
@@ -73,7 +65,7 @@
       v-for="section in featureSections"
       :key="section.id"
       :id="section.id"
-      :class="['py-24', section.background]"
+      :class="['py-24 text-gray-100', section.background]"
     >
       <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="grid grid-cols-1 items-center gap-16 lg:grid-cols-12">
@@ -122,7 +114,7 @@
             </div>
             <h2 class="text-3xl font-bold text-white sm:text-4xl lg:text-5xl">Launch it as your own</h2>
             <p class="text-lg text-gray-300">
-              Ship a loyalty experience that looks and feels like a native app for your taproom. From logos and colors to domains and copy, BrewTokens disappears behind your brand.
+              Ship a loyalty experience that looks and feels native to your venue. Logos, colors, domains, and copy—BrewTokens disappears behind your brand.
             </p>
             <ul class="space-y-4">
               <li v-for="highlight in whiteLabelHighlights" :key="highlight.text" class="flex items-start space-x-3 text-base text-gray-200">
@@ -132,12 +124,12 @@
             </ul>
             <div class="flex flex-col gap-4 sm:flex-row">
               <router-link to="/login" class="btn btn-primary px-8 py-3 text-lg font-semibold">Get Started</router-link>
-              <router-link to="/contact" class="btn btn-secondary px-8 py-3 text-lg font-semibold">Book a Demo</router-link>
+              <router-link to="/contact" class="btn btn-secondary border-white/20 bg-white/10 text-white hover:bg-white/20 px-8 py-3 text-lg font-semibold">Book a Demo</router-link>
             </div>
           </div>
           <div class="lg:col-span-6">
             <div class="rounded-3xl border border-white/10 bg-black/30 p-4 shadow-2xl">
-              <img :src="whiteLabelBrewery" alt="White-labeled BrewTokens rewards app for breweries" class="h-full w-full rounded-2xl object-cover" />
+              <img :src="whiteLabelBrewery" alt="White-labeled BrewTokens rewards app" class="h-full w-full rounded-2xl object-cover" />
             </div>
           </div>
         </div>
@@ -151,9 +143,9 @@
           <Icon icon="mdi:rocket-launch" class="h-4 w-4" />
           <span>Launch in under 15 minutes</span>
         </div>
-        <h2 class="mt-6 text-4xl font-bold sm:text-5xl">Unleash BrewTokens today</h2>
+        <h2 class="mt-6 text-4xl font-bold sm:text-5xl">Ready to get started?</h2>
         <p class="mt-4 text-lg text-indigo-100">
-          Elevate your loyalty game with our QR-powered system. Engage guests, unlock repeat visits, and own the entire experience.
+          Launch your loyalty program in minutes. Engage guests, drive repeat visits, and own the experience.
         </p>
         <div class="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <a href="/login" class="btn btn-primary px-10 py-4 text-lg font-semibold">Create your venue</a>
@@ -259,14 +251,14 @@
           <img src="/images/brew-tokens-logo.png" alt="BrewTokens Logo" class="h-10 w-10" />
           <div>
             <p class="text-lg font-semibold text-white">BrewTokens</p>
-            <p class="text-sm text-gray-500">Rewards crafted for craft venues</p>
+            <p class="text-sm text-gray-500">QR-powered loyalty for any venue</p>
           </div>
         </div>
         <div class="flex items-center space-x-4 text-sm">
           <a href="/privacy-policy" class="transition hover:text-white">Privacy</a>
           <a href="/terms-of-service" class="transition hover:text-white">Terms</a>
           <a href="/contact" class="transition hover:text-white">Support</a>
-          <a href="/members/gordon" class="transition hover:text-white">Sample Portal</a>
+          <a href="/members/DEMO" class="transition hover:text-white">Demo Portal</a>
         </div>
         <p class="text-xs text-gray-500">&copy; {{ currentYear }} BrewTokens. All rights reserved.</p>
       </div>
@@ -277,11 +269,10 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { Icon } from '@iconify/vue';
-import heroQrCode from '@/assets/images/hero-qr-code.png';
 import qrAwardBrewery from '@/assets/images/qr-award-brewery.png';
-import qrCode from '@/assets/images/qr-code.png';
+import qrCode from '@/assets/images/qr-code-2.png';
 import singleQr from '@/assets/images/single-qr.png';
-import LandingRegistrationCard from '@/components/marketing/LandingRegistrationCard.vue';
+import PhoneGraphic from '@/components/marketing/PhoneGraphic.vue';
 import whiteLabelBrewery from '/images/white-label-brewery.png';
 import { useLocation } from '@/composables/useLocation';
 
@@ -305,51 +296,51 @@ onMounted(async () => {
 
 const heroHighlights = [
   {
-    title: 'No POS integration',
-    copy: 'Launch loyalty instantly without touching your existing tech stack.',
+    title: 'No POS needed',
+    copy: 'Works alongside any setup—no integrations required.',
     icon: 'mdi:link-variant-off',
   },
   {
-    title: 'Guests love it',
-    copy: 'Customers enroll and redeem in seconds using their phones.',
+    title: 'Instant enrollment',
+    copy: 'Guests join and redeem in seconds from their phone.',
     icon: 'mdi:heart-outline',
   },
   {
-    title: 'Live insights',
-    copy: 'Track redemptions, visits, and VIPs in real time from one dashboard.',
+    title: 'Real-time insights',
+    copy: 'Track visits, redemptions, and top guests at a glance.',
     icon: 'mdi:chart-bell-curve-cumulative',
   },
 ];
 
 const featureSections = [
-  {
-    id: 'award-points',
-    title: 'Award points effortlessly',
-    description: 'Scan one QR after the tab closes to instantly drop points into a guest\'s wallet. No friction, just smiles.',
-    bullets: [
-      { text: 'Trigger rewards with a single tap and a quick scan.', icon: 'mdi:flash-outline' },
-      { text: 'Reward regulars and first-timers without juggling punch cards.', icon: 'mdi:account-group-outline' },
-      { text: 'Automate offers that keep craft fans coming back.', icon: 'mdi:repeat-variant' },
-    ],
-    metrics: [
-      { value: '92%', label: 'faster reward fulfillment' },
-      { value: '3x', label: 'more repeat taproom visits' },
-    ],
-    image: qrAwardBrewery,
-    imageAlt: 'Team member awarding loyalty points via QR scan',
-    reverse: false,
-    badge: 'Award points',
-    badgeIcon: 'mdi:qrcode-check',
-    background: 'bg-gray-950',
-  },
+  // {
+  //   id: 'award-points',
+  //   title: 'Award points effortlessly',
+  //   description: 'A quick scan drops points straight into your guest\'s wallet—no friction, no extra hardware.',
+  //   bullets: [
+  //     { text: 'One tap, one scan—rewards issued instantly.', icon: 'mdi:flash-outline' },
+  //     { text: 'Reward regulars and first-timers without punch cards.', icon: 'mdi:account-group-outline' },
+  //     { text: 'Automate offers that drive repeat visits.', icon: 'mdi:repeat-variant' },
+  //   ],
+  //   metrics: [
+  //     { value: '92%', label: 'faster reward fulfillment' },
+  //     { value: '3x', label: 'more repeat visits' },
+  //   ],
+  //   image: qrAwardBrewery,
+  //   imageAlt: 'Team member awarding loyalty points via QR scan',
+  //   reverse: false,
+  //   badge: 'Award points',
+  //   badgeIcon: 'mdi:qrcode-check',
+  //   background: 'bg-gray-950',
+  // },
   {
     id: 'easy-join',
-    title: 'Let guests join in seconds',
-    description: 'One QR joins your guests to your loyalty program, checks their balance, and guides them to the next reward.',
+    title: 'Guests join in seconds',
+    description: 'One QR code enrolls guests, shows their balance, and guides them to the next reward.',
     bullets: [
       { text: 'Capture emails and phone numbers without clunky forms.', icon: 'mdi:email-variant' },
-      { text: 'Works on any device—no apps or downloads required.', icon: 'mdi:cellphone-link' },
-      { text: 'Automatic SMS and email nudges keep engagement high.', icon: 'mdi:bell-ring-outline' },
+      { text: 'Works on any device—no apps or downloads.', icon: 'mdi:cellphone-link' },
+      { text: 'Automated SMS and email nudges keep engagement high.', icon: 'mdi:bell-ring-outline' },
     ],
     metrics: [
       { value: '30s', label: 'average signup time' },
@@ -364,12 +355,12 @@ const featureSections = [
   },
   {
     id: 'single-qr',
-    title: 'Manage everything with one QR',
-    description: 'Admin, guest onboarding, redemptions, and analytics all live behind the same dynamic code—no juggling links.',
+    title: 'One QR runs everything',
+    description: 'Onboarding, redemptions, and analytics all live behind a single dynamic code.',
     bullets: [
-      { text: 'Control campaigns and switch offers instantly from HQ.', icon: 'mdi:remote-desktop' },
-      { text: 'Surface top fans and segment guests in real time.', icon: 'mdi:trophy-outline' },
-      { text: 'Sync data with your CRM via secure exports and webhooks.', icon: 'mdi:cloud-sync-outline' },
+      { text: 'Switch offers and campaigns instantly from one dashboard.', icon: 'mdi:remote-desktop' },
+      { text: 'Surface top guests and segment audiences in real time.', icon: 'mdi:trophy-outline' },
+      { text: 'Export data or sync with your CRM via webhooks.', icon: 'mdi:cloud-sync-outline' },
     ],
     metrics: [
       { value: '1', label: 'QR to run your entire program' },
@@ -398,27 +389,6 @@ const whiteLabelHighlights = [
     icon: 'mdi:storefront-outline',
   },
 ];
-
-const registrationHighlight = ref(false);
-const betaCardRef = ref(null);
-
-const focusRegistrationCard = async () => {
-  const cardEl = betaCardRef.value?.getCardEl?.();
-  if (cardEl && typeof cardEl.scrollIntoView === 'function') {
-    cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
-  registrationHighlight.value = true;
-  await new Promise((resolve) => setTimeout(resolve, 280));
-  registrationHighlight.value = false;
-};
-
-const handleRegistrationLoginClick = () => {
-  focusRegistrationCard();
-};
-
-const handleFocusCard = () => {
-  focusRegistrationCard();
-};
 
 // Video modal functions
 const openVideoModal = () => {

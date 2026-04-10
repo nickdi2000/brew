@@ -3,6 +3,12 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 const { authenticateToken: auth, requireAdmin } = require('../middleware/auth');
 
+// Admin user management routes (admin-only)
+router.get('/admin', [auth, requireAdmin], userController.getOrganizationAdmins);
+router.post('/admin', [auth, requireAdmin], userController.createAdminUser);
+router.put('/admin/:id', [auth, requireAdmin], userController.updateAdminUser);
+router.delete('/admin/:id', [auth, requireAdmin], userController.deleteAdminUser);
+
 // Member management routes (admin-only)
 router.get('/members', [auth, requireAdmin], userController.getOrganizationMembers);
 router.get('/members/:id', [auth, requireAdmin], userController.getMemberDetails);

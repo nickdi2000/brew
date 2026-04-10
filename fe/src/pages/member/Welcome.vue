@@ -1,46 +1,44 @@
 <template>
-  <div class="min-h-screen">
+  <div class="min-h-screen bg-black">
     <!-- Loading State -->
     <div v-if="loading" class="flex items-center justify-center min-h-screen">
       <div class="text-center">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mx-auto"></div>
-        <p class="mt-4 text-gray-500 animate-pulse">Loading...</p>
+        <div class="h-10 w-10 animate-spin rounded-full border-2 border-white/10 border-t-amber-400 mx-auto"></div>
+        <p class="mt-4 text-sm text-white/40">Loading…</p>
       </div>
     </div>
 
     <!-- Not Found State -->
-    <div v-else-if="notFound" class="flex items-center justify-center min-h-screen p-4">
-      <div class="text-center max-w-sm">
-        <Icon icon="mdi:brewery" class="h-20 w-20 text-amber-500 mx-auto" />
-        <h2 class="mt-6 text-2xl font-bold text-gray-900">Brewery Not Found</h2>
-        <p class="mt-3 text-gray-600">
-          We couldn't find a brewery at this address.
+    <div v-else-if="notFound" class="flex items-center justify-center min-h-screen p-6">
+      <div class="text-center max-w-xs">
+        <Icon icon="mdi:map-marker-question-outline" class="h-16 w-16 text-white/20 mx-auto" />
+        <h2 class="mt-5 text-xl font-bold text-white">Not Found</h2>
+        <p class="mt-2 text-sm text-white/50 leading-relaxed">
+          We couldn't find a venue at this address. Double-check the link and try again.
         </p>
       </div>
     </div>
 
     <!-- Error State -->
-    <div v-else-if="error" class="flex items-center justify-center min-h-screen p-4">
-      <div class="bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg max-w-sm">
-        <div class="flex items-center">
-          <Icon icon="mdi:alert" class="h-5 w-5 text-red-400 flex-shrink-0" />
-          <p class="ml-3 text-sm text-red-700">
-            Unable to load brewery information.
-          </p>
-        </div>
+    <div v-else-if="error" class="flex items-center justify-center min-h-screen p-6">
+      <div class="text-center max-w-xs">
+        <Icon icon="mdi:alert-circle-outline" class="h-16 w-16 text-red-400/60 mx-auto" />
+        <h2 class="mt-5 text-xl font-bold text-white">Something went wrong</h2>
+        <p class="mt-2 text-sm text-white/50 leading-relaxed">
+          Unable to load venue information. Please try again later.
+        </p>
       </div>
     </div>
 
     <!-- Content -->
-    <div v-if="organization" class="min-h-screen">
-      <welcome-component
-        :name="organization.name"
-        :description="organization.description"
-        :banner-image="organization.bannerImage"
-        :code="organization.code"
-        @sign-in="signInWithGoogle"
-      />
-    </div>
+    <welcome-component
+      v-if="organization"
+      :name="organization.name"
+      :description="organization.description"
+      :banner-image="organization.bannerImage"
+      :code="organization.code"
+      @sign-in="signInWithGoogle"
+    />
   </div>
 </template>
 
@@ -239,44 +237,4 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.animate-fade-in {
-  animation: fadeIn 1s ease-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Smooth transitions */
-.transition-all {
-  transition-property: all;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 300ms;
-}
-
-/* Hover animations */
-.hover\:scale-105:hover {
-  transform: scale(1.05);
-}
-
-/* Loading animation */
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: .5;
-  }
-}
 </style>

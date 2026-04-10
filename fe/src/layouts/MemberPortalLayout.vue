@@ -2,7 +2,10 @@
   <div class="min-h-screen flex flex-col bg-black">
     <div class="flex-grow flex justify-center">
       <!-- Mobile Container -->
-      <div class="w-full max-w-[420px] bg-white min-h-[640px] shadow-2xl flex flex-col">
+      <div
+        class="w-full max-w-[420px] min-h-[640px] flex flex-col"
+        :class="isWelcomePage ? 'bg-black' : 'bg-white shadow-2xl'"
+      >
         <!-- Top Nav -->
         <nav v-if="currentUser" class="bg-gray-900 text-white border-b border-gray-800 sticky top-0 z-50">
           <div class="px-4 py-3 flex items-center justify-between">
@@ -80,8 +83,8 @@
           <router-view />
         </main>
 
-        <!-- Footer -->
-        <footer class="bg-gray-900 w-full">
+        <!-- Footer (hidden on welcome page) -->
+        <footer v-if="!isWelcomePage" class="bg-gray-900 w-full">
           <!-- Links -->
           <div class="py-6 px-6">
             <div class="grid grid-cols-2 gap-4 text-sm text-gray-400 mb-6">
@@ -283,6 +286,7 @@ const route = useRoute();
 const router = useRouter();
 const toast = useToast();
 const showMenu = ref(false);
+const isWelcomePage = computed(() => route.name === 'member-home');
 const pointsUpdated = ref(false);
 const displayPoints = ref(0);
 const currentUser = computed(() => store.getters['auth/currentUser'] || store.getters.currentUser);

@@ -1,162 +1,97 @@
 <template>
-  <div class="h-full flex flex-col">
-    <!-- Main Content -->
-    <main class="flex-grow flex flex-col">
-      <!-- Sticky Header -->
-      <div 
-        class="fixed left-0 right-0 z-40 transition-all duration-300"
-        :class="{
-          'opacity-0 pointer-events-none translate-y-[-100%]': !isHeaderSticky,
-          'opacity-100 translate-y-0': isHeaderSticky
-        }"
-        style="top: 56px;"
-      >
-        <div class="bg-black/80 backdrop-blur-sm shadow-lg">
-          <div class="max-w-[420px] mx-auto px-4 py-3 flex items-center justify-between">
-            <h1 class="text-xl font-bold text-white">{{ name || 'Welcome' }}</h1>
-          </div>
-        </div>
+  <div class="welcome-root">
+    <!-- Background layer: banner image + overlay -->
+    <div class="welcome-bg">
+      <img
+        :src="bannerImage || '/images/brewery-beers-coins.png'"
+        alt=""
+        class="welcome-bg-img"
+      />
+      <div class="welcome-bg-overlay"></div>
+    </div>
+
+    <!-- Radar pulse from top edge -->
+    <div class="radar-origin">
+      <div class="radar-ring radar-ring--1"></div>
+      <div class="radar-ring radar-ring--2"></div>
+      <div class="radar-ring radar-ring--3"></div>
+    </div>
+
+    <!-- Content -->
+    <div class="welcome-content">
+      <!-- Top spacer -->
+      <div class="welcome-top"></div>
+
+      <!-- Branding -->
+      <div class="welcome-brand">
+        <h1 class="welcome-title">{{ name || 'Welcome' }}</h1>
+        <p v-if="description" class="welcome-desc">{{ description }}</p>
       </div>
 
-      <!-- Hero Section -->
-      <div 
-        ref="heroSection"
-        class="relative min-h-[360px] flex items-center justify-center bg-cover bg-center"
-        :style="{
-          backgroundImage: `url(${bannerImage || '/images/brewery-beers-coins.png'})`
-        }"
-      >
-        <!-- Overlay -->
-        <div class="absolute inset-0 bg-gradient-to-b from-black/30 to-black/70 backdrop-blur-[1px]"></div>
-        
-        <!-- Content -->
-        <div 
-          class="relative z-10 w-full mx-auto text-center px-6 pt-12 pb-32 transition-opacity duration-300"
-          :class="{ 'opacity-0': isHeaderSticky }"
+      <!-- Actions -->
+      <div class="welcome-actions">
+        <GoogleLogin
+          :callback="handleGoogleLoginSuccess"
+          :error-callback="handleGoogleLoginError"
+          :popup-type="'CODE'"
+          :auto-login="false"
+          :client-id="googleClientId"
+          class="w-full"
+          :disabled="isLoading || isAdminOfThisOrg"
         >
-          <h1 class="text-3xl font-bold text-white mb-3 animate-fade-in">
-            {{ name || 'Welcome' }}
-          </h1>
-          <p class="text-lg text-white text-opacity-90 max-w-sm mx-auto">
-            {{ description || 'Loading brewery description...' }}
-          </p>
-        </div>
-      </div>
-
-      <!-- Login Card -->
-      <div class="relative -mt-20 px-6">
-        <div class="bg-white rounded-2xl shadow-xl p-6 text-center">
-          <h2 class="text-lg font-medium text-gray-900 mb-4">
-            Join our rewards program
-          </h2>
-          
-          <!-- Sign In Button -->
-          <GoogleLogin
-            :callback="handleGoogleLoginSuccess"
-            :error-callback="handleGoogleLoginError"
-            :popup-type="'CODE'"
-            :auto-login="false"
-            :client-id="googleClientId"
-            class="w-full"
-            :disabled="isLoading || isAdminOfThisOrg"
-            :class="{
-              'opacity-50 cursor-not-allowed': isLoading || isAdminOfThisOrg
-            }"
-          >
-            <template #default="{ isProcessing }">
-              <div
-                class="group w-full flex justify-center items-center px-4 py-3 border border-gray-700 rounded-xl text-base font-medium text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-400 shadow-md hover:shadow-xl transition-all duration-200 ease-out relative overflow-hidden"
-              >
-                <!-- Subtle shine effect pseudo-element for epic twist: a sweeping highlight on hover -->
-                <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                  <div class="absolute inset-y-0 left-0 w-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent transform -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
-                </div>
-                <template v-if="isProcessing">
-                  <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3 z-10 relative"></div>
-                  <span class="z-10 relative">Signing in...</span>
-                </template>
-                <template v-else>
-                  <img src="https://www.google.com/favicon.ico" alt="Google" class="h-5 w-5 mr-3 z-10 relative flex-shrink-0" />
-                  <span class="z-10 relative">{{ isAdminOfThisOrg ? 'Admin cannot join as member here' : 'Sign in with Google' }}</span>
-                  <Icon icon="mdi:arrow-right" class="ml-2 h-5 w-5 opacity-0 translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 ease-out z-10 relative" />
-                </template>
-              </div>
-            </template>
-          </GoogleLogin>
-          
-          <!-- Demo Login Button (Development or Easter Egg) -->
-          <div v-if="isDevelopment || bellClickCount === 3" class="mt-3">
+          <template #default="{ isProcessing }">
             <button
-              @click="handleDemoLogin"
-              :disabled="isLoading"
-              class="w-full flex justify-center items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              type="button"
+              class="welcome-signin-btn"
+              :class="{ 'opacity-50 pointer-events-none': isLoading || isAdminOfThisOrg }"
+              :disabled="isLoading || isAdminOfThisOrg"
             >
-              <Icon icon="mdi:test-tube" class="h-4 w-4 mr-2" />
-              Demo Login
+              <template v-if="isProcessing">
+                <div class="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white"></div>
+                <span>Signing in…</span>
+              </template>
+              <template v-else>
+                <img
+                  src="https://www.google.com/favicon.ico"
+                  alt="Google"
+                  class="h-5 w-5 flex-shrink-0"
+                />
+                <span>{{ isAdminOfThisOrg ? 'Admin cannot join here' : 'Continue with Google' }}</span>
+              </template>
             </button>
-          </div>
-          
-          <p v-if="isAdminOfThisOrg" class="text-sm text-red-600 mt-2">You're an admin of this organization. Log out to join as a member.</p>
+          </template>
+        </GoogleLogin>
+
+        <p v-if="isAdminOfThisOrg" class="mt-2 text-center text-xs text-red-400">
+          You're an admin of this organization. Log out to join as a member.
+        </p>
+
+      </div>
+
+      <!-- Feature pills -->
+      <div class="welcome-features">
+        <div
+          v-for="feature in features"
+          :key="feature.label"
+          class="welcome-feature"
+          @click="feature.onClick?.()"
+        >
+          <Icon :icon="feature.icon" class="h-4 w-4 text-amber-400" />
+          <span>{{ feature.label }}</span>
         </div>
       </div>
 
-      <!-- Features Section -->
-      <div class="bg-white px-6 pt-12 pb-8">
-        <div class="max-w-sm mx-auto">
-          <!-- Feature Cards -->
-          <div class="space-y-6">
-            <!-- Feature 1 -->
-            <div class="bg-sky-50 rounded-xl p-4 flex items-center space-x-4">
-              <div class="flex-shrink-0">
-                <div class="bg-sky-100 rounded-lg p-2">
-                  <Icon icon="mdi:gift" class="h-6 w-6 text-sky-600" />
-                </div>
-              </div>
-              <div>
-                <h3 class="font-medium text-gray-900">Earn Points</h3>
-                <p class="text-sm text-gray-600 mt-0.5">Get rewarded for every visit</p>
-              </div>
-            </div>
-
-            <!-- Feature 2 -->
-            <div class="bg-sky-50 rounded-xl p-4 flex items-center space-x-4">
-              <div class="flex-shrink-0">
-                <div class="bg-sky-100 rounded-lg p-2">
-                  <Icon icon="mdi:star" class="h-6 w-6 text-sky-600" />
-                </div>
-              </div>
-              <div>
-                <h3 class="font-medium text-gray-900">Exclusive Perks</h3>
-                <p class="text-sm text-gray-600 mt-0.5">Free drinks & special offers</p>
-              </div>
-            </div>
-
-            <!-- Feature 3 -->
-            <div class="bg-sky-50 rounded-xl p-4 flex items-center space-x-4">
-              <div class="flex-shrink-0">
-                <div class="bg-sky-100 rounded-lg p-2">
-                  <Icon 
-                    icon="mdi:bell" 
-                    class="h-6 w-6 text-sky-600 cursor-pointer transition-transform hover:scale-110" 
-                    @click="handleBellClick" 
-                  />
-                </div>
-              </div>
-              <div>
-                <h3 class="font-medium text-gray-900">Early Access</h3>
-                <p class="text-sm text-gray-600 mt-0.5">Be first to know about events</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </main>
+      <!-- Powered by -->
+      <p class="welcome-powered">
+        Powered by <strong class="text-white/60">BrewTokens</strong>
+      </p>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { Icon } from '@iconify/vue';
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import { useToast } from '@/plugins/toast';
@@ -166,88 +101,57 @@ const store = useStore();
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
-const currentUser = computed(() => store.getters['auth/currentUser'] || store.getters.currentUser);
+
 const isLoading = ref(false);
 const googleClientId = ref(import.meta.env.VITE_GOOGLE_CLIENT_ID);
-const bellClickCount = ref(0);
+const membershipByCode = ref(null);
 
-// Sticky header logic
-const heroSection = ref(null);
-const isHeaderSticky = ref(false);
-
-const handleScroll = () => {
-  if (!heroSection.value) return;
-  
-  const heroRect = heroSection.value.getBoundingClientRect();
-  const navHeight = 56; // Height of the main nav bar
-  const triggerPoint = heroRect.height - (navHeight + 50); // Account for nav height in calculation
-  
-  // Check if the hero section is scrolled up enough (accounting for nav bar)
-  isHeaderSticky.value = heroRect.top < navHeight;
-};
-
-// Add and remove scroll listener
-onMounted(() => {
-  window.addEventListener('scroll', handleScroll);
+const props = defineProps({
+  name: { type: String, default: '' },
+  description: { type: String, default: '' },
+  bannerImage: { type: String, default: '' },
+  code: { type: String, default: '' },
 });
 
-onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll);
-});
+defineEmits(['sign-in']);
 
-// Environment detection
-const isDevelopment = computed(() => {
-  return import.meta.env.MODE === 'development' || 
-         import.meta.env.DEV || 
-         window.location.hostname === 'localhost' ||
-         window.location.hostname.includes('.local');
-});
-
-// Determine if the logged-in user is an admin of this organization
 const isAdminOfThisOrg = computed(() => {
-  const user = store.getters['auth/currentUser'] || store.getters.currentUser;
-  const memberships = user?.memberships || [];
-  if (!props.code && !route.params.code) return false;
-  // We need to know if user has admin membership for this org code.
-  // Frontend does not have org id here, so fetch membership by code when mounted.
   return membershipByCode.value?.role === 'admin' || membershipByCode.value?.role === 'owner';
 });
 
-const membershipByCode = ref(null);
+const features = computed(() => [
+  { label: 'Earn points every visit', icon: 'mdi:star-circle-outline' },
+  { label: 'Redeem exclusive rewards', icon: 'mdi:gift-outline' },
+  { label: 'Early access to events', icon: 'mdi:bell-outline' },
+]);
 
 onMounted(async () => {
   const codeToUse = props.code || route.params.code;
   if (!codeToUse) return;
 
-  // If user is already logged in, redirect to member portal
   if (store.getters['auth/token']) {
     router.push({ name: 'member-portal', params: { code: codeToUse } });
     return;
   }
 
   try {
-    // Only check membership for admins to show the warning message
     const { default: api } = await import('@/api');
     const response = await api.get(`/memberships/by-code/${codeToUse}`);
     membershipByCode.value = response.data.data;
-  } catch (error) {
-    // Silently ignore if not a member
+  } catch {
+    // Not a member — fine
   }
 });
 
-// Handle Google login success
 const handleGoogleLoginSuccess = async (response) => {
   const codeToUse = props.code || route.params.code;
-  if (!codeToUse) {
-    console.error('❌ Organization code not available');
-    return;
-  }
+  if (!codeToUse) return;
 
   try {
     isLoading.value = true;
     const authResult = await store.dispatch('auth/handleGoogleLogin', {
       credential: response.code,
-      code: codeToUse
+      code: codeToUse,
     });
 
     if (!authResult?.membership) {
@@ -255,93 +159,218 @@ const handleGoogleLoginSuccess = async (response) => {
     }
 
     router.push({ name: 'member-portal', params: { code: codeToUse } });
-  } catch (error) {
-    console.error('❌ Google login error:', error);
-    toast(error.response?.data?.message || error.message || 'Failed to authenticate with Google', 'error');
+  } catch (err) {
+    console.error('Google login error:', err);
+    toast(err.response?.data?.message || err.message || 'Failed to authenticate with Google', 'error');
   } finally {
     isLoading.value = false;
   }
 };
 
-// Handle Google login error
 const handleGoogleLoginError = (error) => {
-  console.error('❌ Google login error:', error);
+  console.error('Google login error:', error);
   toast('Failed to sign in with Google', 'error');
 };
 
-// Handle demo login
-// Handle bell icon clicks for easter egg
-const handleBellClick = () => {
-  bellClickCount.value++;
-};
-
-const handleDemoLogin = async () => {
-  const codeToUse = props.code || route.params.code;
-  if (!codeToUse) {
-    console.error('❌ Organization code not available');
-    toast('Organization code not available', 'error');
-    return;
-  }
-
-  try {
-    isLoading.value = true;
-    console.log('🧪 Demo login started');
-    
-    const authResult = await store.dispatch('auth/handleDemoLogin', { code: codeToUse });
-
-    if (!authResult?.membership) {
-      throw new Error('No membership found for this organization');
-    }
-
-    store.commit('SET_DEMO_SESSION', true);
-
-    toast('Demo login successful!', 'success');
-    router.push({ name: 'member-portal', params: { code: codeToUse } });
-
-  } catch (error) {
-    console.error('❌ Demo login error:', error);
-    toast(error.response?.data?.message || error.message || 'Demo login failed', 'error');
-  } finally {
-    isLoading.value = false;
-  }
-};
-
-const props = defineProps({
-  name: {
-    type: String,
-    default: ''
-  },
-  description: {
-    type: String,
-    default: ''
-  },
-  bannerImage: {
-    type: String,
-    default: ''
-  },
-  code: {
-    type: String,
-    default: ''
-  }
-});
-
-
-defineEmits(['sign-in']);
 </script>
 
 <style scoped>
-.animate-fade-in {
-  animation: fadeIn 1s ease-out;
+/* ---- Full-screen dark shell ---- */
+.welcome-root {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  overflow: hidden;
+  background: #000;
 }
 
-@keyframes fadeIn {
-  from {
+/* ---- Background image ---- */
+.welcome-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.welcome-bg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(0.8);
+}
+
+.welcome-bg-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.45) 0%,
+    rgba(0, 0, 0, 0.6) 45%,
+    rgba(0, 0, 0, 0.88) 100%
+  );
+}
+
+/* ---- Radar pulse ---- */
+.radar-origin {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.radar-ring {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  border: 2.5px solid rgba(96, 165, 250, 0.7);
+  box-shadow: 0 0 18px 4px rgba(96, 165, 250, 0.25);
+  animation: radar-expand 4.5s ease-out infinite;
+}
+
+.radar-ring--1 { animation-delay: 0s; }
+.radar-ring--2 { animation-delay: 1.5s; }
+.radar-ring--3 { animation-delay: 3s; }
+
+@keyframes radar-expand {
+  0% {
+    width: 0;
+    height: 0;
+    top: 0;
+    opacity: 0.85;
+    border-color: rgba(96, 165, 250, 0.8);
+    box-shadow: 0 0 20px 6px rgba(96, 165, 250, 0.35);
+  }
+  100% {
+    width: 700px;
+    height: 700px;
+    top: -350px;
     opacity: 0;
-    transform: translateY(20px);
+    border-color: rgba(96, 165, 250, 0);
+    box-shadow: 0 0 0 0 rgba(96, 165, 250, 0);
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+}
+
+/* ---- Content column ---- */
+.welcome-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 0 24px env(safe-area-inset-bottom, 20px);
+}
+
+.welcome-top {
+  flex: 1.2;
+  min-height: 60px;
+}
+
+/* ---- Branding ---- */
+.welcome-brand {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.welcome-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+  line-height: 1.15;
+}
+
+.welcome-desc {
+  margin-top: 10px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.6);
+  max-width: 300px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ---- Actions ---- */
+.welcome-actions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.welcome-signin-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 20px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.welcome-signin-btn:active {
+  transform: scale(0.98);
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* ---- Feature pills ---- */
+.welcome-features {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.welcome-feature {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ---- Powered by ---- */
+.welcome-powered {
+  flex-shrink: 0;
+  padding-bottom: 16px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.25);
+  text-align: center;
+}
+
+/* ---- Spacer pushes powered-by to bottom ---- */
+.welcome-features {
+  flex-shrink: 0;
+}
+
+.welcome-actions + .welcome-features {
+  margin-top: auto;
 }
 </style>

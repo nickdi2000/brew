@@ -18,6 +18,7 @@ const transactionRoutes = require('./routes/transactionRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 const healthRoutes = require('./routes/healthRoutes');
 const superRoutes = require('./routes/superRoutes');
+const websiteRoutes = require('./routes/websiteRoutes');
 
 // Import models to ensure they are registered with Mongoose
 require('./models/Organization');
@@ -27,6 +28,7 @@ require('./models/Reward');
 require('./models/QRCode');
 require('./models/Transaction');
 require('./models/Message');
+require('./models/Website');
 
 const app = express();
 
@@ -83,6 +85,7 @@ app.use('/api/transactions', transactionRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/super', superRoutes);
+app.use('/api/website', websiteRoutes);
 
 // MongoDB Connection
 const connectDB = async () => {

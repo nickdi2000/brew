@@ -35,6 +35,12 @@ const routes = [
     meta: { public: true }
   },
   {
+    path: '/website/:code',
+    name: 'website',
+    component: () => import('../pages/Website.vue'),
+    meta: { public: true }
+  },
+  {
     path: '/start',
     name: 'start',
     component: Start,
@@ -424,6 +430,18 @@ const routes = [
         name: 'super-admin',
         component: SuperAdmin,
         meta: { section: 'Guide' }
+      },
+      {
+        path: 'users',
+        name: 'users',
+        component: () => import('../pages/admin/Users.vue'),
+        meta: { section: 'Users' }
+      },
+      {
+        path: 'site-builder',
+        name: 'site-builder',
+        component: () => import('../pages/admin/SiteBuilder.vue'),
+        meta: { section: 'Site Builder' }
       }
     ]
   }

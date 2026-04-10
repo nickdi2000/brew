@@ -225,21 +225,29 @@ exports.updateOrganization = async (req, res) => {
       }
     });
 
-    // If code is being updated, check for duplicates first
+    // If code is being updated, validate format and check for duplicates
     if (updates.code) {
       const trimmedCode = updates.code.trim().toUpperCase();
+
+      if (trimmedCode.length < 3 || trimmedCode.length > 20) {
+        return res.status(400).json(formatError('Code must be between 3 and 20 characters.'));
+      }
+
+      if (!/^[A-Z0-9]+$/.test(trimmedCode)) {
+        return res.status(400).json(formatError('Code can only contain letters and numbers (no spaces or special characters).'));
+      }
+
       const existingOrg = await Organization.findOne({ 
         code: trimmedCode,
-        _id: { $ne: user.organization._id } // Exclude current organization
+        _id: { $ne: user.organization._id }
       });
       
       if (existingOrg) {
         return res.status(400).json(formatError(
-          `Organization code "${trimmedCode}" is already taken. Please choose a different code.`
+          `Code "${trimmedCode}" is already taken. Please choose a different code.`
         ));
       }
       
-      // Update the code to the trimmed uppercase version
       updates.code = trimmedCode;
     }
 

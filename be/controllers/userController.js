@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const { formatResponse, formatError } = require('../utils/responseFormatter');
 const axios = require('axios');
+const { issueMagicLinkForEmail } = require('../services/magicLoginService');
 
 // Proxy profile pictures to avoid CORS issues
 exports.getProfilePicture = async (req, res) => {
@@ -27,6 +28,229 @@ exports.getProfilePicture = async (req, res) => {
   } catch (error) {
     console.error('Error fetching profile picture:', error);
     res.status(500).json(formatError('Error fetching profile picture'));
+  }
+};
+
+// Get all admin users for an organization
+exports.getOrganizationAdmins = async (req, res) => {
+  try {
+    const organizationId = req.user.organization._id || req.user.organization;
+
+    // Find all admin users for this organization
+    const admins = await User.find({
+      organizations: organizationId,
+      isAdmin: true
+    }).select('-password -refreshToken').sort({ createdAt: 1 });
+
+    res.json(formatResponse({
+      data: admins,
+      message: 'Admin users retrieved successfully'
+    }));
+  } catch (error) {
+    console.error('Error fetching admin users:', error);
+    res.status(500).json(formatError('Failed to fetch admin users', error.message));
+  }
+};
+
+// Create a new admin user
+exports.createAdminUser = async (req, res) => {
+  try {
+    const organizationId = req.user.organization._id || req.user.organization;
+    const { email, firstName, lastName, password, authMethod } = req.body;
+
+    if (!email) {
+      return res.status(400).json(formatError('Email is required'));
+    }
+
+    // Validate auth method
+    const selectedAuthMethod = authMethod || 'magic-link';
+    if (!['magic-link', 'set-password'].includes(selectedAuthMethod)) {
+      return res.status(400).json(formatError('Invalid authentication method'));
+    }
+
+    // If password method is selected, ensure password is provided
+    if (selectedAuthMethod === 'set-password' && !password) {
+      return res.status(400).json(formatError('Password is required when using set-password method'));
+    }
+
+    // Check if user already exists
+    let user = await User.findOne({ email: email.toLowerCase().trim() });
+    let isNewUser = false;
+
+    if (user) {
+      // Check if user is already part of this organization
+      const isInOrg = user.organizations.some(org => 
+        String(org._id || org) === String(organizationId)
+      );
+
+      if (isInOrg) {
+        return res.status(400).json(formatError('User is already part of this organization'));
+      }
+
+      // Add organization to existing user
+      user.organizations.push(organizationId);
+      user.isAdmin = true;
+      if (firstName) user.firstName = firstName;
+      if (lastName) user.lastName = lastName;
+      
+      // Update password if provided
+      if (selectedAuthMethod === 'set-password' && password) {
+        user.password = password; // Will be hashed by the pre-save hook
+      }
+      
+      await user.save();
+    } else {
+      // Create new user
+      isNewUser = true;
+      const userData = {
+        email: email.toLowerCase().trim(),
+        firstName: firstName?.trim(),
+        lastName: lastName?.trim(),
+        organizations: [organizationId],
+        isAdmin: true,
+        status: 'active'
+      };
+
+      // Add password if provided
+      if (selectedAuthMethod === 'set-password' && password) {
+        userData.password = password; // Will be hashed by the pre-save hook
+      }
+
+      user = new User(userData);
+      await user.save();
+    }
+
+    // Generate and send magic login link only if magic-link method is selected
+    if (selectedAuthMethod === 'magic-link') {
+      try {
+        const { magicLoginUrl, emailResult } = await issueMagicLinkForEmail({
+          email: user.email,
+          requestIp: req.ip,
+          userAgent: req.headers['user-agent']
+        });
+        console.log('Generated magic login link for new admin:', magicLoginUrl);
+        if (emailResult) {
+          console.log('Magic login email sent successfully:', emailResult);
+        }
+      } catch (emailError) {
+        console.error('Error generating/sending magic login link:', emailError);
+        // Don't fail the request if email fails
+      }
+    } else {
+      console.log(`Admin user ${user.email} created with password authentication`);
+    }
+
+    // Remove sensitive data from response
+    const userResponse = user.toObject();
+    delete userResponse.password;
+    delete userResponse.refreshToken;
+
+    res.status(201).json(formatResponse({
+      data: userResponse,
+      message: 'Admin user created successfully'
+    }));
+  } catch (error) {
+    console.error('Error creating admin user:', error);
+    res.status(400).json(formatError('Failed to create admin user', error.message));
+  }
+};
+
+// Update an admin user
+exports.updateAdminUser = async (req, res) => {
+  try {
+    const organizationId = req.user.organization._id || req.user.organization;
+    const { id } = req.params;
+    const { firstName, lastName } = req.body;
+
+    // Prevent user from updating themselves through this endpoint
+    if (String(req.user._id) === String(id)) {
+      return res.status(400).json(formatError('Use the profile endpoint to update your own information'));
+    }
+
+    // Find the user
+    const user = await User.findById(id);
+
+    if (!user) {
+      return res.status(404).json(formatError('User not found'));
+    }
+
+    // Check if user is part of this organization
+    const isInOrg = user.organizations.some(org => 
+      String(org._id || org) === String(organizationId)
+    );
+
+    if (!isInOrg) {
+      return res.status(403).json(formatError('User is not part of your organization'));
+    }
+
+    // Update user fields
+    if (firstName !== undefined) user.firstName = firstName.trim();
+    if (lastName !== undefined) user.lastName = lastName.trim();
+
+    await user.save();
+
+    // Remove sensitive data from response
+    const userResponse = user.toObject();
+    delete userResponse.password;
+    delete userResponse.refreshToken;
+
+    res.json(formatResponse({
+      data: userResponse,
+      message: 'Admin user updated successfully'
+    }));
+  } catch (error) {
+    console.error('Error updating admin user:', error);
+    res.status(500).json(formatError('Failed to update admin user', error.message));
+  }
+};
+
+// Delete an admin user
+exports.deleteAdminUser = async (req, res) => {
+  try {
+    const organizationId = req.user.organization._id || req.user.organization;
+    const { id } = req.params;
+
+    // Prevent user from deleting themselves
+    if (String(req.user._id) === String(id)) {
+      return res.status(400).json(formatError('You cannot remove yourself'));
+    }
+
+    // Find the user
+    const user = await User.findById(id);
+
+    if (!user) {
+      return res.status(404).json(formatError('User not found'));
+    }
+
+    // Check if user is part of this organization
+    const isInOrg = user.organizations.some(org => 
+      String(org._id || org) === String(organizationId)
+    );
+
+    if (!isInOrg) {
+      return res.status(403).json(formatError('User is not part of your organization'));
+    }
+
+    // Remove organization from user's organizations array
+    user.organizations = user.organizations.filter(org => 
+      String(org._id || org) !== String(organizationId)
+    );
+
+    // If user has no more organizations, delete the user
+    if (user.organizations.length === 0) {
+      await User.findByIdAndDelete(id);
+    } else {
+      // Otherwise just update the organizations array
+      await user.save();
+    }
+
+    res.json(formatResponse({
+      data: null,
+      message: 'Admin user removed successfully'
+    }));
+  } catch (error) {
+    console.error('Error deleting admin user:', error);
+    res.status(500).json(formatError('Failed to remove admin user', error.message));
   }
 };
 

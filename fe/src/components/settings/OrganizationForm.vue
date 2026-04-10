@@ -232,38 +232,104 @@
       <!-- URL Preview - only show when preview is shown -->
       <div v-if="showPreview">
         <label class="block text-sm font-medium text-gray-700 mb-2">Member Portal URL</label>
-        <div class="space-y-4">
-          <!-- URL Preview -->
-          <div class="bg-gray-50 rounded-lg border border-gray-200 p-4">
-            <div class="flex items-center space-x-3">
-              <Icon icon="mdi:link-variant" class="h-5 w-5 text-gray-400" />
-              <div class="flex-grow">
-                <p class="text-sm text-gray-600">Your Member Portal URL:</p>
-                <div v-if="formData.code">
-                <a 
-                  
-                  :href="memberPortalUrl" 
-                  target="_blank" 
+        <div class="bg-gray-50 rounded-lg border border-gray-200 p-4">
+          <div class="flex items-center space-x-3">
+            <Icon icon="mdi:link-variant" class="h-5 w-5 text-gray-400 flex-shrink-0" />
+            <div class="flex-grow min-w-0">
+              <p class="text-sm text-gray-600">Your Member Portal URL:</p>
+              <div v-if="formData.code" class="flex items-center gap-2 mt-1">
+                <a
+                  :href="memberPortalUrl"
+                  target="_blank"
                   class="text-amber-600 hover:text-amber-700 font-medium break-all"
                 >
                   {{ memberPortalUrl }}
                 </a>
-                <div>
-                  <router-link 
-                    :to="{ name: 'qr-codes' }" 
-                    class="btn btn-secondary btn-sm mt-3"
-                  >
-                    View QR Code
-                    <Icon icon="mdi:arrow-right" class="ml-1 h-4 w-4" />
-                  </router-link>
-                </div>
-                </div>
-                <p v-else class="text-gray-400 italic">Enter a code above to generate your URL</p>
+                <button
+                  type="button"
+                  class="flex-shrink-0 rounded-md p-1.5 text-gray-400 hover:bg-gray-200 hover:text-gray-600 transition"
+                  title="Edit portal code"
+                  @click="openCodeModal"
+                >
+                  <Icon icon="mdi:pencil-outline" class="h-4 w-4" />
+                </button>
               </div>
+              <p v-else class="text-gray-400 italic mt-1">No code set</p>
             </div>
+          </div>
+          <div v-if="formData.code" class="mt-3 pl-8">
+            <router-link
+              :to="{ name: 'qr-codes' }"
+              class="btn btn-secondary btn-sm"
+            >
+              View QR Code
+              <Icon icon="mdi:arrow-right" class="ml-1 h-4 w-4" />
+            </router-link>
           </div>
         </div>
       </div>
+
+      <!-- Edit Code Modal -->
+      <Teleport to="body">
+        <Transition
+          enter-active-class="transition-opacity duration-200"
+          leave-active-class="transition-opacity duration-200"
+          enter-from-class="opacity-0"
+          leave-to-class="opacity-0"
+        >
+          <div
+            v-if="showCodeModal"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+            @click.self="closeCodeModal"
+          >
+            <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+              <h3 class="text-lg font-semibold text-gray-900">Edit Portal Code</h3>
+              <p class="mt-1 text-sm text-gray-500">
+                This changes the URL your members use to access their portal.
+              </p>
+
+              <div class="mt-4">
+                <label for="editCode" class="block text-sm font-medium text-gray-700">Code</label>
+                <div class="mt-1 flex items-center rounded-md border border-gray-300 shadow-sm focus-within:border-amber-500 focus-within:ring-1 focus-within:ring-amber-500">
+                  <span class="pl-3 text-sm text-gray-400">{{ baseUrl }}/members/</span>
+                  <input
+                    id="editCode"
+                    ref="codeInput"
+                    v-model="editCodeValue"
+                    type="text"
+                    class="flex-1 border-0 bg-transparent py-2 pr-3 text-sm text-gray-900 focus:ring-0"
+                    placeholder="MYCODE"
+                    maxlength="20"
+                    @input="sanitizeCodeInput"
+                    @keydown.enter.prevent="saveCode"
+                  />
+                </div>
+                <p v-if="codeError" class="mt-1.5 text-sm text-red-600">{{ codeError }}</p>
+                <p v-else class="mt-1.5 text-xs text-gray-400">Letters and numbers only, 3–20 characters.</p>
+              </div>
+
+              <div class="mt-6 flex justify-end gap-3">
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  :disabled="savingCode"
+                  @click="closeCodeModal"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  :disabled="savingCode || !isEditCodeValid"
+                  @click="saveCode"
+                >
+                  {{ savingCode ? 'Saving...' : 'Save' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </Transition>
+      </Teleport>
 
       
 
@@ -289,14 +355,74 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue';
+import { ref, watch, computed, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
-import { uploadOrganizationBanner } from '../../api';
+import { uploadOrganizationBanner, updateOrganization } from '../../api';
 import { useToast } from '../../plugins/toast';
 
 const router = useRouter();
 const toast = useToast();
+
+const showCodeModal = ref(false);
+const editCodeValue = ref('');
+const codeError = ref('');
+const savingCode = ref(false);
+const codeInput = ref(null);
+
+const isEditCodeValid = computed(() => {
+  const v = editCodeValue.value.trim();
+  return v.length >= 3 && v.length <= 20 && /^[A-Za-z0-9]+$/.test(v) && !codeError.value;
+});
+
+const sanitizeCodeInput = () => {
+  editCodeValue.value = editCodeValue.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+  codeError.value = '';
+};
+
+const openCodeModal = () => {
+  editCodeValue.value = formData.value.code || '';
+  codeError.value = '';
+  showCodeModal.value = true;
+  nextTick(() => codeInput.value?.focus());
+};
+
+const closeCodeModal = () => {
+  showCodeModal.value = false;
+  codeError.value = '';
+};
+
+const saveCode = async () => {
+  const code = editCodeValue.value.trim().toUpperCase();
+
+  if (code.length < 3 || code.length > 20) {
+    codeError.value = 'Code must be between 3 and 20 characters.';
+    return;
+  }
+  if (!/^[A-Z0-9]+$/.test(code)) {
+    codeError.value = 'Letters and numbers only—no spaces or special characters.';
+    return;
+  }
+  if (code === formData.value.code) {
+    closeCodeModal();
+    return;
+  }
+
+  savingCode.value = true;
+  codeError.value = '';
+
+  try {
+    const response = await updateOrganization({ code });
+    formData.value.code = response.data.data.code;
+    toast('Portal code updated', 'success');
+    closeCodeModal();
+  } catch (err) {
+    const msg = err.response?.data?.message || 'Failed to update code';
+    codeError.value = msg;
+  } finally {
+    savingCode.value = false;
+  }
+};
 const props = defineProps({
   organization: {
     type: Object,
