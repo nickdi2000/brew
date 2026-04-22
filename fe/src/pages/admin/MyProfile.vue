@@ -110,6 +110,39 @@
                   <dd class="mt-1 text-sm text-gray-900">{{ formatDate(organization?.createdAt) }}</dd>
                 </div>
               </dl>
+
+              <!-- Demo Mode Toggle -->
+              <div class="mt-6 pt-4 border-t border-gray-200">
+                <div class="flex items-start justify-between gap-4">
+                  <div class="min-w-0">
+                    <p class="text-sm font-medium text-gray-900">Enable Demo Mode</p>
+                    <p class="mt-0.5 text-xs text-gray-500">
+                      Replaces Google Sign-In on the member welcome page with a one-click demo login.
+                      Use for sandbox/demo organizations or to test the app.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    :aria-checked="isDemoMode"
+                    :disabled="isTogglingDemoMode"
+                    @click="toggleDemoMode"
+                    :class="[
+                      'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed',
+                      isDemoMode ? 'bg-amber-500' : 'bg-gray-300'
+                    ]"
+                  >
+                    <span class="sr-only">Enable Demo Mode</span>
+                    <span
+                      aria-hidden="true"
+                      :class="[
+                        'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                        isDemoMode ? 'translate-x-5' : 'translate-x-0'
+                      ]"
+                    ></span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -138,6 +171,8 @@ const form = ref({
 // Computed
 const user = computed(() => store.getters.currentUser)
 const organization = computed(() => store.getters['organization/config'])
+const isDemoMode = computed(() => !!organization.value?.isDemoMode)
+const isTogglingDemoMode = ref(false)
 
 // Keep form prefilled with current user when not editing
 watch(user, (newUser) => {
@@ -183,6 +218,27 @@ const handleSubmit = async () => {
     toast(error.message || 'Failed to update profile', 'error')
   } finally {
     isSaving.value = false
+  }
+}
+
+const toggleDemoMode = async () => {
+  if (isTogglingDemoMode.value) return
+  const nextValue = !isDemoMode.value
+  try {
+    isTogglingDemoMode.value = true
+    await store.dispatch('organization/updateConfigField', {
+      field: 'isDemoMode',
+      value: nextValue
+    })
+    toast(
+      nextValue ? 'Demo Mode enabled' : 'Demo Mode disabled',
+      'success'
+    )
+  } catch (err) {
+    console.error('Failed to toggle demo mode:', err)
+    toast(err.response?.data?.message || err.message || 'Failed to update Demo Mode', 'error')
+  } finally {
+    isTogglingDemoMode.value = false
   }
 }
 

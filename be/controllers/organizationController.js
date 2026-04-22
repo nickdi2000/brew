@@ -225,6 +225,11 @@ exports.updateOrganization = async (req, res) => {
       }
     });
 
+    // Explicitly coerce boolean flags so we don't drop an intentional `false`
+    if (Object.prototype.hasOwnProperty.call(req.body, 'isDemoMode')) {
+      updates.isDemoMode = Boolean(req.body.isDemoMode);
+    }
+
     // If code is being updated, validate format and check for duplicates
     if (updates.code) {
       const trimmedCode = updates.code.trim().toUpperCase();

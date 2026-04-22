@@ -2,6 +2,25 @@
   <div class="min-h-screen bg-gradient-subtle">
     <!-- Navigation -->
     <nav class="fixed top-0 z-50 w-full bg-slate-800 shadow-lg">
+      <!-- Demo Mode Banner -->
+      <div
+        v-if="isDemoMode"
+        class="w-full bg-amber-500 text-slate-900 text-xs sm:text-sm font-medium"
+      >
+        <div class="px-4 sm:px-6 lg:px-8 h-8 flex items-center justify-center text-center">
+          <Icon icon="mdi:flask-outline" class="h-4 w-4 mr-2 flex-shrink-0" />
+          <span class="truncate">
+            Demo Mode is enabled — you are not redeeming points from real users.
+            <button
+              type="button"
+              class="underline underline-offset-2 font-semibold hover:text-slate-950 disabled:opacity-60 disabled:cursor-not-allowed"
+              :disabled="isTogglingDemoMode"
+              @click="disableDemoMode"
+            >{{ isTogglingDemoMode ? 'disabling…' : 'Click here' }}</button>
+            to disable.
+          </span>
+        </div>
+      </div>
       <div class="px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
           <div class="flex items-center">
@@ -71,7 +90,7 @@
     </nav>
 
     <!-- Desktop Sidebar -->
-    <Sidebar class="hidden md:block" />
+    <Sidebar class="hidden md:block" :top-offset="isDemoMode ? 'demo' : 'default'" />
 
     <!-- Mobile Drawer Menu -->
     <Drawer
@@ -96,7 +115,7 @@
     </Drawer>
 
     <!-- Main Content -->
-    <main class="pt-16 md:pl-64">
+    <main :class="[isDemoMode ? 'pt-24' : 'pt-16', 'md:pl-64']">
       <div class="p-4 md:p-8">
         <ErrorBoundary>
           <router-view v-slot="{ Component }">
@@ -129,14 +148,36 @@ import Drawer from '../components/Drawer.vue'
 import TabView from '../components/TabView.vue'
 import ComingSoon from '../components/ComingSoon.vue'
 import ErrorBoundary from '../components/ErrorBoundary.vue'
+import { useToast } from '@/plugins/toast'
 import adminNav from './admin_nav.json'
 
 const store = useStore()
 const router = useRouter()
 const route = useRoute()
+const toast = useToast()
 const showAccountMenu = ref(false)
 const showMobileMenu = ref(false)
 const accountDropdown = ref(null)
+const isTogglingDemoMode = ref(false)
+
+const isDemoMode = computed(() => !!store.getters['organization/config']?.isDemoMode)
+
+const disableDemoMode = async () => {
+  if (isTogglingDemoMode.value) return
+  try {
+    isTogglingDemoMode.value = true
+    await store.dispatch('organization/updateConfigField', {
+      field: 'isDemoMode',
+      value: false
+    })
+    toast('Demo Mode disabled', 'success')
+  } catch (err) {
+    console.error('Failed to disable demo mode:', err)
+    toast(err.response?.data?.message || err.message || 'Failed to disable Demo Mode', 'error')
+  } finally {
+    isTogglingDemoMode.value = false
+  }
+}
 
 // Setup click outside handler
 onClickOutside(accountDropdown, () => {

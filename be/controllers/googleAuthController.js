@@ -12,27 +12,51 @@ exports.googleLogin = async (req, res) => {
     
     let payload;
     
-    // Check if this is a demo token (development only)
+    // Check if this is a demo token. Demo tokens only work when the target
+    // organization explicitly has `isDemoMode` enabled (and must always have
+    // an organization code — admin flows cannot use demo tokens).
     const isDemoToken = token && token.includes('demo-signature-not-real');
-    const isDevelopment = process.env.NODE_ENV !== 'production';
-    
-    if (isDemoToken && isDevelopment) {
-      console.log('[GoogleAuth] Processing demo token (development only)');
-      
+    const incomingOrgCode = req.body.code || req.body.organizationCode;
+
+    if (isDemoToken) {
+      if (!incomingOrgCode) {
+        console.warn('[GoogleAuth] Demo token rejected: missing organization code');
+        return res.status(400).json(formatError('Demo login requires an organization code'));
+      }
+
+      const Organization = require('../models/Organization');
+      const escapedCode = String(incomingOrgCode).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const demoOrg = await Organization.findOne({ code: new RegExp(`^${escapedCode}$`, 'i') });
+
+      if (!demoOrg) {
+        console.warn('[GoogleAuth] Demo token rejected: organization not found', { incomingOrgCode });
+        return res.status(404).json(formatError('Organization not found'));
+      }
+      if (!demoOrg.isDemoMode) {
+        console.warn('[GoogleAuth] Demo token rejected: organization is not in demo mode', {
+          organizationId: demoOrg._id.toString(),
+          code: demoOrg.code
+        });
+        return res.status(403).json(formatError('Demo login is not enabled for this organization'));
+      }
+
+      console.log('[GoogleAuth] Processing demo token for demo-mode organization', {
+        organizationId: demoOrg._id.toString(),
+        code: demoOrg.code
+      });
+
       // Decode the fake JWT token manually
       try {
         const parts = token.split('.');
         if (parts.length !== 3) {
           throw new Error('Invalid demo token format');
         }
-        
-        // Decode the payload (second part)
         const decodedPayload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
         payload = decodedPayload;
         console.log('[GoogleAuth] Demo token payload:', payload);
       } catch (decodeError) {
         console.error('[GoogleAuth] Failed to decode demo token:', decodeError);
-        throw new Error('Invalid demo token');
+        return res.status(400).json(formatError('Invalid demo token'));
       }
     } else {
       payload = await verifyGoogleIdToken(token);

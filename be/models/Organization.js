@@ -46,6 +46,13 @@ const organizationSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'QRCode'
   }],
+  // When true, the member welcome page exposes a DEMO LOGIN button that
+  // authenticates against a seeded demo account without real Google SSO.
+  // This must remain false for real organizations in production.
+  isDemoMode: {
+    type: Boolean,
+    default: false
+  },
   createdAt: {
     type: Date,
     default: Date.now

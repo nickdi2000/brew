@@ -37,13 +37,14 @@
       :description="organization.description"
       :banner-image="organization.bannerImage"
       :code="organization.code"
+      :is-demo-mode="!!organization.isDemoMode"
       @sign-in="signInWithGoogle"
     />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useStore } from 'vuex';
 import { Icon } from '@iconify/vue';
@@ -60,9 +61,14 @@ const error = ref(false);
 const notFound = ref(false);
 const organization = ref(null);
 const route = useRoute();
-const organizationCode = route.params.code;
 
 const fetchOrganizationInfo = async () => {
+  const organizationCode = route.params.code;
+
+  organization.value = null;
+  error.value = false;
+  notFound.value = false;
+
   if (!organizationCode) {
     notFound.value = true;
     loading.value = false;
@@ -70,9 +76,7 @@ const fetchOrganizationInfo = async () => {
   }
 
   loading.value = true;
-  error.value = false;
-  notFound.value = false;
-  
+
   try {
     console.log('🏢 Fetching organization info for code:', organizationCode);
     const response = await getOrganizationByCode(organizationCode);
@@ -230,6 +234,15 @@ const signInWithGoogle = async () => {
   }
 };
 
+
+watch(
+  () => route.params.code,
+  (newCode, oldCode) => {
+    if (newCode && newCode !== oldCode) {
+      fetchOrganizationInfo();
+    }
+  }
+);
 
 onMounted(() => {
   fetchOrganizationInfo();
