@@ -16,7 +16,12 @@ exports.getOrganizationByCode = async (req, res) => {
 
     // Case-insensitive exact match
     const codeRegex = new RegExp(`^${code.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
-    const organization = await Organization.findOne({ code: codeRegex });
+    // Use .lean() so we return the raw document from MongoDB rather than a
+    // Mongoose-serialized version. This protects the public member landing
+    // page from schema drift (e.g. the running server missing a newly added
+    // field like `bannerImage` would otherwise silently strip that value from
+    // the response even though it exists in the DB).
+    const organization = await Organization.findOne({ code: codeRegex }).lean();
 
     if (!organization) {
       return res.status(404).json(formatError('Organization not found'));
